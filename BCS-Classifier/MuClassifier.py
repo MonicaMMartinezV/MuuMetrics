@@ -18,10 +18,12 @@ class ImageSorter:
         self.start_x = None
         self.start_y = None
         self.rect = None
-        self.boxes = []  # (x1, y1, x2, y2)
+        self.box = None
+        
+        self.set_box = False
         
         # ----- INTERFAZ -----
-        self.label_info = tk.Label(root, text="Selecciona una carpeta con imágenes", font=("Arial", 14))
+        self.label_info = tk.Label(root, text="MU CLASSIFIER", font=("Arial", 20))
         self.label_info.pack(pady=10)
 
         self.canvas = tk.Canvas(root, width=600, height=400, bg="gray")
@@ -59,6 +61,7 @@ class ImageSorter:
                 messagebox.showwarning("Sin imágenes", "La carpeta no contiene imágenes.")
             else:
                 self.show_image()
+                self.set_box = True
 
     def show_image(self):
         if 0 <= self.current_index < len(self.images):
@@ -74,40 +77,64 @@ class ImageSorter:
             self.canvas.delete("all")
             self.label_info.config(text="No hay más imágenes.")
 
-    def on_press(self, event):
-        self.start_x = event.x
-        self.start_y = event.y
-        self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline="red", width=2)
     
+    def on_press(self, event):
+        if self.set_box:
+            if self.box:
+                self.canvas.delete(self.box)
+                self.box = None
+
+            self.start_x = event.x
+            self.start_y = event.y
+            self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline="red", width=2)
+
     def on_drag(self, event):
-        if self.rect:
-            self.canvas.coords(self.rect, self.start_x, self.start_y, event.x, event.y)
+        if self.set_box:
+            if self.rect:
+                self.canvas.coords(self.rect, self.start_x, self.start_y, event.x, event.y)
 
     def on_release(self, event):
-        end_x, end_y = event.x, event.y
-        self.boxes.append((self.start_x, self.start_y, end_x, end_y))
+        if self.set_box:
+            end_x, end_y = event.x, event.y
 
-    def save_annotations(self):
-        if not self.boxes:
+            # Guardar la caja final y eliminar rectángulos temporales
+            if self.rect:
+                self.box = self.rect
+                self.rect = None
+                self.box_coords = (self.start_x, self.start_y, end_x, end_y)
+            else:
+                self.box_coords = None
+
+    def save_annotation(self):
+        if not hasattr(self, "box_coords") or self.box_coords is None:
+            messagebox.showwarning("Aviso", "Dibuja un rectángulo antes de guardar.")
             return
 
-        # Convertir a formato YOLO
-        yolo_lines = []
-        for (x1, y1, x2, y2) in self.boxes:
-            # Normalizar coordenadas
-            x_center = ((x1 + x2) / 2) / 800
-            y_center = ((y1 + y2) / 2) / 600
-            w = abs(x2 - x1) / 800
-            h = abs(y2 - y1) / 600
-            class_id = 0  # puedes cambiar esto según la clase
-            yolo_lines.append(f"{class_id} {x_center:.6f} {y_center:.6f} {w:.6f} {h:.6f}")
+        x1, y1, x2, y2 = self.box_coords
 
-        # Guardar en txt con el mismo nombre
-        img_name = os.path.splitext(self.images[self.index])[0]
-        txt_path = os.path.join(self.folder, f"{img_name}.txt")
-        with open(txt_path, "w") as f:
-            f.write("\n".join(yolo_lines))
-        print(f"Anotaciones guardadas en: {txt_path}")
+        # Convertir a formato YOLO (normalizado a tamaño del canvas)
+        x_center = ((x1 + x2) / 2) / 800
+        y_center = ((y1 + y2) / 2) / 600
+        w = abs(x2 - x1) / 800
+        h = abs(y2 - y1) / 600
+        class_id = 0
+
+        yolo_line = f"{class_id} {x_center:.6f} {y_center:.6f} {w:.6f} {h:.6f}"
+
+        old_name = self.images[self.index]
+        old_path = os.path.join(self.folder, old_name)
+        ext = os.path.splitext(old_name)[1]
+        new_filename = yolo_line + ext
+        new_path = os.path.join(self.folder, new_filename)
+
+        # Renombrar imagen
+        os.rename(old_path, new_path)
+
+        self.start_x = None
+        self.start_y = None
+        self.rect = None
+        self.box = None
+        self.box_coords is None
 
     def move_image(self):
         if not self.images:
