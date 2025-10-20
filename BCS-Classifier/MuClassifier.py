@@ -1,3 +1,15 @@
+# =============================================================
+# Nombre del archivo: MuClassifier.py
+# Autor: Ulises Orlando Carrizalez Lerín
+# Fecha de creación: 15-10-2025
+# Descripción: GUI clasificadora
+# Dependencias: 
+#   os
+#   shutil
+#   tkinter
+#   PIL
+# =============================================================
+
 import os
 import shutil
 import tkinter  as tk
@@ -6,23 +18,34 @@ from PIL        import Image, ImageTk
 
 class ImageSorter:
     def __init__(self, root):
+        """
+        Método constructor de la GUI
+
+        Args:
+            root(TK): ventana principal de la GUI generada en el main
+
+        Returns:
+            None
+        """
+        # Generar bases de la GUI en root
         self.root = root
         self.root.title("Clasificador de Imágenes")
         self.root.geometry("800x600")
         self.root.iconbitmap("MUU.ico")
 
+        # Variables de control de imagenes
         self.folder_path    = ""
         self.images         = []
         self.current_index  = 0
 
+        # Variables de control de bounding boxes
         self.start_x = None
         self.start_y = None
-        self.rect = None
-        self.box = None
-        
+        self.rect    = None
+        self.box     = None
         self.set_box = False
         
-        # ----- INTERFAZ -----
+        # Generar componentes de interfaz
         self.label_info = tk.Label(root, text="MU CLASSIFIER", font=("Arial", 20))
         self.label_info.pack(pady=10)
 
@@ -49,8 +72,16 @@ class ImageSorter:
         self.canvas.bind("<B1-Motion>", self.on_drag)
         self.canvas.bind("<ButtonRelease-1>", self.on_release)
 
-    # ----- FUNCIONES -----
     def select_folder(self):
+        """
+        Generar ventana para seleccionar directorio de imagenes
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         folder = filedialog.askdirectory()
         if folder:
             self.folder_path = folder
@@ -64,6 +95,15 @@ class ImageSorter:
                 self.set_box = True
 
     def show_image(self):
+        """
+        Mostrar imágenes en GUI
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         if 0 <= self.current_index < len(self.images):
             image_path = os.path.join(self.folder_path, self.images[self.current_index])
             img        = Image.open(image_path)
@@ -79,6 +119,15 @@ class ImageSorter:
 
     
     def on_press(self, event):
+        """
+        Registrar las coordenadas al presionar el ratón y empezar a generar bounding box
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         if self.set_box:
             if self.box:
                 self.canvas.delete(self.box)
@@ -89,11 +138,29 @@ class ImageSorter:
             self.rect = self.canvas.create_rectangle(self.start_x, self.start_y, self.start_x, self.start_y, outline="red", width=2)
 
     def on_drag(self, event):
+        """
+        Modificar la posición final para alterar el tamaño del cuadro
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         if self.set_box:
             if self.rect:
                 self.canvas.coords(self.rect, self.start_x, self.start_y, event.x, event.y)
 
     def on_release(self, event):
+        """
+        Registrar punto final y guardar bounding box
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         if self.set_box:
             end_x, end_y = event.x, event.y
 
@@ -106,6 +173,15 @@ class ImageSorter:
                 self.box_coords = None
 
     def save_annotation(self):
+        """
+        Generar anotación de bounding box en formato YOLO
+        
+        Args:
+            None
+
+        Returns:
+            None
+        """
         if not hasattr(self, "box_coords") or self.box_coords is None:
             messagebox.showwarning("Aviso", "Dibuja un rectángulo antes de guardar.")
             return
@@ -137,6 +213,15 @@ class ImageSorter:
         self.box_coords is None
 
     def move_image(self):
+        """
+        Mover ubicación de imagen a directorio de clasificación
+
+        Args:
+            None
+
+        Returns:
+            None
+        """
         if not self.images:
             messagebox.showinfo("Aviso", "No hay imágenes cargadas.")
             return
