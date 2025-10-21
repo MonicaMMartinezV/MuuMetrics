@@ -19,7 +19,7 @@ import datetime
 
 
 pathCows = r"" #Actualiza la ruta -- calculoDELvacas/datosDemonstracion
-pathPatadas = r"" # Actualiza la ruta
+pathPatadas = r"" # Actualiza la ruta -- calculoDELvacas/datosDemonstracion/patadasDf
 
 
 def calculoDEL (path):
