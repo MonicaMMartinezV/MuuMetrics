@@ -1,7 +1,8 @@
-# MuuMetrics
-Este proyecto busca aplicar técnicas de minería de datos y análisis de imágenes para identificar de forma temprana posibles complicaciones de salud en vacas, evaluando su BCS (Body Condition Score).
+# Código realizado:
 
-El avance de nuestro proyecto se encuentra en las siguientes ligas:
-- [Drive del proyecto](https://drive.google.com/drive/folders/1xQ-WnKvpaFhXdCvodIKwVP_DjKes0lJr?usp=sharing)
+## calculoDELvacas.py
 
-- [Notion](https://gray-seaplane-cef.notion.site/MuuMetrics-2791c55762fc8068b8fdccd1ea386017?source=copy_link)
+### Overview
+The script *calculoDELvacas.py* computes the *Days in Milk (DEL)* closest to the moment a cow’s image was taken.  
+It combines milking records from multiple cows (each stored in a separate .csv file) and matches them to the timestamps of images to identify which cow and milking session are closest in time.
+
