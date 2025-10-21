@@ -26,7 +26,7 @@ A continuación, se describirá la funcionalidad del archivo LimpiarVacas.py. Un
 
 
 
-1. Instalar las dependencias en la terminal CMD
+1. Instalar las dependencias en la terminal CMD.
 
 
 
