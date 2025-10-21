@@ -1,1 +1,4 @@
-aqui debo meter una breve descripción de cada archivo
+# Código realizado:
+
+## calculoDELvacas
+Calculo de los días en leche (DEL) más cercanos a la fecha de toma de fotografía
