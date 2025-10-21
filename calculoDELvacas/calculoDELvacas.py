@@ -18,7 +18,7 @@ import glob
 import datetime
 
 
-pathCows = r"" #Actualiza la ruta 
+pathCows = r"" #Actualiza la ruta -- calculoDELvacas/datosDemonstracion
 pathPatadas = r"" # Actualiza la ruta
 
 
