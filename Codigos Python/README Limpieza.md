@@ -29,17 +29,17 @@ Paso Brillo / Función 3: Para recuperación de imágenes oscuras filtradas por 
 2. Abrir el documento limpiarVacas.py
 3. Instalar las dependencias en la terminal CMD.
 
-
-&nbsp;	pip install opencv-python numpy pillow tqdm ultralytics
-
+```python
+pip install opencv-python numpy pillow tqdm ultralytics
+```
 
 
 4. Correr el archivo en la ubicacion del directorio con el comando:
 
 
-
-&nbsp;	python limpiarVacas.py
-
+```python
+python limpiarVacas.py
+```
 
 
 5. Seguir las instrucciones en la terminal para cumplir los pasos necesarios.
