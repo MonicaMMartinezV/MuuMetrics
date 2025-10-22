@@ -25,16 +25,16 @@ Paso Brillo / Función 3: Para recuperación de imágenes oscuras filtradas por 
 ### Instrucciones
 
 
-1\. Hacer git clone en la terminal de Windows
-2\. Abrir el documento limpiarVacas.py
-3\. Instalar las dependencias en la terminal CMD.
+1. Hacer git clone en la terminal de Windows
+2. Abrir el documento limpiarVacas.py
+3. Instalar las dependencias en la terminal CMD.
 
 
 &nbsp;	pip install opencv-python numpy pillow tqdm ultralytics
 
 
 
-4\. Correr el archivo en la ubicacion del directorio con el comando:
+4. Correr el archivo en la ubicacion del directorio con el comando:
 
 
 
@@ -42,5 +42,5 @@ Paso Brillo / Función 3: Para recuperación de imágenes oscuras filtradas por 
 
 
 
-5\. Seguir las instrucciones en la terminal para cumplir los pasos necesarios.
+5. Seguir las instrucciones en la terminal para cumplir los pasos necesarios.
 
