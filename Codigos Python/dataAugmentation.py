@@ -1,22 +1,51 @@
+# =============================================================
+# Nombre del archivo: data_augmentation.py
+# Autor: María Soto
+# Fecha de creación: 21-10-2025
+# Descripción: Carga un dataset de imágenes por carpetas, aplica 
+#   augmentación (rotación, flip horizontal, escala y conversión 
+#   a grayscale) y guarda las imágenes originales y aumentadas 
+#   en un directorio de salida separado.
+# Dependencias: numpy, matplotlib, tensorflow, pathlib, os, shutil
+# =============================================================
+
 import numpy as np
 import matplotlib.pyplot as plt
-import tensorflow as tf # type: ignore
-from tensorflow.keras import layers # type: ignore
+import tensorflow as tf  # type: ignore
+from tensorflow.keras import layers  # type: ignore
 from pathlib import Path
+import os
 
-
-baseDir = "./Codigos Python/Batches para correr el codigo/04. Batch Imagenes Clasificadas DataAugmentation"
-baseDir = Path("./Codigos Python/Batches para correr el codigo/04. Batch Imagenes Clasificadas DataAugmentation")
+# =============================================================
+# Configuración de directorios
+# =============================================================
+baseDir = Path(
+    "./Codigos Python/Batches para correr el codigo/"
+    "04. Batch Imagenes Clasificadas DataAugmentation"
+)
 print("Ruta absoluta:", baseDir.resolve())
 print("Existe:", baseDir.exists())
-# Load train/validation datasets
+
+# Directorio de salida fuera del dataset para no interferir con clases
+outputDir = baseDir.parent / 'output'
+trainOutputDir = outputDir / 'train'
+valOutputDir = outputDir / 'val'
+augmentedOutputDir = outputDir / 'augmented'
+
+os.makedirs(trainOutputDir, exist_ok=True)
+os.makedirs(valOutputDir, exist_ok=True)
+os.makedirs(augmentedOutputDir, exist_ok=True)
+
+# =============================================================
+# Carga de datasets (entrenamiento y validación)
+# =============================================================
 trainDs = tf.keras.utils.image_dataset_from_directory(
     baseDir,
     validation_split=0.3,
     subset="training",
     seed=42,
     image_size=(1080, 1080)
-    )
+)
 
 valDs = tf.keras.utils.image_dataset_from_directory(
     baseDir,
@@ -26,7 +55,9 @@ valDs = tf.keras.utils.image_dataset_from_directory(
     image_size=(1080, 1080)
 )
 
-# Normalize + augment
+# =============================================================
+# Definición de augmentación
+# =============================================================
 dataAugmentation = tf.keras.Sequential([
     layers.Rescaling(1./255),
     layers.RandomRotation(0.4),
@@ -34,56 +65,39 @@ dataAugmentation = tf.keras.Sequential([
     layers.Lambda(lambda x: tf.tile(tf.image.rgb_to_grayscale(x), [1, 1, 1, 3]))
 ])
 
-# Take one batch from the dataset
+# =============================================================
+# Visualización de ejemplos
+# =============================================================
 for images, labels in trainDs.take(1):
-    sampleImages = images[:5]  # take 5 example images
+    sampleImages = images[:5]
     break
 
-# Apply augmentation
 augmentedImages = dataAugmentation(sampleImages)
 
-# Plot original vs augmented
 plt.figure(figsize=(10, 6))
-
 for i in range(5):
     # Original
     plt.subplot(2, 5, i + 1)
-    plt.imshow(
-        sampleImages[i].numpy().astype("uint8")) # Fixed: Access i-th image from sampleImages
+    plt.imshow(sampleImages[i].numpy().astype("uint8"))
     plt.title("Original")
     plt.axis("off")
-
     # Augmented
     plt.subplot(2, 5, i + 6)
     plt.imshow((augmentedImages[i].numpy() * 255).astype("uint8"))
     plt.title("Augmented")
     plt.axis("off")
-
 plt.tight_layout()
 plt.show()
 
-import os
-import shutil
-import tensorflow as tf # type: ignore
-
-# Define directories to save images
-outputDir = baseDir.parent / 'output' 
-trainOutputDir = os.path.join(outputDir, 'train')
-valOutputDir = os.path.join(outputDir, 'val')
-augmentedOutputDir = os.path.join(outputDir, 'augmented')
-
-# Create directories if they don't exist
-os.makedirs(trainOutputDir, exist_ok=True)
-os.makedirs(valOutputDir, exist_ok=True)
-os.makedirs(augmentedOutputDir, exist_ok=True)
-
-# Function to save images from a dataset
-def saveImagesFromDataset(dataset, outputDirectory, maxImages=None, applyAugmentation=False, augmentationLayer=None):
+# =============================================================
+# Función para guardar imágenes desde un dataset
+# =============================================================
+def saveImagesFromDataset(dataset, outputDirectory, maxImages=None,
+                          applyAugmentation=False, augmentationLayer=None):
     count = 0
-    # Create a mapping from original labels to new labels
-    originalLabels = sorted(trainDs.class_names) # Assuming trainDs contains all class names
-    labelMapping = {originalLabels[i]: 2 + i * 0.25 for i in range(len(originalLabels))}
-
+    originalLabels = sorted(trainDs.class_names)
+    labelMapping = {originalLabels[i]: 2 + i * 0.25 
+                    for i in range(len(originalLabels))}
 
     for images, labels in dataset:
         if applyAugmentation and augmentationLayer is not None:
@@ -92,31 +106,27 @@ def saveImagesFromDataset(dataset, outputDirectory, maxImages=None, applyAugment
         for i in range(images.shape[0]):
             if maxImages is not None and count >= maxImages:
                 return
-            # Ensure image data is in the correct format before converting to PIL Image
-            if images[i].dtype != tf.uint8:
-                imgData = tf.cast(images[i] * 255, tf.uint8)
-            else:
-                imgData = images[i]
+
+            imgData = (tf.cast(images[i] * 255, tf.uint8) 
+                       if images[i].dtype != tf.uint8 else images[i])
 
             img = tf.keras.utils.array_to_img(imgData)
-            originalLabelIndex = labels[i].numpy()
-            originalLabelName = trainDs.class_names[originalLabelIndex]
+            originalLabelName = trainDs.class_names[labels[i].numpy()]
             newLabel = labelMapping[originalLabelName]
 
-            # Use the new label for the directory name, converting to string
             classDir = os.path.join(outputDirectory, str(newLabel))
             os.makedirs(classDir, exist_ok=True)
             imgPath = os.path.join(classDir, f'image_{count}.png')
             img.save(imgPath)
             count += 1
+
         if maxImages is not None and count >= maxImages:
             break
 
-
-
-# Save augmented images from the entire train dataset
+# =============================================================
+# Guardar imágenes aumentadas
+# =============================================================
 print("Saving augmented train images...")
-saveImagesFromDataset(trainDs, augmentedOutputDir, applyAugmentation=True, augmentationLayer=dataAugmentation)
-
-
+saveImagesFromDataset(trainDs, augmentedOutputDir, 
+                      applyAugmentation=True, augmentationLayer=dataAugmentation)
 print("Image saving complete.")
