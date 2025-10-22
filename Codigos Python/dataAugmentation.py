@@ -5,12 +5,14 @@ from tensorflow.keras import layers # type: ignore
 from pathlib import Path
 
 
-baseDir = "../Codigos Python/Batches para correr el codigo/04. Batch Imagenes Clasificadas DataAugmentation"
-
+baseDir = "./Codigos Python/Batches para correr el codigo/04. Batch Imagenes Clasificadas DataAugmentation"
+baseDir = Path("./Codigos Python/Batches para correr el codigo/04. Batch Imagenes Clasificadas DataAugmentation")
+print("Ruta absoluta:", baseDir.resolve())
+print("Existe:", baseDir.exists())
 # Load train/validation datasets
 trainDs = tf.keras.utils.image_dataset_from_directory(
     baseDir,
-    validation_split=0.2,
+    validation_split=0.3,
     subset="training",
     seed=42,
     image_size=(1080, 1080)
@@ -18,7 +20,7 @@ trainDs = tf.keras.utils.image_dataset_from_directory(
 
 valDs = tf.keras.utils.image_dataset_from_directory(
     baseDir,
-    validation_split=0.2,
+    validation_split=0.3,
     subset="validation",
     seed=42,
     image_size=(1080, 1080)
@@ -65,7 +67,7 @@ import shutil
 import tensorflow as tf # type: ignore
 
 # Define directories to save images
-outputDir = str(Path(baseDir) / 'output')
+outputDir = baseDir.parent / 'output' 
 trainOutputDir = os.path.join(outputDir, 'train')
 valOutputDir = os.path.join(outputDir, 'val')
 augmentedOutputDir = os.path.join(outputDir, 'augmented')
