@@ -16,9 +16,10 @@ from tensorflow.keras import layers  # type: ignore
 from pathlib import Path
 import os
 
-# =============================================================
-# Configuración de directorios
-# =============================================================
+'''
+Configuración de directorios
+'''
+
 baseDir = Path(
     "./Codigos Python/Batches para correr el codigo/"
     "04. Batch Imagenes Clasificadas DataAugmentation"
@@ -36,9 +37,9 @@ os.makedirs(trainOutputDir, exist_ok=True)
 os.makedirs(valOutputDir, exist_ok=True)
 os.makedirs(augmentedOutputDir, exist_ok=True)
 
-# =============================================================
-# Carga de datasets (entrenamiento y validación)
-# =============================================================
+'''
+Carga de datasets (entrenamiento y validación)
+'''
 trainDs = tf.keras.utils.image_dataset_from_directory(
     baseDir,
     validation_split=0.3,
@@ -55,9 +56,9 @@ valDs = tf.keras.utils.image_dataset_from_directory(
     image_size=(1080, 1080)
 )
 
-# =============================================================
-# Definición de augmentación
-# =============================================================
+'''
+Definición de augmentación
+'''
 dataAugmentation = tf.keras.Sequential([
     layers.Rescaling(1./255),
     layers.RandomRotation(0.4),
@@ -65,9 +66,9 @@ dataAugmentation = tf.keras.Sequential([
     layers.Lambda(lambda x: tf.tile(tf.image.rgb_to_grayscale(x), [1, 1, 1, 3]))
 ])
 
-# =============================================================
-# Visualización de ejemplos
-# =============================================================
+'''
+Visualización de ejemplos
+'''
 for images, labels in trainDs.take(1):
     sampleImages = images[:5]
     break
@@ -89,9 +90,10 @@ for i in range(5):
 plt.tight_layout()
 plt.show()
 
-# =============================================================
-# Función para guardar imágenes desde un dataset
-# =============================================================
+'''
+Función para guardar imágenes desde un dataset
+'''
+
 def saveImagesFromDataset(dataset, outputDirectory, maxImages=None,
                           applyAugmentation=False, augmentationLayer=None):
     count = 0
@@ -123,9 +125,9 @@ def saveImagesFromDataset(dataset, outputDirectory, maxImages=None,
         if maxImages is not None and count >= maxImages:
             break
 
-# =============================================================
-# Guardar imágenes aumentadas
-# =============================================================
+'''
+Guardar imágenes aumentadas
+'''
 print("Saving augmented train images...")
 saveImagesFromDataset(trainDs, augmentedOutputDir, 
                       applyAugmentation=True, augmentationLayer=dataAugmentation)
