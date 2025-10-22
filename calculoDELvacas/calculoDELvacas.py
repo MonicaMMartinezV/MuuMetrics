@@ -18,8 +18,8 @@ import glob
 import datetime
 
 
-pathCows = r"" #Actualiza la ruta -- calculoDELvacas/datosDemonstracion/vacasCSVs
-pathPatadas = r"" # Actualiza la ruta -- calculoDELvacas/datosDemonstracion/patadasDf
+pathCows = r"calculoDELvacas/datosDemonstracion/vacasCSVs" #Actualiza la ruta de acuerdo a tu acceso
+pathPatadas = r"calculoDELvacas/datosDemonstracion/patadasDf" # Actualiza la ruta de acuerdo a tu acceso
 
 
 def calculoDEL (path):
@@ -235,6 +235,5 @@ def calculoDEL (path):
     else:
         print("No se encontró la vaca en uno de los DataFrames")
 
-
-if __name__ -- '__main__':
-    main()
+if __name__ == '__main__':
+    calculoDEL(pathCows)
