@@ -1,58 +1,60 @@
 # calculoDELvacas.py
 
-## Overview
-The script *calculoDELvacas.py* computes the *Days in Milk (DEL)* closest to the moment a cow’s image was taken.  
-It combines milking records from multiple cows (each stored in a separate .csv file) and matches them to the timestamps of images to identify which cow and milking session are closest in time.
+## Descripción general
+El script **`calculoDELvacas.py`** calcula los **Días en Leche (DEL)** más cercanos al momento en que fue tomada la imagen de una vaca.  
+Combina los registros de ordeña de múltiples vacas (cada uno almacenado en un archivo `.csv` independiente) y los compara con las marcas de tiempo de las fechas más cercanas a las imágenes mostradas en otro archvo `.csv` para identificar qué vaca y qué sesión de ordeña corresponde a la imagen de una vaca.
 
 ---
 
-## How It Works:
+## Funcionamiento del script
 
-1. *Reads and combines CSV files*
-   - The script scans all .csv files inside the directory defined by pathCows.
-   - Each file represents one cow, and its filename is used as the cow’s ID.
-   - It finds the correct header row, cleans up the data, and merges all files into one combined DataFrame.
+1. **Lectura y combinación de archivos CSV**
+   - El script busca todos los archivos `.csv` dentro del directorio definido por `pathCows`.
+   - Cada archivo representa a una vaca, y su nombre de archivo se utiliza como identificador (ID) de la vaca.
+   - Detecta la fila correcta de encabezados, limpia los datos y combina todos los archivos en un solo *DataFrame*.
 
-2. *Cleans and converts date columns*
-   - The milking start times (Hora de inicio) are standardized and converted to datetime format.
-   - Any missing or invalid date entries are reported to the user.
+2. **Limpieza y conversión de columnas de fecha**
+   - Las horas de inicio de ordeña (`Hora de inicio`) se estandarizan y se convierten al formato de fecha y hora (`datetime`).
+   - Cualquier dato faltante o inválido se reporta al usuario.
 
-3. *Processes image timestamps*
-   - A dummy list of image filenames (e.g., 2025-06-01-21-47-55_cam4_cap3) is converted into datetime objects in case the images are converted to the correct format all at once.
-   - The script checks for invalid or unrecognized image names and lists the valid ones.
+3. **Procesamiento de marcas de tiempo de imágenes**
+   - Se utiliza una lista de nombres de archivo simulados (por ejemplo: `2025-06-01-21-47-55_cam4_cap3`), los cuales se convierten en objetos `datetime`, útil en caso de que las imágenes se procesen en lote.
+   - El script valida los nombres de las imágenes y muestra cuáles son válidos o inválidos.
 
-4. *Reads “Patadas” dataset*
-   - The file defined in pathPatadas is read.  
-   - This file must contain the columns:
-     - Número del animal
-     - DEL
-     - Hora Inicio Ordeño
+4. **Lectura del conjunto de datos “Patadas”**
+   - Se lee el archivo definido en `pathPatadas`.
+   - Este archivo debe contener las siguientes columnas:
+     - `Número del animal`
+     - `DEL`
+     - `Hora Inicio Ordeño`
 
-5. *Finds the closest matching cow*
-   - For a target image timestamp, the script finds which cow’s milking record (Hora de inicio) is closest in time.
-   - It then retrieves that cow’s DEL value and prints:
-     - The cow ID
-     - The closest matching datetime
-     - The calculated DEL value corresponding to the image date
+5. **Búsqueda de la vaca más cercana en tiempo**
+   - Para una marca de tiempo objetivo (de la imagen), el script identifica cuál registro de ordeña (`Hora de inicio`) está más próximo en el tiempo.
+   - Después, obtiene el valor de **DEL** correspondiente a esa vaca y muestra:
+     - El ID de la vaca
+     - La fecha y hora más cercanas coincidentes
+     - El valor de **DEL** calculado que corresponde a la fecha de la imagen
 
-6. *Calculates adjusted DEL*
-   - The DEL value is adjusted based on the difference (in days) between the milking record and the image timestamp.
-   - The output shows how many days in milk the cow had at the time the image was taken.
+6. **Cálculo del DEL ajustado**
+   - El valor de DEL se ajusta con base en la diferencia (en días) entre el registro de ordeña y la marca de tiempo de la imagen.
+   - El resultado indica cuántos **días en leche** tenía la vaca al momento en que se tomó la imagen.
 
 ---
 
-## Requirements:
+## Requisitos
 
-The script uses the following Python libraries:
-- numpy
-- pandas
-- matplotlib
-- seaborn
-- glob
-- datetime
-- os
+El script utiliza las siguientes bibliotecas de Python:
 
-You can install them with:
+- `numpy`
+- `pandas`
+- `matplotlib`
+- `seaborn`
+- `glob`
+- `datetime`
+- `os`
+
+Puedes instalarlas con el siguiente comando:
 
 ```bash
 pip install numpy pandas matplotlib seaborn glob datetime os
+
