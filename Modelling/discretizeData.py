@@ -11,7 +11,7 @@ def discretize_value(bcsPred: float) -> float:
     Función para redondear al múltiplo de 0.25 más cercano 
 
     Args: 
-        value (float):  Valor de punto flotante
+        bcsPred (float):  Valor de punto flotante
 
     Return: 
         _ (float): Valor de punto flotante discretizado
