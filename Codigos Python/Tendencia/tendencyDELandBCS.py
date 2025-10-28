@@ -1,3 +1,15 @@
+
+# =============================================================
+# Nombre del archivo: tndencyDELandBCS.py
+# Autor: Bárbara Paola Alcántara Vega
+# Fecha de creación: 22-10-2025
+# Descripción: análisis de correlación de características de
+#              conformación lineal con respecto a la condición
+#              corporal (BCS)
+# Dependencias: os, pandas, numpy, matplotlib, seaborn, glob,
+#               datetime
+# =============================================================
+
 import numpy as np
 import os
 import pandas as pd
