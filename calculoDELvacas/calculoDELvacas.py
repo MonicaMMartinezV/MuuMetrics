@@ -211,7 +211,7 @@ def completeDirectory(pathCows,pathPatadas,pathImages):
     return df
 
 if __name__ == '__main__':
-    pathCows    = r"D:\TEC\IA\B2\Clasificacion proyecto\DATOS VACAS MARZO JUNIO"
-    pathPatadas = r"D:\TEC\IA\B2\Clasificacion proyecto\patadas_180725.csv"
-    pathImages  = r"D:\TEC\IA\B2\Clasificacion proyecto\2.00"
+    pathCows    = r"datosDemonstracion\vacasCSVs"
+    pathPatadas = r"datosDemonstracion\patadasDf\patadas_180725.csv"
+    pathImages  = r"datosDemonstracion\Imagenes"
     print(completeDirectory(pathCows,pathPatadas,pathImages))
