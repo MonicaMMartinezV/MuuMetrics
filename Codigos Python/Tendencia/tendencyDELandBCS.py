@@ -19,7 +19,7 @@ import glob
 import datetime
 
 pathCows = r"C:/Users/baral/OneDrive/Escritorio/Investigación Vacas/bcs/cows34" #Actualizar path 
-pathPatadas = r"C:\Users\baral\OneDrive\Escritorio\Investigación Vacas\bcs\patadas_180725.csv" #Actualizar path
+pathPatadas = r"Codigos Python/Tendencia/patadas_180725.csv" #Actualizar path
 pathBCS = r"C:\Users\baral\OneDrive\Escritorio\Investigación Vacas\bcs\ClassifiedCows" #Actualizar path
 
 #Adaptación del código calculoDELvacas.py para obtener BCS de los archivos de etiquetado
