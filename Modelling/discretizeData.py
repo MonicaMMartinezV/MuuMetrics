@@ -23,4 +23,4 @@ def discretize_value(bcsPred: float) -> float:
     elif value < 1.0: 
         value = 1.0
 
-    return round(value * 4) / 4
+    return round(bcsPred * 4) / 4
