@@ -18,9 +18,9 @@ def discretize_value(bcsPred: float) -> float:
 
     """
 
-    if value > 5.0: 
-        value = 5.0
-    elif value < 1.0: 
-        value = 1.0
+    if bcsPred > 5.0: 
+        bcsPred = 5.0
+    elif bcsPred < 1.0: 
+        bcsPred = 1.0
 
     return round(bcsPred * 4) / 4
