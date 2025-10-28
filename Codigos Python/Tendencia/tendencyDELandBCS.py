@@ -20,7 +20,7 @@ import datetime
 
 pathCows = r"Codigos Python/Tendencia/cows24" #Actualizar path 
 pathPatadas = r"Codigos Python/Tendencia/patadas_180725.csv" #Actualizar path
-pathBCS = r"C:\Users\baral\OneDrive\Escritorio\Investigación Vacas\bcs\ClassifiedCows" #Actualizar path
+pathBCS = r"Codigos Python/Tendencia/ClassifiedCows" #Actualizar path
 
 #Adaptación del código calculoDELvacas.py para obtener BCS de los archivos de etiquetado
 def getAllCowsDELBCS(pathCows, pathPatadas, pathBCS):
