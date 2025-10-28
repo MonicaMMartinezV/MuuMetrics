@@ -18,7 +18,7 @@ import seaborn as sns
 import glob
 import datetime
 
-pathCows = r"C:/Users/baral/OneDrive/Escritorio/Investigación Vacas/bcs/cows34" #Actualizar path 
+pathCows = r"Codigos Python/Tendencia/cows24" #Actualizar path 
 pathPatadas = r"Codigos Python/Tendencia/patadas_180725.csv" #Actualizar path
 pathBCS = r"C:\Users\baral\OneDrive\Escritorio\Investigación Vacas\bcs\ClassifiedCows" #Actualizar path
 
