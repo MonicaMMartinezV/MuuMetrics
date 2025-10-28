@@ -6,7 +6,7 @@
 # Dependencias: Ninguna
 # =============================================================
 
-def discretize_value(value: float) -> float:
+def discretize_value(bcsPred: float) -> float:
     """
     Función para redondear al múltiplo de 0.25 más cercano 
 
