@@ -1,6 +1,6 @@
 # =============================================================
 # Nombre del archivo: data_augmentation.py
-# Autor: María Soto
+# Autor: María Jose Soto Soto
 # Fecha de creación: 21-10-2025
 # Descripción: Carga un dataset de imágenes por carpetas, aplica 
 #   augmentación (rotación, flip horizontal, escala y conversión 
