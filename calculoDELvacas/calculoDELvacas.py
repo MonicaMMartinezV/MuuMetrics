@@ -9,20 +9,21 @@
 # Dependencias: numpy, os, pandas, matplotlib, seaborn, glob, datetime
 # =============================================================
 
-import numpy as np
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
 import glob
 import datetime
 
+def combinedDfVacas(path):
+    """
+    Recuperar Data Frame con informacion de todas las vacas
 
-pathCows = r"calculoDELvacas/datosDemonstracion/vacasCSVs" #Actualiza la ruta de acuerdo a tu acceso
-pathPatadas = r"calculoDELvacas/datosDemonstracion/patadasDf" # Actualiza la ruta de acuerdo a tu acceso
-
-
-def calculoDEL (path):
+    Args:
+        path (str): direccion de directorio con todos los datos de las vacas
+        
+    Returns:	
+        combinedDf (DataFrame): Data Frame de todas las vacas en formato
+    """
 
     csvFiles = glob.glob(os.path.join(path, "*.csv"))
 
@@ -32,9 +33,7 @@ def calculoDEL (path):
         try:
             cowId = os.path.splitext(os.path.basename(file))[0]
 
-            # Lee el dataframe sin tomar en cuenta los encabezados para después
-            # asignar como encabezado el ID obtenido del nombre de cada archivo
-            # por vaca
+            # Lee el csv
             dfRaw = pd.read_csv(file, header=None)
 
             # Encuentra la fila que contiene "Hora de inicio"
@@ -42,14 +41,13 @@ def calculoDEL (path):
             ("Hora de inicio").any(), axis=1)].index[0]
 
             # Usa esa fila como encabezado
-            df = dfRaw[headerRowIndex + 1:].copy()
+            df         = dfRaw[headerRowIndex + 1:].copy()
             df.columns = dfRaw.iloc[headerRowIndex].tolist()
 
 
             df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
             # Inserta la nueva columna vacaId para colocar los nombres de cada
-            # archivo correspondientes al Id de cada vaca
             df.insert(0, "vacaId", cowId)
 
             dfs.append(df)
@@ -59,11 +57,11 @@ def calculoDEL (path):
         except pd.errors.ParserError as e:
             print(f"Error leyendo archivo {file}: {e}")
 
-    # Aquí se convierten las fechas y horas de los 34 archivos csv combinados
+    # Convierten las fechas y horas de los 34 archivos csv combinados
     # a formato datetime
 
     combinedDf = pd.concat(dfs, ignore_index=True)
-    csv34cows = ["vacaId", "Hora de inicio"]
+    csv34cows = ["vacaId", "Hora de inicio","Duración (mm:ss)"]
     combinedDf = combinedDf[csv34cows]
     combinedDf.to_csv("combinedVacas.csv", index=False)
 
@@ -90,50 +88,62 @@ def calculoDEL (path):
         errors="coerce"
     )
 
+    #print(combinedDf.columns)
+    combinedDf["duracion_timedelta"] = combinedDf["Duración (mm:ss)"].apply(
+    lambda x: datetime.timedelta(minutes=int(x.split(":")[0]), seconds=int(x.split(":")[1]))
+    )
+    combinedDf["Hora de fin"] = combinedDf["Hora de inicio"] + combinedDf["duracion_timedelta"]
     #Revisar si hay valores nulos después de la limpieza
-    print(combinedDf.isna().sum())
+    #print(combinedDf.isna().sum())
 
-    print("="*60)
-    print("El nombre de las imágenes viene en el siguiente formato:")
-    print(" 2025-05-31-15-08-37_cam0_cap1 " )
-    print("Por lo que la lista rawDates es una variable dummy que")
-    print("representa las ímagenes como input")
-    print("="*60)
-    print("\n")
+    return combinedDf
 
-    # Aquí es donde se agregará la conexión a las imágenes si se decide meter todas
-    # las imágenes de una vez y convertir sus nombres a fechas
-    rawDates = [
-        "2025-06-01-21-47-55_cam4_cap3",
-        "2025-05-31-15-08-37_cam0_cap1",
-        "2025-06-01-05-10-12_cam0_cap1"
-    ]
+def getDateImag(imgName):
+    """
+    Recuper Date Time de imagen
 
-    df = pd.DataFrame({"rawDate": rawDates})
-    df["fechaLimpia"] = df["rawDate"].str.extract(r"(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})")
+    Args:
+        imgName (str): direccion de imagen
+        
+    Returns:	
+        HoraImagen (DateTime): Date Time de imagen
+    """
+    imgName = os.path.basename(imgName) #Tomar nombre de la imagen
+    datetime_str = imgName.split("_")[0] #Descartar todo despues del _
+    return datetime.datetime.strptime(datetime_str, "%Y-%m-%d-%H-%M-%S") #generar DateTime
 
-    df["datetime"] = pd.to_datetime(df["fechaLimpia"], format="%Y-%m-%d-%H-%M-%S",
-                                    errors='coerce')
+def getIdImag (dfCows,imgDT):
+    """
+    Recuperar ID de la imagen
 
-    # Verificación y mensaje al usuario
-    invalidas = df[df["datetime"].isna()]
-    if not invalidas.empty:
-        print(f"¡ADVERTENCIA! {len(invalidas)} imagen(es) sin fecha válida:")
-        for idx, row in invalidas.iterrows():
-            print(f"  - {row['rawDate']}")
+    Args:
+        dfCows (DataFrame)   : df con infromacion de ID de vacas y sus ordenños
+        imgDT (DateTime)     : DateTime de la imagen
+        
+    Returns:	
+        ID (int): ID de la imagen
+    """
+    # Ordenar por tiempo (por si acaso)
+    dfCows = dfCows.sort_values("Hora de fin").reset_index(drop=True)
 
-    # Se muestran solo las fechas y horas válidas convertidas para revisar si todos
-    # los nombres de las imágenes fueron convertidos correctamente
-    validas = df[df["datetime"].notna()]
-    if not validas.empty:
-        print(f"\n{len(validas)} fecha(s) procesada(s) correctamente:")
-        print(validas["datetime"])
+    # Filtrar las filas con tiempo menor que s_dt
+    antes = dfCows[dfCows["Hora de fin"] < imgDT]
+
+    if not antes.empty:
+        return int(antes.iloc[-1]["vacaId"])
     else:
-        print("No hay fechas válidas para procesar.")
+        return None
 
-    # Se convieren las fechas y horas de patadasDf a formato datetime para empezar
-    # a formar un formato homogéneo a través de los archivos conteniendo los datos
+def DfPatadas(pathPatadas):
+    """
+    Recuperar Data Frame de patadas y poner en formato
 
+    Args:
+        pathPatadas (str): direccion de archivo patadas.csv
+        
+    Returns:	
+        patadasDf (DataFrame): Data Frame de patadas en formato
+    """
     patadasDf = pd.read_csv(pathPatadas)
 
     columnsToKeep = ["Número del animal", "DEL", "Hora Inicio Ordeño"]
@@ -157,83 +167,51 @@ def calculoDEL (path):
         dayfirst=True,   # porque el formato es dd/mm/yyyy
         errors="coerce"  # evita que truene si hay un valor raro
     )
+    return patadasDf
 
+def getDEL(dfPatadas,ID,horaImg):
+    """
+    Calcular dias en leche
 
-    # Se debe realizar la conexión con la lista de imágenes y sus nombres para
-    # obtener la fecha objetivo
+    Args:
+        dfPatadas (DataFrame): df con infromacion archivo de patadas
+        ID (int)             : ID de la imagen
+        horaImg (DateTime)   : Hora y dia de la imagen
+        
+    Returns:	
+        DEL (int): dias en leche
+    """
+    fila     = dfPatadas[dfPatadas["Número del animal"] == int(ID)].iloc[0] #recuperar fecha base
+    baseDEL  = int(fila["DEL"]) #separar DEL registrado y hora
+    Hora     = fila["Hora Inicio Ordeño"]
+    timeDEL  = horaImg - Hora#imagen - Registrado
+    return baseDEL + timeDEL.days #Sumar el registrado más el calculado
 
-    # Variable dummy en caso de que se metan imágenes una por una
-    targetDatetime = datetime.datetime(2025, 6, 1, 21, 47, 55)
-    #2025-06-01-21-47-55_cam4_cap3
+def completeDirectory(pathCows,pathPatadas,pathImages):
+    """
+    Recuperar DEL de todas las imagenes de un directorio
 
-    # Calcula la diferencia absoluta en segundos
-    combinedDf["diferencia"] = abs(combinedDf["Hora de inicio"] - targetDatetime)
-
-    # Encuentra la fila con la menor diferencia en el dataset de las 34 vacas unidas
-    closestRow = combinedDf.loc[combinedDf["diferencia"].idxmin()]
-
-    # Extrae la vaca_id del dataset de 34 vacas unidas y la fecha más cercana a la
-    # de la imagen para después utilizarla en el cálculo de DEL a la fecha de la
-    # imagen
-    vacaId = closestRow["vacaId"]
-    foundDate = closestRow["Hora de inicio"]
-
-    print(f"Vaca encontrada: {vacaId}")
-    print(f"Fecha más cercana: {foundDate}")
-
-    # Recordatorio de que todas las columnas necesarias deben estar en el df
-    # que se le pide adjuntar al usuario
-    if 'Número del animal' not in patadasDf.columns or 'DEL' not in patadasDf.columns or 'Hora Inicio Ordeño' not in patadasDf.columns:
-        raise ValueError("El DataFrame no tiene las columnas 'Número del animal','DEL' o 'Hora Inicio Ordeño'")
-
-    # Buscar cada vaca convirtiendo vacaId a entero
-    cowRow = patadasDf[patadasDf['Número del animal'] == int(vacaId)]
-
-    if cowRow.empty:
-        print(f"No se encontró el identificador de la vaca {vacaId} en patadasDf.")
-    else:
-        for _, row in cowRow.iterrows():
-            # Convertir y formatear la hora de ordeño para evitar problmas de tipo
-            milkingDate = pd.to_datetime(row['Hora Inicio Ordeño'], errors='coerce')
-
-            # Formatear la fecha y hora para mejor legibilidad
-            if pd.notna(milkingDate):
-                formattedDate = milkingDate.strftime('%Y-%m-%d %H:%M:%S')
-            else:
-                formattedDate = "Fecha inválida"
-
-            foundDEL = row['DEL']
-
-            print(f"Vaca: {row['Número del animal']}")
-            print(f"Días en Leche (DEL): {row['DEL']} días")
-            print(f"Hora de inicio del ordeño: {formattedDate}")
-            print("-" * 50)
-
-    # formattedDate (de patadasDf) y foundDate (de combinedDf) se suman o se restan
-    # para obtener los días en leche de la vaca a la fecha y hora de la fecha más
-    # cercana a la que se tomó su imagen.
-
-    # La razón por la cual no se usa la fecha de la imagen directamente es para que
-    # el usuario pueda buscar los datos registrados en relación a la fecha de los
-    # datasets de otros aspectos como pezones que presentaron patadas en esa vaca en
-    # caso de incorporarlos a futuro.
-
-    if not cowRow.empty and not closestRow.empty:
-        date1 = pd.to_datetime(cowRow['Hora Inicio Ordeño'].iloc[0]) #patadas
-        date2 = pd.to_datetime(closestRow["Hora de inicio"])         #34 vacas
-
-        # Se obtiene la diferencia de días (positivo o negativo) para restar o sumar
-        # a los DEL registrados con la fecha más cercana de a la de la imagen)
-        dayDifference = (date1 - date2).days
-        print(f"Diferencia entre {date1} y {date2}: {dayDifference} días")
-
-        foundDEL = cowRow['DEL'].iloc[0]
-
-        photoDEL = foundDEL + dayDifference
-        print(f"Días en leche más cercanos al momento de tomar la fotografía: {photoDEL}")
-
-    else:
-        print("No se encontró la vaca en uno de los DataFrames")
+    Args:
+        pathCows (DataFrame)    : direccion de directorio con la informacion de todas las vacas
+        pathPatadas (str) : direccion de patadas.csv
+        pathImages (str)  : direccion de directorio con todas las imagenes
+        
+    Returns:	
+        df (DataFrame): Data Frame con todos los DEL
+    """
+    df   = pd.DataFrame(columns=["img","ID", "DEL"]) #Generar DF
+    DfV  = combinedDfVacas(pathCows)
+    Df   = DfPatadas(pathPatadas)
+    for archivo in os.listdir(pathImages):
+        dirImg          = os.path.join(pathImages, archivo)
+        dataImg         = getDateImag(dirImg)
+        ID              = getIdImag(DfV,dataImg)
+        DEL             = getDEL(Df,ID,dataImg)
+        df.loc[len(df)] = [dirImg,ID,DEL] #Agregar datos DF
+    return df
 
 if __name__ == '__main__':
-    calculoDEL(pathCows)
+    pathCows    = r"datosDemonstracion\vacasCSVs"
+    pathPatadas = r"datosDemonstracion\patadasDf\patadas_180725.csv"
+    pathImages  = r"datosDemonstracion\Imagenes"
+    print(completeDirectory(pathCows,pathPatadas,pathImages))
