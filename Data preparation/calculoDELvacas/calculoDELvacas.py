@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # =============================================================
 # Nombre del archivo: Calidad de Datos 34Vacas.py
 # Autor: Bárbara Paola Alcántara Vega
