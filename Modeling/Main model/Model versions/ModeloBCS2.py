@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: muu_metrics_bcs_train_local.py
+# Nombre del archivo: ModeloBCS2.py
 # Autor: Mónica Monserrat Martínez Vásquez
 # Fecha de creación: 22-10-2025
 # Última edición: 05-11-2025
