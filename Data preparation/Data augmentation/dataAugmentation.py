@@ -60,10 +60,11 @@ valDs = tf.keras.utils.image_dataset_from_directory(
 Definición de augmentación
 '''
 dataAugmentation = tf.keras.Sequential([
-    layers.Rescaling(1./255),
-    layers.RandomRotation(0.4),
     layers.RandomFlip("horizontal"),
-    layers.Lambda(lambda x: tf.tile(tf.image.rgb_to_grayscale(x), [1, 1, 1, 3]))
+    layers.RandomRotation(0.25),
+    layers.RandomZoom(0.25),
+    layers.RandomContrast(0.3),
+    layers.RandomBrightness(0.3),
 ])
 
 '''
