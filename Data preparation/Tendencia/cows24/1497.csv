@@ -1,0 +1,4 @@
+﻿Main,,,,Estado,,,,,Estado AMD,,Media de los flujos (kg/min),,,,Sangre (ppm),,,,Conductividad (mS / cm),,,,Misc,,,,Flujos máximos (kg/min),,,,Producciones (kg),,,
+Hora de inicio,Acción,Duración (mm:ss),Producción (kg),Número de ordeño,RCS (* 1000 células / ml),Patada,Incompleto,Pezones no encontrados,Ubre,Pezón,DI,DD,TI,TD,DI,DD,TI,TD,DI,DD,TI,TD,EO/PO,Usuario,Destino Leche,Razón de la desviación,DI,DD,TI,TD,DI,DD,TI,TD
+18/07/2025 09:22 a. m.,Echada sin ordeñar,02:43,,,,,,,,,,,,,,,,,,,,,VMS 3,,,,,,,,,,,
+18/07/2025 09:25 a. m.,Ordeño,06:21,5.20,1,,,,,0,,0.78,0.60,0.66,0.60,7997,887,7992,3890,4.24,4.78,4.55,4.18,VMS 3,,Divert 3,,1.14,1.32,1.08,0.90,1.36,0.88,1.47,1.49
