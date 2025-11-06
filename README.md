@@ -50,3 +50,7 @@ A01799609 - Bárbara Paola Alcántara Vega\
 A01710965 - Mónica Monserrat Martínez Vásquez\
 A01705840 - María José Soto Castro\
 A01700753 - Grant Keegan
+
+## Notion Link
+https://www.notion.so/MuuMetrics-2791c55762fc8068b8fdccd1ea386017
+
