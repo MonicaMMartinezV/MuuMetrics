@@ -3,7 +3,6 @@
 # Autores: Mónica Monserrat Martínez Vásquez,
 #          Ulises Orlando Carrizalez Lerín,
 #          Bárbara Paola Alcántara Vega 
-# Fecha de creación: 05-11-2025
 #
 # Descripción:
 #   entrenamiento de una red convolucional separable para estimar el
