@@ -1,7 +1,6 @@
 # =============================================================
 # Nombre del archivo: ModeloBCS4.py
 # Autores: Mónica Monserrat Martínez Vásquez,
-#          Ulises Orlando Carrizalez Lerín,
 #          Bárbara Paola Alcántara Vega 
 #
 # Descripción:

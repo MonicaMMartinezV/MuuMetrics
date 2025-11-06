@@ -1,8 +1,6 @@
 # =============================================================
 # Nombre del archivo: ModeloBCS2.py
 # Autor: Mónica Monserrat Martínez Vásquez
-# Fecha de creación: 22-10-2025
-# Última edición: 05-11-2025
 #
 # Descripción:
 #   Entrenamiento local de una CNN para predecir el BCS (Body Condition Score)
