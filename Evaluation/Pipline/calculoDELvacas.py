@@ -61,7 +61,6 @@ def combinedDfVacas(path):
     combinedDf = pd.concat(dfs, ignore_index=True)
     csv34cows = ["vacaId", "Hora de inicio","Duración (mm:ss)"]
     combinedDf = combinedDf[csv34cows]
-    combinedDf.to_csv("combinedVacas.csv", index=False)
 
 
     # Cambiar a formato datetime
