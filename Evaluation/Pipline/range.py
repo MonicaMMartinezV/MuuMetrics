@@ -46,7 +46,7 @@ def Semaforo(BCS,DEL):
     #print("Min: ",Min)
     #print("BCS: ",BCS)
     if BCS <= Max and BCS >= Min:
-        return "Verde"
+        return "Green"
     elif BCS <= Max + 0.25 and BCS >= Min - 0.25:
         return "Yellow"
     else: 
