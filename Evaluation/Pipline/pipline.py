@@ -3,9 +3,9 @@
 # Autor: Ulises Orlando Carrizalez Lerín
 # Fecha de creación: 11-11-2025
 # Descripción: function that generets de df with final results
-# Dependencias: Funcion de discrteisacion
+# Dependencias: Funciones de Calcuulo de DEL, Predicciones del 
+#               modelo y rango seguro
 # =============================================================
-
 
 import pandas as pd
 from calculoDELvacas import completeDirectory
@@ -30,10 +30,3 @@ def predictDf(pathCows,pathPatadas,pathImages,checkpoint):
     df  = pd.merge(DEL, BCS, on=["img"], how="left")
     df['Semaforo'] = df.apply(lambda fila: Semaforo(fila['BCS'], fila['DEL']), axis=1)
     return df
-
-if __name__ == '__main__':
-    pathCows    = r"D:\TEC\IA\B2\Clasificacion proyecto\DATOS VACAS MARZO JUNIO"
-    pathPatadas = r"D:\TEC\IA\B2\Clasificacion proyecto\patadas_180725.csv"
-    pathImages  = r"D:\TEC\IA\B2\Clasificacion proyecto\2.00"
-    checkpoint  = r"D:\TEC\IA\B2\ProyectoFinal\MetricsMuu\final_model.pth"
-    print(predictDf(pathCows,pathPatadas,pathImages,checkpoint))

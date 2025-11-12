@@ -3,7 +3,7 @@
 # Autor: Ulises Orlando Carrizalez Lerín
 # Fecha de creación: 11-11-2025
 # Descripción: Funciones para sacar rango normal y semaforo
-# Dependencias: Funcion de discrteisacion
+# Dependencias: Funcion de discretize_value
 # =============================================================
 
 from discretizeData import discretize_value
@@ -39,7 +39,7 @@ def Semaforo(BCS,DEL):
         DEL (int): Dias en leche actual
 
     Returns:	
-        Semaforo (str): Color de semaforo
+        _ (str): Color de semaforo
     """
     Max,Min = NormalRange(DEL)
     #print("Max: ",Max)
