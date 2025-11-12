@@ -17,7 +17,6 @@ from PIL            import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# --- Cargar modelo ---
 def load_model(checkpoint_path):
     """
     Cargar modelo de pytorch para predecir BCS en imagen
@@ -38,11 +37,10 @@ def load_model(checkpoint_path):
     model.load_state_dict(ckpt[state_dict_key])
 
     model.eval()
-    print("El Modelo se cargado con Exito :D", checkpoint_path)
+    print(f"El Modelo se cargado con Exito :D device: {device}")
 
     return model
 
-# --- Preparar transformaciones ---
 def get_val_transform(img_size=384):
     """
     Preparar las imágenes para que tengan el formato, tamaño y normalización que el modelo necesita
@@ -51,7 +49,7 @@ def get_val_transform(img_size=384):
         img_size (int)  : tamaño de imagen
 
     Returns:	
-        pred (transforms.Compose): datos de tensor
+        _ (transforms.Compose): datos de tensor
     """
     return transforms.Compose([
         transforms.Resize(int(img_size * 1.05)),
@@ -61,7 +59,6 @@ def get_val_transform(img_size=384):
                              [0.229, 0.224, 0.225])
     ])
 
-# --- Función para predecir ---
 def predict_image(model, image_path):
     """
     regresar el BCS de la imagen con modelo
@@ -71,7 +68,7 @@ def predict_image(model, image_path):
         image_path (str)  : direccion de imagen
 
     Returns:	
-        pred (float): BCS predicho
+        _ (float): BCS predicho
     """
     transform = get_val_transform(384)
     img = Image.open(image_path).convert("RGB")
@@ -83,14 +80,14 @@ def predict_image(model, image_path):
 
 def dfPredict(dir,checkpoint):
     """
-    Generar df con predicciones
+    Generar df con predicciones de imagenes de un directorio.
 
     Args:
         dir (str)  : direccion de directorio con todas las imagenes
         checkpoint (str)  : direccion de .pth del modelo
 
     Returns:	
-        df (DataFrame): df con predicciones
+        _ (DataFrame): df con predicciones
     """
     model = load_model(checkpoint)
     results = []
@@ -101,11 +98,24 @@ def dfPredict(dir,checkpoint):
             results.append({"img": filename, "BCS": pred})
     return pd.DataFrame(results)
 
-"""# --- Ejemplo de uso ---
-if __name__ == "__main__":
-    checkpoint = r"D:\TEC\IA\B2\ProyectoFinal\MetricsMuu\final_model.pth"  # ajusta la ruta
-    image_path = r"D:\TEC\IA\B2\Clasificacion proyecto\2.00"
+def dfPredictTest(dir,checkpoint):
+    """
+    Generar df con predicciones de imagenes de un directorio con
+    subdirectorios. (para recolectarlo del formato del dataset)
 
-    df = dfPredict(image_path,checkpoint)
+    Args:
+        dir (str)  : direccion de directorio con todas las imagenes
+        checkpoint (str)  : direccion de .pth del modelo
 
-    print(df)"""
+    Returns:	
+        _ (DataFrame): df con predicciones
+    """
+    model = load_model(checkpoint)
+    results = []
+    for root, _, files in os.walk(dir):
+        for file in files:
+            if file.lower().endswith(('.jpg')):
+                path = os.path.join(root, file)
+                pred = predict_image(model,path)
+                results.append({"img": file, "BCS": pred})
+    return pd.DataFrame(results)
