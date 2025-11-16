@@ -8,7 +8,7 @@
 
 import os
 import pandas        as pd
-from calculoDELvacas import completeDirectorysInDir
+from calculoDELvacas.calculoDELvacas import completeDirectorysInDir
 from model           import dfPredictTest
 from range           import Semaforo
 
@@ -87,7 +87,7 @@ def finalTest(pred,label):
     dftest   = pd.merge(pred, label[["img","Semaforo label",'BCS Label']], on=["img"], how="left")
     accuracy = (dftest["Semaforo model"] == dftest["Semaforo label"]).mean()
     dftest = dftest[["img","ID","DEL","BCS model","BCS Label","Semaforo model","Semaforo label"]]
-    dftest.to_csv(f'Test Accuracy {accuracy:.4f}.csv', index=False)
+    dftest.to_csv(f'test.csv', index=False)
     print(f"Accuracy: {accuracy:.2f}")
 
 if __name__ == '__main__':
