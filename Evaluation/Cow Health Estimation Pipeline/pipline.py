@@ -8,7 +8,7 @@
 # =============================================================
 
 import pandas as pd
-from calculoDELvacas import completeDirectory
+from calculoDELvacas.calculoDELvacas import completeDirectory
 from model           import dfPredict
 from range           import Semaforo
 
@@ -29,4 +29,5 @@ def predictDf(pathCows,pathPatadas,pathImages,checkpoint):
     BCS = dfPredict(pathImages,checkpoint)
     df  = pd.merge(DEL, BCS, on=["img"], how="left")
     df['Semaforo'] = df.apply(lambda fila: Semaforo(fila['BCS'], fila['DEL']), axis=1)
-    return df
+    json_string = df.to_json()
+    return json_string
