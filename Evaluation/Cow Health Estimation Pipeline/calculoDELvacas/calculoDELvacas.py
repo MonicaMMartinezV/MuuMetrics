@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: Calidad de Datos 34Vacas.py
+# Nombre del archivo: CalculoDELvacas.py
 # Autor: Bárbara Paola Alcántara Vega
 # Fecha de creación: 20-10-2025
 # Descripción: cálculo de los días en leche más próximos al momento de
@@ -61,7 +61,6 @@ def combinedDfVacas(path):
     combinedDf = pd.concat(dfs, ignore_index=True)
     csv34cows = ["vacaId", "Hora de inicio","Duración (mm:ss)"]
     combinedDf = combinedDf[csv34cows]
-    combinedDf.to_csv("combinedVacas.csv", index=False)
 
 
     # Cambiar a formato datetime
@@ -190,7 +189,7 @@ def completeDirectory(pathCows,pathPatadas,pathImages):
     Recuperar DEL de todas las imagenes de un directorio
 
     Args:
-        pathCows (DataFrame)    : direccion de directorio con la informacion de todas las vacas
+        pathCows (str)    : direccion de directorio con la informacion de todas las vacas
         pathPatadas (str) : direccion de patadas.csv
         pathImages (str)  : direccion de directorio con todas las imagenes
         
@@ -205,11 +204,31 @@ def completeDirectory(pathCows,pathPatadas,pathImages):
         dataImg         = getDateImag(dirImg)
         ID              = getIdImag(DfV,dataImg)
         DEL             = getDEL(Df,ID,dataImg)
-        df.loc[len(df)] = [dirImg,ID,DEL] #Agregar datos DF
+        df.loc[len(df)] = [archivo,ID,DEL] #Agregar datos DF
     return df
 
-if __name__ == '__main__':
-    pathCows    = r"datosDemonstracion\vacasCSVs"
-    pathPatadas = r"datosDemonstracion\patadasDf\patadas_180725.csv"
-    pathImages  = r"datosDemonstracion\Imagenes"
-    print(completeDirectory(pathCows,pathPatadas,pathImages))
+def completeDirectorysInDir(pathCows,pathPatadas,pathImages):
+    """
+    Recuperar DEL de todas las imagenes de un directorio con
+    subdirectorios. (para recolectarlo del formato del dataset)
+
+    Args:
+        pathCows (str)    : direccion de directorio con la informacion de todas las vacas
+        pathPatadas (str) : direccion de patadas.csv
+        pathImages (str)  : direccion de directorio con todas las imagenes
+        
+    Returns:	
+        df (DataFrame): Data Frame con todos los DEL
+    """
+    df   = pd.DataFrame(columns=["img","ID", "DEL"]) #Generar DF
+    DfV  = combinedDfVacas(pathCows)
+    Df   = DfPatadas(pathPatadas)
+    for root, _, files in os.walk(pathImages):
+        for file in files:
+            if file.lower().endswith(('.jpg')):
+                ruta_img = os.path.join(root, file)
+                dataImg         = getDateImag(ruta_img)
+                ID              = getIdImag(DfV,dataImg)
+                DEL             = getDEL(Df,ID,dataImg)
+                df.loc[len(df)] = [file,ID,DEL]
+    return df
