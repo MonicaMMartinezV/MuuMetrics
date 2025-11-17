@@ -1,9 +1,6 @@
-#!/usr/bin/env python3
 # =============================================================
 # Nombre del archivo: ModeloBCS4.py
 # Autor: Bárbara Paola Alcántara Vega 
-# Fecha de creación: cambia la fecha
-# Última edición: cambia la fecha
 #
 # Descripción:
 #   Script para fine-tuning del modelo ConvNeXt en una tarea de
