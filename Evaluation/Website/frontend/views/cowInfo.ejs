@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>MuuMetrics</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="background-circles"></div>
+
+    <header class="top-bar">
+        <img src="/img/logoMuuMetricsWhite.png" class="logo1" alt="Logo MuuMetrics">
+
+        <h1 class="title">
+            <div class="m-wrapper">
+                <img src="/img/mWhite.png" class="title-m" alt="M logo">
+            </div>
+        uuMetrics
+        </h1>
+
+        <img src="/img/logoMuuMetricsWhite.png" class="logo2" alt="Logo MuuMetrics">
+    </header>
+
+    <main class="content">
+
+        <section class="left-panel">
+
+            <h2 class="cow-id"><%= cowID %></h2>
+
+                <table class="info-table">
+                    <tr>
+                        <td class="label">Índice de condición corporal</td>
+                        <td class="value"><%= bcs %></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Estado coloquial</td>
+                        <td class="value"><%= estado %></td>
+                    </tr>
+                    <tr>
+                        <td class="label">Días en leche</td>
+                        <td class="value"><%= diasLeche %></td>
+                    </tr>
+                </table>
+            <div class="mini-graph">
+                <img src="/img/catImage.jpg" class="graph-placeholder">
+            </div>
+        </section>
+
+        <section class="health-meter">
+            <h2 class="health-title">Salud-ometro</h2>
+
+            <div class="circles-container">
+                <% if (status === "rojo") { %>
+                    <div class="circle-item">
+                        <img src="/img/healthRed.png" class="health-circle" />
+                        <p>Potencialmente <br> enferma</p>
+                    </div>
+                <% } %>
+                
+                <% if (status === "amarillo") { %>
+                    <div class="circle-item">
+                        <img src="/img/healthYellow.png" class="health-circle" />
+                        <p>Propensa a <br> enfermedades</p>
+                    </div>
+                <% } %>
+                
+                <% if (status === "verde") { %>
+                    <div class="circle-item">
+                        <img src="/img/healthGreen.png" class="health-circle" />
+                        <p>Saludable</p>
+                    </div>
+                <% } %>
+            </div>
+
+        </section>
+
+    </main>
+
+    <footer class="footer">
+
+        <p>Da clic 
+            <a href="https://drive.google.com/drive/u/1/folders/1y82rruaFLT1_R-yHftXJUn2lVrjmsL88">
+                aquí
+            </a> si quieres nuevas fotos e información</p>
+
+        <div class="warning">
+            <img src="/img/alertIcon.png" class="alert-icon" alt="Advertencia">
+            <div class="warning-text">
+                Toma en cuenta que la precisión de este modelo es del 70%. <br>
+                Esta herramienta no sustituye a un profesional veterinario.
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js"></script>
+</body>
+</html>
