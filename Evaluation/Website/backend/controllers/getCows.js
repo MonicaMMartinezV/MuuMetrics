@@ -1,6 +1,6 @@
 const cowInfo = require('../model/model');
 
-exports.refreshCowList = async (req, res) => {
+exports.getCows = async (req, res) => {
     try {
         const cows = await cowInfo.findAll();
 
