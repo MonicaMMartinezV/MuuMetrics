@@ -17,7 +17,7 @@ from ultralytics import YOLO
 
 # Variables Globales
 baseDir    = os.path.dirname(os.path.abspath(__file__))
-modelPath  = os.path.join(baseDir, "CowScanner.pt")
+modelPath  = os.path.join(baseDir, "cowScanner.pt")
 model       = YOLO(modelPath)
 
 def cropCow(imagePath, savePath = None):
