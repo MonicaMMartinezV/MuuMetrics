@@ -1,0 +1,1 @@
+console.log("MuuMetrics UI loaded");
