@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: ModeloBCS4.py
+# Nombre del archivo: modelBCS3.py
 # Autor: Bárbara Paola Alcántara Vega 
 #
 # Descripción:

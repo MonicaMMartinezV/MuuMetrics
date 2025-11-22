@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: ModeloBCS2.py
+# Nombre del archivo: modelBCS1.py
 # Autor: Mónica Monserrat Martínez Vásquez
 #
 # Descripción:
