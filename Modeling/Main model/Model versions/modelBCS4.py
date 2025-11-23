@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: ModeloBCS4.py
+# Nombre del archivo: modelBCS4.py
 # Autor: Bárbara Paola Alcántara Vega 
 #
 # Descripción:
@@ -21,6 +21,13 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 from torchvision import transforms, models
+
+# Intentar importar timm
+try:
+    import timm
+    HAS_TIMM = True
+except Exception:
+    HAS_TIMM = False
 
 # Funciones utilitarias
 def seed_everything(seed: int = 42):
