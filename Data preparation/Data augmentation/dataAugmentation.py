@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: data_augmentation.py
+# Nombre del archivo: dataAugmentation.py
 # Autor: María Jose Soto Soto
 # Fecha de creación: 21-10-2025
 # Descripción: Carga un dataset de imágenes por carpetas, aplica 

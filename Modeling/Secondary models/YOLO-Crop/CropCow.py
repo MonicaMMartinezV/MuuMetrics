@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: CropCow.py
+# Nombre del archivo: cropCow.py
 # Autor: Ulises Orlando Carrizalez Lerín
 # Fecha de creación: 19-10-2025
 # Descripción: Funciones para realizar corte a la imagen en 
@@ -17,8 +17,8 @@ from ultralytics import YOLO
 
 # Variables Globales
 baseDir    = os.path.dirname(os.path.abspath(__file__))
-modelPath  = os.path.join(baseDir, "CowScanner.pt")
-model       = YOLO(modelPath)
+modelPath  = os.path.join(baseDir, "cowScanner.pt")
+model      = YOLO(modelPath)
 
 def cropCow(imagePath, savePath = None):
     """

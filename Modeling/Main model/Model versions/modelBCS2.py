@@ -1,13 +1,14 @@
 # =============================================================
-# Nombre del archivo: ModeloBCS2.py
-# Autor: Mónica Monserrat Martínez Vásquez
+# Nombre del archivo: modelBCS2.py
+# Autores: Mónica Monserrat Martínez Vásquez,
+#          Ulises Orlando Carrizalez Lerín,
+#          Bárbara Paola Alcántara Vega 
 #
 # Descripción:
-#   Entrenamiento local de una CNN para predecir el BCS (Body Condition Score)
-#   a partir de imágenes clasificadas por nivel de condición corporal.
-#   El script prepara los datasets, aplica data augmentation, entrena el
-#   modelo con callbacks (EarlyStopping, Checkpoint, TensorBoard) y guarda
-#   el modelo final en formato .keras.
+#   entrenamiento de una red convolucional separable para estimar el
+#   body condition score (bcs) a partir de imágenes del dataset
+#   MuMetrics. se incluyen funciones de carga, augmentación, entrenamiento,
+#   callbacks y visualización del desempeño del modelo.
 #
 # Dependencias: os, numpy, pandas, tensorflow, matplotlib, datetime
 # =============================================================
@@ -24,7 +25,7 @@ import tensorflow.keras.backend as K
 import datetime
 
 # Configuración de rutas
-baseDir  = r"E:\DataSet MuMetrics"
+baseDir  = r"C:\Users\Artur\OneDrive\Documents\DataSet MuMetrics"
 #imagesDir = f'{baseDir}/Final Dataset/Images'
 #imagesDir = f'{baseDir}/Data Transformations/Cow'
 imagesDir = os.path.join(baseDir, 'DS')
@@ -35,12 +36,12 @@ checkpointDir = os.path.join(baseDir, 'Checkpoints')
 os.makedirs(checkpointDir, exist_ok=True)
 
 # Parámetros base
-imageSize    = (256, 256) #800,1000 #512,512
+imageSize    = (612, 612) #800,1000 #512,512
 seed         = 42
 batchSize    = 32
 valTestSplit = 0.30
 
-# Descubrimiento de clases dentro del directorio de imágenes
+# Descubrimiento de clases en el directorio de imágenes
 subdirs = sorted([
     d for d in os.listdir(imagesDir)
     if os.path.isdir(os.path.join(imagesDir, d))])
@@ -53,7 +54,7 @@ except ValueError as e:
 bcsValues = [float(c) for c in classNames]
 print("Clases detectadas (BCS):", bcsValues)
 
-# Carga de datasets desde carpetas (tf.data)
+# Creación de datasets de entrenamiento y validación
 trainDataset = tf.keras.utils.image_dataset_from_directory(
     imagesDir,
     labels='inferred',
@@ -82,17 +83,17 @@ valTestDataset = tf.keras.utils.image_dataset_from_directory(
     subset='validation'
 )
 
-# Tabla de conversión clase a etiqueta de regresión
+# Tabla de conversión clase → valor de regresión
 bcsLookupTable = tf.constant(bcsValues, dtype=tf.float32)
 
 @tf.function
 def putRegressionLabels(images, classIndices):
     """
-    Convierte índices de clase a valores float del bcs.
+    Convierte índices de clase a etiquetas numéricas de bcs.
 
     args:
         images (tf.Tensor): batch de imágenes.
-        classIndices (tf.Tensor): índices de clase.
+        classIndices (tf.Tensor): índices enteros de clase.
 
     returns:
         tuple(tf.Tensor, tf.Tensor): (imágenes, etiquetas_float)
@@ -108,13 +109,13 @@ valTestRegDataset = valTestDataset.map(
 
 def splitValidationAndTest(dataset):
     """
-    Divide un dataset en dos mitades iguales para validación y prueba.
+    Divide el dataset de validación en partes iguales para validación y prueba.
 
     args:
-        dataset (tf.data.Dataset): dataset a dividir.
+        dataset (tf.data.Dataset): dataset combinado.
 
     returns:
-        tuple(tf.data.Dataset, tf.data.Dataset)
+        tuple(tf.data.Dataset, tf.data.Dataset): (valDataset, testDataset)
     """
     datasetSize = dataset.cardinality().numpy()
     halfSize = datasetSize // 2
@@ -124,7 +125,7 @@ def splitValidationAndTest(dataset):
 
 valRegDataset, testRegDataset = splitValidationAndTest(valTestRegDataset)
 
-# Capas de preprocesamiento y augmentación
+# Augmentación y normalización de imágenes
 dataAugmentationLayer = tf.keras.Sequential([
     tf.keras.layers.RandomFlip("horizontal"),
     tf.keras.layers.RandomRotation(0.10),
@@ -136,11 +137,11 @@ rescaleLayer = tf.keras.layers.Rescaling(1./255, name="rescaleLayer")
 
 def augmentThenScale(images, labels):
     """
-    Aplica augmentación de datos seguida de reescalado 1/255.
+    Aplica augmentación y reescalado (solo en entrenamiento).
 
     args:
         images (tf.Tensor): batch de imágenes.
-        labels (tf.Tensor): etiquetas de salida.
+        labels (tf.Tensor): valores bcs.
 
     returns:
         tuple(tf.Tensor, tf.Tensor)
@@ -150,15 +151,12 @@ def augmentThenScale(images, labels):
     return images, labels
 
 def onlyScale(images, labels):
-    """
-    Aplica solo el reescalado 1/255 (validación o test).
-    """
+    """Reescalado 1/255 (validación y test)."""
     images = rescaleLayer(images)
     return images, labels
 
 autoTune = tf.data.AUTOTUNE
 
-# Construcción final de datasets
 trainDataset = (trainRegDataset
            .shuffle(8 * batchSize, seed=seed, reshuffle_each_iteration=True)
            .map(augmentThenScale, num_parallel_calls=autoTune)
@@ -172,10 +170,9 @@ testDataset = (testRegDataset
           .map(onlyScale, num_parallel_calls=autoTune)
           .prefetch(autoTune))
 
-# Definición del modelo cnn
 def buildBcsCnnModel(inputShape):
     """
-    construye una cnn para regresión de bcs.
+    Construye una cnn basada en separable conv2d para regresión bcs.
 
     args:
         inputShape (tuple): dimensiones de entrada (h, w, c).
@@ -184,55 +181,56 @@ def buildBcsCnnModel(inputShape):
         tf.keras.Model
     """
     model = tf.keras.Sequential([
-        layers.Conv2D(32, kernel_size=3, padding='same', activation='relu',
-                        kernel_regularizer=regularizers.l2(
-                            1e-4), input_shape=inputShape),
-        layers.Conv2D(32, kernel_size=3, padding='same', activation='relu'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Dropout(0.25),
-        layers.Conv2D(64, kernel_size=3, padding='same', activation='relu'),
-        layers.Conv2D(64, kernel_size=3, padding='same', activation='relu'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Dropout(0.25),
-        layers.Conv2D(128, kernel_size=3, padding='same', activation='relu'),
-        layers.Conv2D(128, kernel_size=3, padding='same', activation='relu'),
-        layers.MaxPooling2D((2, 2)),
-        layers.Dropout(0.4),
-        layers.Flatten(),
-        layers.Dense(256, activation='relu'),
-        layers.Dropout(0.4),
-        layers.Dense(128, activation='relu'),
-        layers.Dense(1, activation='linear', name='bcs_output')
-    ])
+      layers.SeparableConv2D(32, kernel_size=3, padding='same', activation='relu',
+                    kernel_regularizer=regularizers.l2(
+                        1e-4), input_shape=inputShape),
+      layers.SeparableConv2D(64, kernel_size=3, padding='same', activation='relu'),
+      layers.MaxPooling2D((2, 2)),
+      layers.Dropout(0.15),
+      layers.SeparableConv2D(128, kernel_size=3, padding='same', activation='relu'),
+      layers.SeparableConv2D(128, kernel_size=3, padding='same', activation='relu'),
+      layers.MaxPooling2D((2, 2)),
+      layers.Dropout(0.15),
+      #layers.SeparableConv2D(256, kernel_size=3, padding='same', activation='relu'),
+      #layers.SeparableConv2D(256, kernel_size=3, padding='same', activation='relu'),
+      #layers.MaxPooling2D((2, 2)),
+      #layers.Dropout(0.2),
+      layers.Flatten(),
+      layers.Dense(256, activation='relu'), #512 con todas las capas en kernels al doble ha sido el mejoir resultado
+      layers.Dropout(0.2),
+      layers.Dense(128, activation='relu'),
+      layers.Dense(1, activation='linear', name='bcs_output')
+      ])
     return model
 
-inputShape = (256, 256, 3)
+inputShape = (612, 612, 3)
 model = buildBcsCnnModel(inputShape)
 model.summary()
 
-"""## Métricas"""
+# Métricas personalizadas
 
 def mae(yTrue, yPred):
-    """error absoluto medio."""
+    """Error absoluto medio"""
     return tf.reduce_mean(tf.abs(yTrue - yPred))
 
 def bias(yTrue, yPred):
-    """sesgo promedio (pred - real)."""
+    """Sesgo promedio (pred - real)"""
     return tf.reduce_mean(yPred - yTrue)
 
 def variance(yTrue, yPred):
-    """varianza de las predicciones."""
+    """Varianza de las predicciones."""
     meanPred = tf.reduce_mean(yPred)
     return tf.reduce_mean(tf.square(yPred - meanPred))
 
 def accuracyWithinHalfBcs(yTrue, yPred):
-    """porcentaje de aciertos ±0.5 bcs."""
+    """Porcentaje de aciertos ±0.5 bcs."""
     absError  = tf.abs(yTrue - yPred)
     return tf.reduce_mean(tf.cast(absError  <= 0.5, tf.float32))
 
 # Compilación y callbacks
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-4)
 
+# Compilar el modelo
 model.compile(
     optimizer=optimizer,
     loss='mae',
@@ -266,7 +264,7 @@ tensorboardCallback = TensorBoard(log_dir=logsDir)
 callbacksList = [checkpointCallback, earlyStoppingCallback, tensorboardCallback]
 
 # Entrenamiento del modelo
-epochs = 2
+epochs = 150
 
 history = model.fit(
     trainDataset,
@@ -280,3 +278,25 @@ history = model.fit(
 finalModelPath = os.path.join(outputDir, "MuuMetricsBcsModel.keras")
 model.save(finalModelPath)
 print(f"\nModelo completo guardado en: {finalModelPath}")
+
+# Evaluación final en conjunto de prueba
+print("\nEvaluación final en conjunto de prueba:")
+results = model.evaluate(testDataset, verbose=1)
+for name, value in zip(model.metrics_names, results):
+    print(f"{name}: {value:.4f}")
+
+# Guardado del modelo completo
+finalModelPath = os.path.join(outputDir, "MuuMetricsBcsModel.keras")
+model.save(finalModelPath)
+print(f"\nModelo completo guardado en: {finalModelPath}")
+
+# Visualización del desempeño del modelo
+plt.figure(figsize=(10, 5))
+plt.plot(history.history['mae'], label='Train MAE')
+plt.plot(history.history['val_mae'], label='Validation MAE')
+plt.title('MAE over Training Epochs')
+plt.xlabel('Epoch')
+plt.ylabel('Mean Absolute Error')
+plt.legend()
+plt.grid(True)
+plt.show()

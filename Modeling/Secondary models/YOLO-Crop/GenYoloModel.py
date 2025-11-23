@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: GenYoloModel.py
+# Nombre del archivo: genYoloModel.py
 # Autor: Ulises Orlando Carrizalez Lerín
 # Fecha de creación: 2025-10-20
 # Descripción: Generar modelo de YOLO.

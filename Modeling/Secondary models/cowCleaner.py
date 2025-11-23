@@ -1,5 +1,5 @@
 # =============================================================
-# limpiarVacas.py
+# Nombre del archivo: cowCleaner.py
 # Autor: Grant Nathaniel Keegan
 # Fecha de creación: 10-20-2025
 # Descripción: Archivo para limpiar los datos de imágenes del
