@@ -1,10 +1,10 @@
-const cowInfo = require('../model/model');
+const cowInfo = require('../models/Cow');
 
 exports.getCows = async (req, res) => {
     try {
         const cows = await cowInfo.findAll();
 
-        res.render("getCows", {
+        res.render("cows", {
             cows
         });
     } catch (error) {

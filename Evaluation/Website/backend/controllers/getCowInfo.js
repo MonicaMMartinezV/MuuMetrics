@@ -1,4 +1,4 @@
-const cowInfo = require('../model/model');
+const cowInfo = require('../models/Cow');
 
 exports.getCowInfo = async (req, res) => {
     const cowId = req.params.id;
@@ -8,7 +8,7 @@ exports.getCowInfo = async (req, res) => {
         // const healthStatus = await getCowHealthStatus(cow);
         const healthStatus = { status: "rojo" };
 
-        res.render("getCowInfo", {
+        res.render("cowInfo", {
             cowID: cow.IDCow,
             bcs: cow.BCS,
             diasLeche: cow.DEL,
