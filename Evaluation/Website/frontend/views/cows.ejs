@@ -8,19 +8,10 @@
 
 <body>
 
-    <header class="top-bar">
-        <img src="/images/logoMuuMetricsWhite.png" class="logo1">
-        <h1 class="title">
-            <div class="m-wrapper">
-                <img src="/images/mWhite.png" class="title-m">
-            </div>
-            uuMetrics
-        </h1>
-        <img src="/images/logoMuuMetricsWhite.png" class="logo2">
-    </header>
+    <%- include("components/background") %>
+    <%- include("components/header") %>
 
     <main class="dropdown-container">
-
         <h2 class="select-title">Selecciona una vaca</h2>
 
         <select id="cowSelector" class="cow-dropdown">
@@ -32,6 +23,8 @@
         </select>
 
     </main>
+
+    <%- include("components/footer") %>
 
     <script>
         document.getElementById("cowSelector").addEventListener("change", function() {
