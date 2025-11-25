@@ -3,8 +3,13 @@ const cowInfo = require('../models/Cow');
 exports.getCowInfo = async (req, res) => {
     const cowId = req.params.id;
     try {
-        const cow = await cowInfo.findOne({ where: { IDCow: cowId } });
-
+        const cow = {
+        IDCow: req.params.id,
+        BCS: 2.75,
+        DEL: 143
+        };
+        
+        //const cow = await cowInfo.findOne({ where: { IDCow: cowId } });
         // const healthStatus = await getCowHealthStatus(cow);
         const healthStatus = { status: "rojo" };
 
