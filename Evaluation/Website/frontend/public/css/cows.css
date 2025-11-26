@@ -1,26 +1,24 @@
 .dropdown-container {
-    width: 100%;
+    width: auto;
     text-align: center;
-    padding-top: 80px;
+    padding-top: 40px;
 }
 
 .select-title {
-    font-size: 32px;
-    margin-bottom: 30px;
-    color: #0d1b2a;
+    font-size: 30px;
 }
 
 .cow-dropdown {
-    font-size: 22px;
-    padding: 10px 20px;
+    font-size: 20px;
+    padding: 10px;
     border-radius: 10px;
     border: 2px solid #0d1b2a;
     background: white;
     cursor: pointer;
-    width: 50%;
+    width: auto;
     max-width: 400px;
 }
 
 .cow-dropdown:hover {
-    border-color: #007bff;
+    border-color: #9900ff;
 }

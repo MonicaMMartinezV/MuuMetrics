@@ -1,5 +1,5 @@
 .top-bar {
-    width: 100%;
+    width: auto;
     height: auto;
     background: black;
     display: flex;
@@ -115,10 +115,11 @@
 }
 
 .footer {
-    margin-top: 80px;
     text-align: center;
     font-size: 16px;
     padding-bottom: 40px;
+    padding-top: 20px;
+    margin-top: auto;
 }
 
 .warning {
