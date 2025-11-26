@@ -21,7 +21,7 @@ coef = np.array([
     3.06663559-0.06663559000000019
 ])
 
-poly = np.poly1d(coef)
+rangeFunction = np.poly1d(coef)
 
 def NormalRange(DEL):
     """
@@ -36,8 +36,8 @@ def NormalRange(DEL):
     """
 
     if DEL <= 400 and DEL >= 0:
-        Max= discretize_value(poly(DEL)+0.25)
-        Min = discretize_value(poly(DEL)-0.25)
+        Max = discretize_value(rangeFunction(DEL)  + 0.25)
+        Min = discretize_value(rangeFunction(DEL) - 0.25)
     elif DEL > 400 and DEL <= 500:
         Max = 3.25
         Min = 2.75
