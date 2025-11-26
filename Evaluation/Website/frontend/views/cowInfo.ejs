@@ -39,7 +39,15 @@
                         </tr>
                     </table>
                 <div class="mini-graph">
-                    <img src="/images/catImage.jpg" class="graph-placeholder">
+                    <div id="graph-loader" class="graph-skeleton"></div>
+                    <img 
+                        id="graph-img"
+                        src=""
+                        class="graph-placeholder"
+                        style="display:none;"
+                        onload="showGraph()"
+                        onerror="retryGraph()"
+                    >
                 </div>
             </section>
 
@@ -75,5 +83,28 @@
     <%- include("components/footer") %>
 
     <script src="/js/main.js"></script>
+    <script>
+    function showGraph() {
+        document.getElementById("graph-loader").style.display = "none";
+        const img = document.getElementById("graph-img");
+        img.style.display = "block";
+        img.style.opacity = "1";
+    }
+
+    function retryGraph() {
+        const img = document.getElementById("graph-img");
+        console.log("Retrying...");
+        setTimeout(() => {
+            img.src = img.src.split("?")[0] + "?t=" + Date.now();
+        }, 500);
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+        const img = document.getElementById("graph-img");
+        const base = "<%= graphImg %>";
+        img.src = base + "?t=" + Date.now();   // fuerza refresh SIEMPRE
+    });
+    </script>
+
 </body>
 </html>
