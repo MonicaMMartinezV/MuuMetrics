@@ -7,6 +7,21 @@
 # =============================================================
 
 from discretizeData import discretize_value
+import numpy  as np
+
+x_key = np.array([0, 50, 100, 150, 200, 250, 300, 350, 400])
+y_key = np.array([3.10, 2.85, 2.55, 2.25, 2.55, 2.75, 2.85, 2.95, 3.10]) - 0.07
+
+# Polynomial coefficients (from polyfit)
+coef = np.array([
+    -1.63170163e-10,
+    6.92566693e-08,
+    1.94599845e-05,
+    -8.59893810e-03,
+    3.06663559-0.06663559000000019
+])
+
+poly = np.poly1d(coef)
 
 def NormalRange(DEL):
     """
@@ -20,14 +35,14 @@ def NormalRange(DEL):
         Min (float): BCS minimo para que no sea un riesgo
     """
 
-    if DEL <= 288 and DEL >= 0:
-        Max= discretize_value(-1e-8*DEL**3 + 3e-5 * DEL**2 - 0.0079*DEL + 3.2665)
-        Min = Max - 0.5
-    elif DEL > 288 and DEL <= 500:
+    if DEL <= 400 and DEL >= 0:
+        Max= discretize_value(poly(DEL)+0.25)
+        Min = discretize_value(poly(DEL)-0.25)
+    elif DEL > 400 and DEL <= 500:
         Max = 3.25
-        Min = 2.25
+        Min = 2.75
     else:
-        raise ValueError("el numero esta arriba de 500 dias o menos que 0")
+        raise ValueError(f"el numero esta arriba de 500 dias o menos que 0 Valor:{DEL}")
     return Max, Min
 
 def Semaforo(BCS,DEL):
