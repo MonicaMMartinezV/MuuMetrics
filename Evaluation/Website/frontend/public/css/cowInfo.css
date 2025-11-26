@@ -1,12 +1,34 @@
 .content {
+    padding: 40px 40px;
+}
+
+.panel-container {
     display: flex;
-    justify-content: space-between;
-    padding: 10px;
+    grid-template-columns: 1fr 1fr 1fr; 
+    align-items: start;
+}
+
+.back-panel {
+    margin-top: 50px;
+}
+
+.back-button { 
+    color: #0d1b2a; 
+    cursor: pointer; 
+    width: fit-content; 
+}
+
+.back-button:hover {
+    opacity: 0.8;
+}
+
+.back-icon {
+    width: 60px;
 }
 
 .left-panel {
     width: 50%;
-    padding: 40px;
+    padding: 40px 40px 40px 0px;
 }
 
 .cow-id {
