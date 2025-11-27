@@ -4,14 +4,14 @@ const driveService = require("../models/driveServices.js");
 exports.getCowInfo = (req, res) => {
     const cowId = req.params.id;
 
-    driveService.downloadImageAndCsv(cowId);
+    //driveService.downloadImageAndCsv(cowId);
     
     // 🟩 Run Python in background (clean)
-    pythonService.runCowPythonScript(cowId);
+    //pythonService.runCowPythonScript(cowId);
 
     // 🟩 Render page normally
     res.render("cowInfo", {
-        cowID: cowId,
+        cowID: 1234,
         bcs: 2.75,
         diasLeche: 143,
         estado: "Temporal",
