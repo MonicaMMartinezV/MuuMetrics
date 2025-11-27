@@ -1,47 +1,27 @@
-const pythonService = require("../utils/pythonService");
 const driveService = require("../models/driveServices.js");
-const { runProgram } = require("../utils/pythonService");
-const fs = require("fs");
-const path = require("path");
+const { generateCowGraph } = require("../utils/graphService");
 
 exports.getCowInfo = async (req, res) => {
     try {
-        const dataset = path.join(__dirname, "..", "..", "dataset.json"); // path to your dataset
         const cowId = req.params.cowId;
-        const output = path.join(__dirname, "..", "..", "output.png");   // where to save PNG
 
-        const exeOutput = await runProgram(dataset, cowId, output);
-        const outputPath = path.join(__dirname, "..", "..", "output.png");
-        const base64Image = fs.readFileSync(outputPath, { encoding: "base64" });
-        const dataUri = "data:image/png;base64," + base64Image;
-        console.log("EXE Output:", exeOutput);
+        //  Generate the graph (returns base64 data URI)
+        const graphDataUri = await generateCowGraph(cowId);
+
         res.render("cowInfo", {
             cowID: cowId,
             bcs: 2.75,
             diasLeche: 143,
             estado: "Temporal",
             status: "rojo",
-            graphImg: dataUri
+            graphImg: graphDataUri
         });
 
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: "Failed to generate graph" });
     }
-
-    //driveService.downloadImageAndCsv(cowId);
-
-    // 🟩 Render page normally
-    /**res.render("cowInfo", {
-        cowID: 1234,
-        bcs: 2.75,
-        diasLeche: 143,
-        estado: "Temporal",
-        status: "rojo",
-        graphImg: "/images/graph${cowId}.png"
-    });*/
 };
-
 exports.getCowById = async (req, res) => {
     try {
         const cowId = req.params.cowId;

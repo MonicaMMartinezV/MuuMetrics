@@ -50,7 +50,8 @@ async function getFiles() {
 
     // 1. Find the subfolder named "img" INSIDE FOLDER_ID
     const folderSearch = await drive.files.list({
-        q: `'${FOLDER_ID}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = 'img' and trashed = false`,
+        q: `'${FOLDER_ID}' in parents and mimeType = 
+        'application/vnd.google-apps.folder' and name = 'img' and trashed = false`,
         fields: "files(id, name)"
     });
 

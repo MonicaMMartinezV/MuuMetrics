@@ -11,7 +11,9 @@
     "ejs": "^3.1.10",
     "express": "^4.21.2",
     "googleapis": "^166.0.0",
-    "pm2": "^6.0.11"
+    "onnxruntime-node": "^1.23.2",
+    "pm2": "^6.0.11",
+    "sharp": "^0.34.5"
   },
   "keywords": [],
   "author": "",
