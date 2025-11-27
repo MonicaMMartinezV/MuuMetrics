@@ -1,5 +1,6 @@
 // services/pythonService.js
 const { spawn } = require("child_process");
+const { execFile } = require("child_process");
 const path = require("path");
 
 exports.runCowPythonScript = (cowId) => {
@@ -28,4 +29,29 @@ exports.runCowPythonScript = (cowId) => {
     } catch (err) {
         console.error("❌ ERROR ejecutando pythonw:", err);
     }
+};
+
+
+function runProgram(datasetPath, cowId, outputPath) {
+    return new Promise((resolve, reject) => {
+        const exePath = path.join(__dirname, "..", "..", "generateGraph.exe");
+
+        execFile(
+            exePath,
+            [datasetPath, cowId, outputPath],  // <-- pass the 3 arguments
+            { cwd: path.dirname(exePath) },
+            (error, stdout, stderr) => {
+                if (error) {
+                    console.error("EXE error:", stderr || error);
+                    return reject(error);
+                }
+                resolve(stdout);
+            }
+        );
+    });
+}
+
+
+module.exports = {
+    runProgram
 };

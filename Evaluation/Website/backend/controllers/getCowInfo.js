@@ -1,23 +1,43 @@
 const pythonService = require("../utils/pythonService");
 const driveService = require("../models/driveServices.js");
+const { runProgram } = require("../utils/pythonService");
+const path = require("path");
 
-exports.getCowInfo = (req, res) => {
-    const cowId = req.params.id;
+exports.getCowInfo = async (req, res) => {
+    //const cowId = req.params.id;
+
+    try {
+        const dataset = path.join(__dirname, "..", "..", "dataset.json"); // path to your dataset
+        const cowId = req.query.id || "123";  // example: get cow ID from query
+        const output = path.join(__dirname, "..", "..", "output.png");   // where to save PNG
+
+        const exeOutput = await runProgram(dataset, cowId, output);
+
+        res.render("cowInfo", {
+            cowID: 1234,
+            bcs: 2.75,
+            diasLeche: 143,
+            estado: "Temporal",
+            status: "rojo",
+            graphImg: output
+        });
+
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Failed to generate graph" });
+    }
 
     //driveService.downloadImageAndCsv(cowId);
-    
-    // 🟩 Run Python in background (clean)
-    //pythonService.runCowPythonScript(cowId);
 
     // 🟩 Render page normally
-    res.render("cowInfo", {
+    /**res.render("cowInfo", {
         cowID: 1234,
         bcs: 2.75,
         diasLeche: 143,
         estado: "Temporal",
         status: "rojo",
         graphImg: "/images/graph${cowId}.png"
-    });
+    });*/
 };
 
 exports.getCowById = async (req, res) => {
