@@ -6,9 +6,8 @@ const folderInfo = require("../../folder_info.json");
 // Dynamic import is used for 'open' because it is an ES Module
 // const open = require("open"); // <-- Removed due to ERR_REQUIRE_ESM
 const  OAuth2Client  = google.auth.OAuth2;
-// --- CONFIGURATION ---
 
-// 💥 UPDATE THESE VALUES with your OAuth Client ID and Secret
+// --- CONFIGURATION ---
 const keys = {
     client_id: process.env.GOOGLE_CLIENT_ID,
     client_secret: process.env.GOOGLE_CLIENT_SECRET,
@@ -18,17 +17,14 @@ const keys = {
 
 // --- CONFIGURATION ---
 const FOLDER_ID = folderInfo.folder_id; // Google Drive Folder ID to read files from
-const DOWNLOAD_DIR = path.join(__dirname, "..", "..", "downloads"); // Local directory to save downloaded files
-
+const DOWNLOAD_DIR = path.join(__dirname, "..", "utils", "downloads"); // Local directory to save downloaded files
 // Scopes required for reading files from a user's Drive
-const SCOPE = ["https://www.googleapis.com/auth/drive.readonly"];
+const SCOPE = [
+    "https://www.googleapis.com/auth/drive.readonly",
+    "https://www.googleapis.com/auth/spreadsheets.readonly"];
 
 
-const oauth2Client = new OAuth2Client(
-    keys.client_id,
-    keys.client_secret,
-    keys.redirect_uris
-);
+
 
 async function getDriveClient() {
     try {
@@ -97,78 +93,139 @@ async function downloadFile(drive, fileId, outputPath) {
     });
 }
 
-async function downloadImageAndCsv(imageFileId) {
-    try {
-        // Authenticate
-        const auth = new google.auth.GoogleAuth({
-            keyFile: KEY_FILE,
-            scopes: SCOPE,
-        });
+async function downloadImage(cowId) {
+    const drive = await getDriveClient();
 
-        const client = await auth.getClient();
-        const drive = google.drive({ version: "v3", auth: client });
+    // Find the "img" folder
+    const folderSearch = await drive.files.list({
+        q: `'${FOLDER_ID}' in parents and mimeType = 'application/vnd.google-apps.folder'
+            and name = 'img' and trashed = false`,
+        fields: "files(id, name)"
+    });
 
-        // -----------------------------------------------------
-        // 1. Get metadata from the selected image
-        // -----------------------------------------------------
-        const imageMetadata = await drive.files.get({
-            fileId: imageFileId,
-            fields: "name"
-        });
-
-        const imageName = imageMetadata.data.name;
-        const imagePrefix = imageName.slice(0, 4); // First 4 digits
-        const imageLocalPath = path.join(DOWNLOAD_DIR, imageName);
-
-        console.log(`Downloading image: ${imageName}`);
-
-        await downloadFile(drive, imageFileId, imageLocalPath);
-
-        // -----------------------------------------------------
-        // 2. Search for CSV with matching 4-digit prefix
-        // -----------------------------------------------------
-        const csvQuery = `name contains '${imagePrefix}' and name contains '.csv'`;
-
-        const csvSearch = await drive.files.list({
-            q: csvQuery,
-            fields: "files(id, name)",
-        });
-
-        if (!csvSearch.data.files.length) {
-            throw new Error(`No CSV found starting with prefix '${imagePrefix}'`);
-        }
-
-        const csvFile = csvSearch.data.files[0];
-        const csvLocalPath = path.join(DOWNLOAD_DIR, csvFile.name);
-
-        console.log(`Downloading CSV: ${csvFile.name}`);
-
-        await downloadFile(drive, csvFile.id, csvLocalPath);
-
-        // -----------------------------------------------------
-        // Done!
-        // -----------------------------------------------------
-        return {
-            image: {
-                fileId: imageFileId,
-                name: imageName,
-                path: imageLocalPath,
-            },
-            csv: {
-                fileId: csvFile.id,
-                name: csvFile.name,
-                path: csvLocalPath,
-            }
-        };
-
-    } catch (err) {
-        console.error("Error in downloadImageAndCsv:", err);  
-        throw err;
+    if (!folderSearch.data.files.length) {
+        throw new Error(`Folder 'img' not found inside root folder.`);
     }
+
+    const imgFolderId = folderSearch.data.files[0].id;
+
+    // Now find an image starting with cowId
+    const fileSearch = await drive.files.list({
+        q: `'${imgFolderId}' in parents 
+            and name contains '${cowId}' 
+            and mimeType contains 'image/' 
+            and trashed = false`,
+        fields: "files(id, name, mimeType)"
+    });
+
+    if (!fileSearch.data.files.length) {
+        throw new Error(`No image found for cowId '${cowId}'`);
+    }
+
+    const file = fileSearch.data.files[0];
+    const outputPath = path.join(DOWNLOAD_DIR, file.name);
+
+    await downloadFile(drive, file.id, outputPath);
+
+    return {
+        id: file.id,
+        name: file.name,
+        localPath: outputPath
+    };
 }
+
+async function downloadCsv(cowId) {
+    const drive = await getDriveClient();
+
+    // Find the "csvIndividual" folder
+    const folderSearch = await drive.files.list({
+        q: `'${FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder'
+            and name='csvIndividual' and trashed=false`,
+        fields: "files(id, name)"
+    });
+
+    if (!folderSearch.data.files.length) {
+        throw new Error(`Folder 'csvIndividual' not found.`);
+    }
+
+    const csvFolderId = folderSearch.data.files[0].id;
+
+    // Find CSV matching cowId
+    const fileSearch = await drive.files.list({
+        q: `'${csvFolderId}' in parents 
+            and name contains '${cowId}' 
+            and name contains '.csv'
+            and trashed = false`,
+        fields: "files(id, name)"
+    });
+
+    if (!fileSearch.data.files.length) {
+        throw new Error(`No CSV found for cowId '${cowId}'.`);
+    }
+
+    const csvFile = fileSearch.data.files[0];
+    const outputPath = path.join(DOWNLOAD_DIR, csvFile.name);
+
+    await downloadFile(drive, csvFile.id, outputPath);
+
+    return {
+        id: csvFile.id,
+        name: csvFile.name,
+        localPath: outputPath
+    };
+}
+
+async function downloadPatadas() {
+    const drive = await getDriveClient();
+
+    // Find the "patadas" folder
+    const folderSearch = await drive.files.list({
+        q: `'${FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder'
+            and name='patadas' and trashed=false`,
+        fields: "files(id, name)"
+    });
+
+    if (!folderSearch.data.files.length) {
+        throw new Error(`Folder 'patadas' not found.`);
+    }
+
+    const patadasFolderId = folderSearch.data.files[0].id;
+
+    // Find CSV files inside patadas
+    const fileSearch = await drive.files.list({
+        q: `'${patadasFolderId}' in parents 
+            and name contains '.csv'
+            and trashed = false`,
+        fields: "files(id, name)"
+    });
+
+    const files = fileSearch.data.files;
+
+    if (files.length === 0) {
+        throw new Error("No CSV found inside 'patadas' folder.");
+    }
+
+    if (files.length > 1) {
+        throw new Error("More than one CSV found inside 'patadas'. Expected exactly 1.");
+    }
+
+    const csvFile = files[0];
+    const outputPath = path.join(DOWNLOAD_DIR, csvFile.name);
+
+    await downloadFile(drive, csvFile.id, outputPath);
+
+    return {
+        id: csvFile.id,
+        name: csvFile.name,
+        localPath: outputPath
+    };
+}
+
 
 module.exports = {
     getDriveClient,
     getFiles,
-    downloadImageAndCsv
+    downloadImage,
+    downloadCsv,
+    downloadPatadas
 };

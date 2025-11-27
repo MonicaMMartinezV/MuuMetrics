@@ -76,3 +76,7 @@ credentials.json
 client_secret.json
 folder_info.json
 .env
+output.png
+final_model.pth
+model.onnx.data
+model.onnx
