@@ -1,6 +1,7 @@
 const pythonService = require("../utils/pythonService");
 const driveService = require("../models/driveServices.js");
 const { runProgram } = require("../utils/pythonService");
+const fs = require("fs");
 const path = require("path");
 
 exports.getCowInfo = async (req, res) => {
@@ -12,6 +13,9 @@ exports.getCowInfo = async (req, res) => {
         const output = path.join(__dirname, "..", "..", "output.png");   // where to save PNG
 
         const exeOutput = await runProgram(dataset, cowId, output);
+        const outputPath = path.join(__dirname, "..", "..", "output.png");
+        const base64Image = fs.readFileSync(outputPath, { encoding: "base64" });
+        const dataUri = "data:image/png;base64," + base64Image;
 
         res.render("cowInfo", {
             cowID: 1234,
@@ -19,7 +23,7 @@ exports.getCowInfo = async (req, res) => {
             diasLeche: 143,
             estado: "Temporal",
             status: "rojo",
-            graphImg: output
+            graphImg: dataUri
         });
 
     } catch (err) {
