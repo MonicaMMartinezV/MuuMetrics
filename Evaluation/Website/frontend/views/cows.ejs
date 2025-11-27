@@ -23,7 +23,6 @@
             <% cows.forEach(cow => { %>
                 <option value="<%= cow.IDCow %>"><%= cow.IDCow %></option>
             <% }) %>
-
         </select>
 
     </main>
@@ -34,7 +33,7 @@
         document.getElementById("cowSelector").addEventListener("change", function() {
             const selectedId = this.value;
             if (selectedId) {
-                window.location.href = `/getCowInfo/${selectedId}`;
+                window.location.href = `/cow/${selectedId}`;
             }
         });
     </script>

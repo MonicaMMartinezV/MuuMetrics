@@ -49,7 +49,7 @@ async function getDriveClient() {
 async function getFiles() {
     const drive = await getDriveClient();
     
-    const query = '${FOLDER_ID}' in parents and mimeType contains 'image/' and trashed = false;
+    const query = `'${FOLDER_ID}' in parents and mimeType contains 'image/' and trashed = false`;
     
     const res = await drive.files.list({
         q: query,
@@ -106,14 +106,14 @@ async function downloadImageAndCsv(imageFileId) {
         const imagePrefix = imageName.slice(0, 4); // First 4 digits
         const imageLocalPath = path.join(DOWNLOAD_DIR, imageName);
 
-        console.log(Downloading image: ${imageName});
+        console.log(`Downloading image: ${imageName}`);
 
         await downloadFile(drive, imageFileId, imageLocalPath);
 
         // -----------------------------------------------------
         // 2. Search for CSV with matching 4-digit prefix
         // -----------------------------------------------------
-        const csvQuery = name contains '${imagePrefix}' and name contains '.csv';
+        const csvQuery = `name contains '${imagePrefix}' and name contains '.csv'`;
 
         const csvSearch = await drive.files.list({
             q: csvQuery,
@@ -121,13 +121,13 @@ async function downloadImageAndCsv(imageFileId) {
         });
 
         if (!csvSearch.data.files.length) {
-            throw new Error(No CSV found starting with prefix '${imagePrefix}');
+            throw new Error(`No CSV found starting with prefix '${imagePrefix}'`);
         }
 
         const csvFile = csvSearch.data.files[0];
         const csvLocalPath = path.join(DOWNLOAD_DIR, csvFile.name);
 
-        console.log(Downloading CSV: ${csvFile.name});
+        console.log(`Downloading CSV: ${csvFile.name}`);
 
         await downloadFile(drive, csvFile.id, csvLocalPath);
 
