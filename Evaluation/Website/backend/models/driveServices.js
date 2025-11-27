@@ -161,7 +161,7 @@ async function downloadImageAndCsv(imageFileId) {
         };
 
     } catch (err) {
-        console.error("Error in downloadImageAndCsv:", err);
+        console.error("Error in downloadImageAndCsv:", err);  
         throw err;
     }
 }

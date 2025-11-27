@@ -5,20 +5,18 @@ const fs = require("fs");
 const path = require("path");
 
 exports.getCowInfo = async (req, res) => {
-    //const cowId = req.params.id;
-
     try {
         const dataset = path.join(__dirname, "..", "..", "dataset.json"); // path to your dataset
-        const cowId = req.query.id || "123";  // example: get cow ID from query
+        const cowId = req.params.cowId;
         const output = path.join(__dirname, "..", "..", "output.png");   // where to save PNG
 
         const exeOutput = await runProgram(dataset, cowId, output);
         const outputPath = path.join(__dirname, "..", "..", "output.png");
         const base64Image = fs.readFileSync(outputPath, { encoding: "base64" });
         const dataUri = "data:image/png;base64," + base64Image;
-
+        console.log("EXE Output:", exeOutput);
         res.render("cowInfo", {
-            cowID: 1234,
+            cowID: cowId,
             bcs: 2.75,
             diasLeche: 143,
             estado: "Temporal",
