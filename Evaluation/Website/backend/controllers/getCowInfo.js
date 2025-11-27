@@ -1,8 +1,10 @@
-const pythonService = require("../services/pythonService");s
+const pythonService = require("../services/pythonService");
+const driveService = require("../models/driveServices.js");
 
 exports.getCowInfo = (req, res) => {
     const cowId = req.params.id;
 
+    driveService.downloadImageAndCsv(cowId);
     
     // 🟩 Run Python in background (clean)
     pythonService.runCowPythonScript(cowId);

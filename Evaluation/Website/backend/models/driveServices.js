@@ -48,7 +48,7 @@ async function getDriveClient() {
 };
 async function getFiles() {
     const drive = await getDriveClient();
-
+    
     const query = '${FOLDER_ID}' in parents and mimeType contains 'image/' and trashed = false;
     
     const res = await drive.files.list({

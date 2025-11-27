@@ -1,22 +1,21 @@
 const express = require("express");
 const path = require("path");
+const cowRoutes = require('./backend/routes/cowRoutes.js'); // Import the router
+
 const app = express();
 
-const { getCows } = require("./backend/controllers/getCows");
-const { getCowInfo } = require("./backend/controllers/getCowInfo");
-
+// --- View Engine Setup (EJS) ---
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "frontend", "views"));
 
+
 app.use(express.static(path.join(__dirname, "frontend", "public")));
 
-/*app.get("/", getCows);*/
-app.get("/getCows", getCows);
-app.get("/getCowInfo/:id", getCowInfo);
+// --- Routes ---
 
-app.get("/", (req, res) => {
-    res.redirect("/getCows");
-});
+// Use the existing cowRoutes for API endpoints and file listing
+app.use("/", cowRoutes);
+
 
 app.listen(3000, () => {
     console.log("Servidor corriendo en http://localhost:3000");
