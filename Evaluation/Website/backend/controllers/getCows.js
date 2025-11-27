@@ -15,17 +15,30 @@ exports.getCowData = async (req, res) => {
         );
 
         // Extract unique cow IDs
-        const uniqueCowIds = [...new Set(
-            cowFiles.map(f => f.name.substring(0, 4))
-        )];
+        let uniqueCowIds = [...new Set(cowFiles.map(f => f.name.substring(0, 4)))];
 
-        res.render("cows", {   
+        let cows;
+
+        if (uniqueCowIds.length === 0) {
+            // No IDs found → use fallback
+            cows = [
+                { IDCow: 1101 },
+                { IDCow: 2105 },
+                { IDCow: 3133 },
+                { IDCow: 9199 }
+            ];
+        } else {
+            // Use IDs from Drive
+            cows = uniqueCowIds.map(id => ({ IDCow: id }));
+        }
+
+        res.render("cows", {
             filesFound: cowFiles.length,
-            cows: uniqueCowIds.map(id => ({ IDCow: id }))
+            cows
         });
 
     } catch (error) {
         console.error("Error:", error);
         res.status(500).json({ error: error.message });
-}
+    }
 };
