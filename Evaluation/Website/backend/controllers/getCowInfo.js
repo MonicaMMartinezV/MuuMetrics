@@ -1,9 +1,13 @@
 const driveService = require("../models/driveServices.js");
 const { generateCowGraph } = require("../utils/graphService");
+const path = require("path");
 
 exports.getCowInfo = async (req, res) => {
     try {
         const cowId = req.params.cowId;
+
+        const json = await driveService.getCowDELBundle(cowId);
+        console.log(json);
 
         //  Generate the graph (returns base64 data URI)
         const graphDataUri = await generateCowGraph(cowId);
@@ -22,6 +26,8 @@ exports.getCowInfo = async (req, res) => {
         res.status(500).json({ error: "Failed to generate graph" });
     }
 };
+
+/** 
 exports.getCowById = async (req, res) => {
     try {
         const cowId = req.params.cowId;
@@ -58,3 +64,4 @@ exports.getCowById = async (req, res) => {
         res.status(500).send("Server error");
     }
 };
+*/

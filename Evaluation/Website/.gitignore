@@ -76,7 +76,9 @@ credentials.json
 client_secret.json
 folder_info.json
 .env
-output.png
+Evaluation/website/output.png
 final_model.pth
 model.onnx.data
 model.onnx
+
+Evaluation/website/backend/utils/downloads/
