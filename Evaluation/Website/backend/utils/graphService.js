@@ -3,23 +3,83 @@ const path = require("path");
 const { runProgram } = require("./pythonService");
 
 /**
- * Generates a graph for a given cow ID and returns it as a Base64 data URI.
- * @param {string} cowId
- * @returns {Promise<string>} Base64 data URI of the generated PNG
+ * Converts an array into { "0": value, "1": value, ... }
  */
-async function generateCowGraph(cowId) {
-    // 1️⃣ Paths
-    const dataset = path.join(__dirname, "..", "..", "dataset.json");
-    const output = path.join(__dirname, "..", "..", "output.png"); // you can also name it cow_${cowId}.png
+function arrayToIndexedObject(arr) {
+    // If null/undefined → return empty object
+    if (arr == null) return {};
 
-    // 2️⃣ Run the EXE
-    await runProgram(dataset, cowId, output);
+    // If already an object with numeric keys → return as-is
+    if (typeof arr === "object" && !Array.isArray(arr)) {
+        const keys = Object.keys(arr);
+        if (keys.every(k => !isNaN(Number(k)))) {
+            return arr; 
+        }
+    }
 
-    // 3️⃣ Read the PNG and convert to Base64
+    // If arr is NOT an array, wrap it
+    if (!Array.isArray(arr)) {
+        return { 0: arr };
+    }
+
+    // Convert array → indexed object
+    const obj = {};
+    arr.forEach((v, i) => (obj[i] = v));
+    return obj;
+}
+
+/**
+ * Converts cowData into the format required by generateGraph.exe
+ */
+function convertToExeFormat(cowData) {
+    return {
+        img: arrayToIndexedObject(cowData.img),
+        ID: arrayToIndexedObject(cowData.cowID || cowData.ID),
+        DEL: arrayToIndexedObject(cowData.DEL),
+        BCS: arrayToIndexedObject(cowData.BCS),
+        Semaforo: arrayToIndexedObject(cowData.Semaforo)
+    };
+}
+
+/**
+ * Generates a graph for a given cow using a DATA OBJECT
+ * instead of dataset.json.
+ * @param {object} cowData - All cow values needed by the EXE
+ * @returns {Promise<string>} Base64 data URI
+ */
+async function generateCowGraph(cowData) {
+    const tempInput = path.join(__dirname, "..", "..", "temp_dataset.json");
+    const output = path.join(__dirname, "..", "..", "output.png");
+
+    // Convert to EXE-compatible format
+    const exeJson = convertToExeFormat(cowData);
+    const newJson = JSON.stringify(exeJson, null, 2);
+
+    let shouldWrite = true;
+
+    // Skip writing if JSON is identical
+    if (fs.existsSync(tempInput)) {
+        const existingJson = fs.readFileSync(tempInput, "utf8");
+        if (existingJson.trim() === newJson.trim()) {
+            shouldWrite = false;
+            console.log("✔ temp_dataset.json unchanged — skip write");
+        }
+    }
+
+    // Only write if changed
+    if (shouldWrite) {
+        fs.writeFileSync(tempInput, newJson);
+        console.log("✏ temp_dataset.json updated");
+    }
+
+    // Run EXE
+    console.log(tempInput, cowData.ID, output);
+    await runProgram(tempInput, cowData.ID, output);
+
+    // Convert PNG → Base64
     const base64Image = fs.readFileSync(output, { encoding: "base64" });
-    const dataUri = "data:image/png;base64," + base64Image;
 
-    return dataUri;
+    return "data:image/png;base64," + base64Image;
 }
 
 module.exports = { generateCowGraph };
