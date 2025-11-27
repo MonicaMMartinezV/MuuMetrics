@@ -1,5 +1,4 @@
 const { google } = require("googleapis");
-const url = require("url");
 const fs = require('fs'); // Import File System module
 const path = require('path'); // Import Path module
 const KEY_FILE = "credentials.json"; // Your service account key file paths
@@ -48,16 +47,30 @@ async function getDriveClient() {
 };
 async function getFiles() {
     const drive = await getDriveClient();
-    
-    const query = `'${FOLDER_ID}' in parents and mimeType contains 'image/' and trashed = false`;
-    
-    const res = await drive.files.list({
-        q: query,
+
+    // 1. Find the subfolder named "img" INSIDE FOLDER_ID
+    const folderSearch = await drive.files.list({
+        q: `'${FOLDER_ID}' in parents and mimeType = 'application/vnd.google-apps.folder' and name = 'img' and trashed = false`,
+        fields: "files(id, name)"
+    });
+
+    if (!folderSearch.data.files || folderSearch.data.files.length === 0) {
+        console.log("img folder not found");
+        return [];
+    }
+
+    const imgFolderId = folderSearch.data.files[0].id;
+    console.log("Found img folder:", imgFolderId);
+
+    // 2. Now search for images INSIDE the img folder
+    const fileSearch = await drive.files.list({
+        q: `'${imgFolderId}' in parents and mimeType contains 'image/' and trashed = false`,
         fields: "files(id, name, mimeType)"
     });
 
-    return res.data.files;  // return files, do NOT send Express responses here
+    return fileSearch.data.files;
 }
+
 
 /**
  * Downloads a file from Google Drive using its fileId
