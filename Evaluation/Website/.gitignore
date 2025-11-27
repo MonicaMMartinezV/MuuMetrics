@@ -73,3 +73,6 @@ functions/.env
 docker-data/
 
 credentials.json
+client_secret.json
+folder_info.json
+.env
