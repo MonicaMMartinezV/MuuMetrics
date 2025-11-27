@@ -9,8 +9,8 @@
 
 import pandas as pd
 from calculoDELvacas.calculoDELvacas import completeDirectory
-from model           import dfPredict
-from range           import Semaforo
+from model                           import dfPredict
+from range                           import Semaforo
 
 def predictDf(pathCows,pathPatadas,pathImages,checkpoint):
     """

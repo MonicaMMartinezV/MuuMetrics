@@ -13,7 +13,6 @@ import pandas as pd
 from PIL            import Image
 from torchvision    import transforms
 from discretizeData import discretize_value
-from PIL            import Image
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -37,7 +36,6 @@ def load_model(checkpoint_path):
     model.load_state_dict(ckpt[state_dict_key])
 
     model.eval()
-    print(f"El Modelo se cargado con Exito :D device: {device}")
 
     return model
 
