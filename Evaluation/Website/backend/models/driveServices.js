@@ -19,7 +19,7 @@ const keys = {
 
 // --- CONFIGURATION ---
 const FOLDER_ID = folderInfo.folder_id; // Google Drive Folder ID to read files from
-
+const DOWNLOAD_DIR = path.join(__dirname, "..", "..", "downloads"); // Local directory to save downloaded files
 
 // Scopes required for reading files from a user's Drive
 const SCOPE = ["https://www.googleapis.com/auth/drive.readonly"];
