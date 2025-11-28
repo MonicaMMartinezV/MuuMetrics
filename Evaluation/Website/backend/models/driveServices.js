@@ -232,6 +232,30 @@ async function downloadToDiskCSV(drive, file, outPath) {
 }
 
 
+function clearDownloadedImages() {
+    const imagesDir = path.join(__dirname, "..", "utils", "downloads", "images");
+
+    // Make sure directory exists
+    if (!fs.existsSync(imagesDir)) {
+        console.log("Images folder does not exist, nothing to delete.");
+        return;
+    }
+
+    const files = fs.readdirSync(imagesDir);
+
+    for (const file of files) {
+        const filePath = path.join(imagesDir, file);
+        try {
+            fs.unlinkSync(filePath);
+            console.log(`🗑 Deleted image: ${file}`);
+        } catch (err) {
+            console.error(`Failed to delete ${file}:`, err.message);
+        }
+    }
+
+    console.log("✔ All images deleted.");
+}
+
 // =============================================================
 // IMAGE DOWNLOADER
 // =============================================================
@@ -243,12 +267,13 @@ async function downloadToDiskCSV(drive, file, outPath) {
  */
 async function downloadImage(cowId) {
     const drive = await getDriveClient();
-
+    
+    // --- 1. PREPARE PATHS AND CLEANUP ---
+    clearDownloadedImages(); // Attempt to clear all previous images
     const shortId = String(cowId).slice(0, 4);
 
     // Find img folder
     const folderSearch = await drive.files.list({
-        // FIX: Consolidated query string
         q: `'${FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and name='img' and trashed=false`,
         fields: "files(id, name)",
     });
@@ -260,7 +285,6 @@ async function downloadImage(cowId) {
 
     // Search image by FIRST 4 digits only
     const fileSearch = await drive.files.list({
-        // FIX: Consolidated query string
         q: `'${imgFolderId}' in parents and mimeType contains 'image/' and trashed = false and name contains '${shortId}'`,
         fields: "files(id, name, mimeType)",
     });
@@ -269,16 +293,29 @@ async function downloadImage(cowId) {
         throw new Error(`Image starting with '${shortId}' not found inside /img folder.`);
 
     const file = fileSearch.data.files[0];
-    console.log("Downloading image file:", file.name);
     const outPath = path.join(DOWNLOAD_DIR, "images", file.name);
+    
+    // Ensure the output directory exists
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
+
+    // -----------------------------------------------------------------
+    // 🔥 NEW LOGIC: ABORT DOWNLOAD IF FILE STILL EXISTS AFTER CLEANUP
+    // -----------------------------------------------------------------
+    if (fs.existsSync(outPath)) {
+        console.warn(`⚠️ Target image file ${file.name} still exists at ${outPath} after cleanup. Skipping download to avoid file lock crash.`);
+        
+        // Return the existing file's information
+        return { id: file.id, name: file.name, localPath: outPath };
+    }
+    // -----------------------------------------------------------------
+
+    console.log("Downloading image file:", file.name);
 
     // Use the corrected downloadToDisk function
     await downloadToDisk(drive, file, outPath);
 
     return { id: file.id, name: file.name, localPath: outPath };
 }
-
 
 
 // =============================================================
