@@ -43,7 +43,7 @@ exports.getCowInfo = async (req, res) => {
 
 
 function discretizeValue(x) {
-    return Math.round(x * 100) / 100;   // same behavior as Python discretize_value
+    return Math.round(x * 100) / 100;   
 }
 
 function normalRange(DEL) {
@@ -78,3 +78,9 @@ function semaforo(BCS, DEL) {
         return "Rojo";
     }
 }
+
+exports.showCowLoader = (req, res) => {
+    res.render("components/loader", {
+        redirectUrl: `/cow/${req.params.cowId}/info`
+    });
+};

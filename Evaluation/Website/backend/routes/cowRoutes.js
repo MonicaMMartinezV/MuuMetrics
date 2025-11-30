@@ -3,10 +3,13 @@ const router = express.Router();
 const getCowController = require('../controllers/getCowInfo');
 const getCowDataController = require('../controllers/getCows');
 
-
-// Route 3: Find, download, and process data for a specific cow ID (GET /cow-data?cow_id=...)
+// Main homepage route
 router.get("/", getCowDataController.getCowData);
 
-router.get("/cow/:cowId", getCowController.getCowInfo);
+// NEW: Fast loader route
+router.get("/cow/:cowId", getCowController.showCowLoader);
+
+// Slow heavy route
+router.get("/cow/:cowId/info", getCowController.getCowInfo);
 
 module.exports = router;
