@@ -31,3 +31,13 @@ def predictDf(pathCows,pathPatadas,pathImages,checkpoint):
     df['Semaforo'] = df.apply(lambda fila: Semaforo(fila['BCS'], fila['DEL']), axis=1)
     json_string = df.to_json()
     return json_string
+
+#For tests and see the Json format
+"""if __name__ == '__main__':
+    pathCows    = r"D:\TEC\IA\B2\Clasificacion proyecto\DATOS VACAS MARZO JUNIO"
+    pathPatadas = r"D:\TEC\IA\B2\Clasificacion proyecto\patadas_180725.csv"
+    pathImages  = r"D:\TEC\IA\B2\Uncropped and classified (do not eliminate)\2.00"
+    checkpoint  = r"D:\TEC\IA\B2\ProyectoFinal\MetricsMuu\final_model.pth"
+
+    lable = predictDf(pathCows,pathPatadas,pathImages,checkpoint)
+    print (lable)"""

@@ -1,5 +1,5 @@
 # =============================================================
-# Nombre del archivo: ModeloBCS5.py
+# Nombre del archivo: finalModel.py
 # Autor: Bárbara Paola Alcántara Vega 
 #
 # Descripción:

@@ -1,6 +1,6 @@
 
 # =============================================================
-# Nombre del archivo: tndencyDELandBCS.py
+# Nombre del archivo: tendencyDELandBCS.py
 # Autor: Bárbara Paola Alcántara Vega
 # Fecha de creación: 22-10-2025
 # Descripción: análisis de correlación de características de
