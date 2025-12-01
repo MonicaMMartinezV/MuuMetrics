@@ -11,6 +11,37 @@ import pandas        as pd
 from calculoDELvacas.calculoDELvacas import completeDirectorysInDir
 from model           import dfPredictTest
 from range           import Semaforo
+import matplotlib.pyplot as plt
+
+def plot_class_histogram(df, col1, col2):
+    """
+    Generar un histograma de los semaforos predichos vs. los reales
+
+    Args:
+        df (DataFrame) : df con datos reales y predichos
+        col1 (str)     : columna de predicción
+        col2 (str)     : columna real
+
+    Returns:	
+        None
+    """
+
+    # Contar ocurrencias en cada columna
+    count1 = df[col1].value_counts()
+    count2 = df[col2].value_counts()
+
+    # Unir los conteos y transponer
+    result         = pd.concat([count1, count2], axis=1)
+    result.columns = [col1, col2]
+    result         = result.fillna(0).astype(int)  # por si faltan clases en alguna columna
+
+    # Graficar
+    result.plot(kind="bar")
+    plt.title("Predicción vs. Real")
+    plt.xlabel("Semaforo")
+    plt.ylabel("Frecuencia")
+    plt.xticks(rotation=0)
+    plt.show()
 
 def predictDfTest(pathCows,pathPatadas,pathImages,checkpoint):
     """
@@ -85,6 +116,7 @@ def finalTest(pred,label):
         None
     """
     dftest   = pd.merge(pred, label[["img","Semaforo label",'BCS Label']], on=["img"], how="left")
+    plot_class_histogram(dftest, "Semaforo model", "Semaforo label")
     accuracy = (dftest["Semaforo model"] == dftest["Semaforo label"]).mean()
     dftest = dftest[["img","ID","DEL","BCS model","BCS Label","Semaforo model","Semaforo label"]]
     dftest.to_csv(f'test.csv', index=False)
@@ -93,7 +125,7 @@ def finalTest(pred,label):
 if __name__ == '__main__':
     pathCows    = r"D:\TEC\IA\B2\Clasificacion proyecto\DATOS VACAS MARZO JUNIO"
     pathPatadas = r"D:\TEC\IA\B2\Clasificacion proyecto\patadas_180725.csv"
-    pathImages  = r"D:\TEC\IA\B2\Uncropped and classified (do not eliminate)"
+    pathImages  = r"D:\TEC\IA\B2\test"
     checkpoint  = r"D:\TEC\IA\B2\ProyectoFinal\MetricsMuu\final_model.pth"
     
     lable = labelDf(pathCows,pathPatadas,pathImages)
