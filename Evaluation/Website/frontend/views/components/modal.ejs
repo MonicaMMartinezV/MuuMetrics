@@ -1,12 +1,9 @@
 <%
-    const _cows = Array.isArray(cows) ? cows : [];
-
     const _showError = typeof showError === "boolean" ? showError : false;
     const _showSuccess = typeof showSuccess === "boolean" ? showSuccess : false;
     const _errorMessage = errorMessage || "";
     const _successMessage = successMessage || "";
     const _errorDetail = errorDetail || "";
-
     const _errorAction = errorAction || { label: "Aceptar", url: "" };
 %>
 

@@ -75,7 +75,7 @@ async function generateCowGraph(cowData) {
     // Run EXE
     console.log(tempInput, cowData.ID, output);
     await runProgram(tempInput, cowData.ID, output);
-
+    console.log("✔ Graph generation EXE completed");
     // Convert PNG → Base64
     const base64Image = fs.readFileSync(output, { encoding: "base64" });
 

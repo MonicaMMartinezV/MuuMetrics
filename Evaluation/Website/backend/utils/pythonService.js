@@ -48,6 +48,7 @@ function runProgram(datasetPath, cowId, outputPath) {
                 resolve(stdout);
             }
         );
+        console.log("✔ EXE process started");
     });
 }
 

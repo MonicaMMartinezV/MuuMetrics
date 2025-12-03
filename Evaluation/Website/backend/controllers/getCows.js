@@ -1,34 +1,12 @@
 const driveService = require('../models/driveServices.js');
 const path = require('path');
 const { showErrorModal, showSuccessModal } = require("../utils/modalHelper");
+const { getFiles} = require('../models/driveServices.js');
 
 exports.getCowData = async (req, res) => {
     try {
 
-        return showSuccessModal(res, "cows", {
-            successMessage: "Datos cargados correctamente desde Drive.",
-            redirectUrl: "/",
-            actionLabel: "Continuar",
-            cows,
-            filesFound: cowFiles.length
-        });
-
-        
-
-        let files;
-
-        // --- ERROR AL CARGAR DRIVE ---
-        try {
-            files = await driveService.getIdImag();
-        } catch (err) {
-            return showErrorModal(res, "cows", {
-                errorType: "Error en el drive",
-                errorMessage: "No se pudo acceder a los datos en Google Drive.",
-                errorDetail: err.message,
-                redirectUrl: "/",
-                actionLabel: "Reintentar"
-            });
-        }
+        const files = await getFiles();
 
         // --- NO HAY ARCHIVOS ---
         if (!files || files.length === 0) {
@@ -41,15 +19,10 @@ exports.getCowData = async (req, res) => {
                 cows: []
             });
         }
-
         // --- FILTRAR SOLO IMÁGENES CON cowId ---
         const cowFiles = files.filter(f =>
-            f.cowId &&
-            /^[0-9]{4}$/.test(f.cowId) &&
-            f.mimeType?.startsWith("image/")
+            /^[0-9]{4}/.test(f.name) && f.mimeType.startsWith("image/")
         );
-
-        console.log("CowFiles filtrados:", cowFiles);
 
         if (cowFiles.length === 0) {
             return showErrorModal(res, "cows", {
@@ -62,12 +35,10 @@ exports.getCowData = async (req, res) => {
             });
         }
 
-        // --- EXTRAER IDS ÚNICOS ---
-        const cowIds = [
-            ...new Set(cowFiles.map(f => f.cowId))
-        ].sort();
+        // Extract unique cow IDs
+        let uniqueCowIds = [...new Set(cowFiles.map(f => f.name.substring(0, 4)))];
 
-        if (cowIds.length === 0) {
+        if (uniqueCowIds.length === 0) {
             return showErrorModal(res, "cows", {
                 errorType: "ids_nulos",
                 errorMessage: "Los archivos encontrados no tienen IDs válidos.",
@@ -78,15 +49,16 @@ exports.getCowData = async (req, res) => {
             });
         }
 
-        const cows = cowIds.map(id => ({ IDCow: id }));
+        const cows = uniqueCowIds.map(id => ({ IDCow: id }));
 
-        return res.render("cows", {
+        console.log("CowFiles filtrados:", cowFiles);
+        return showSuccessModal(res, "cows", {
+            successMessage: "Datos cargados correctamente desde Drive.",
+            redirectUrl: "/",
+            actionLabel: "Continuar",
             cows,
-            filesFound: cowFiles.length,
-            showError: false,
-            showSuccess: false
+            filesFound: cowFiles.length
         });
-
 
     } catch (error) {
         console.error("Error inesperado en getCowData:", error);

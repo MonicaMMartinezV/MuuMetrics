@@ -30,10 +30,6 @@
                             <td class="value"><%= bcs %></td>
                         </tr>
                         <tr>
-                            <td class="label">Estado coloquial</td>
-                            <td class="value"><%= estado %></td>
-                        </tr>
-                        <tr>
                             <td class="label">Días en leche</td>
                             <td class="value"><%= diasLeche %></td>
                         </tr>
@@ -46,13 +42,13 @@
                         class="graph-placeholder"
                         style="display:none;"
                         onload="showGraph()"
-                        onerror="retryGraph()"
+                        
                     >
                 </div>
             </section>
 
             <section class="health-meter">
-                <h2 class="health-title">Salud-ometro</h2>
+                <h2 class="health-title">Nivel de Riesgo</h2>
 
                 <div class="circles-container">
                     <% console.log("Status:", status); %>
@@ -91,13 +87,7 @@
         img.style.opacity = "1";
     }
 
-    function retryGraph() {
-        const img = document.getElementById("graph-img");
-        console.log("Retrying...");
-        setTimeout(() => {
-            img.src = img.src.split("?")[0] + "?t=" + Date.now();
-        }, 500);
-    }
+    
 
     window.addEventListener("DOMContentLoaded", () => {
     const img = document.getElementById("graph-img");

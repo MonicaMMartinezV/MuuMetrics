@@ -56,6 +56,7 @@ function loadIndividualCowCsv(csvPath, cowId) {
         "Hora de inicio": o["Hora de inicio"],
         "Duración (mm:ss)": o["Duración (mm:ss)"]
     }));
+    console.log(`**Loaded individual CSV** for cow ${cowId}, ${result.length} rows.`);
 
     return result;
 }
@@ -93,6 +94,7 @@ function processIndividualDf(df) {
         // better to check here too.
         if (isNaN(endDate.getTime())) return null;
 
+        console.log(`Processed row for cow ${row.vacaId}: start=${startDate.toISOString()}, end=${endDate.toISOString()}`);
 
         return {
             vacaId: row.vacaId,
@@ -163,7 +165,7 @@ function loadPatadasCsv(csvPath) {
             console.warn(`Skipping row: Invalid date for "Hora Inicio Ordeño" (${timeStr}) for animal number ${numero}.`);
             return null; // Skip this row, as it will cause NaN in subtraction
         }
-
+        console.log(`Loaded patadas row: animal=${numero}, DEL=${delValue}, Hora Inicio Ordeño=${horaDate.toISOString()}`);
         return {
             numero: numero,
             DEL: delValue,
@@ -207,6 +209,8 @@ function getImageDate(imagePath) {
     if (isNaN(dt.getTime())) {
         throw new Error(`Invalid date format in image filename: Failed to parse date string "${dateString}" from original component "${dateTimeWithExt}".`);
     }
+
+    console.log(`Parsed image date: ${dt.toISOString()} from filename: ${name}`);
     return dt;
 }
 

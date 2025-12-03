@@ -3,18 +3,19 @@ const { generateCowGraph } = require("../utils/graphService");
 const path = require("path");
 const onnxPredictModel = require("../utils/onnxPredictModel.js");
 const { showErrorModal, showSuccessModal} = require("../utils/modalHelper");
+const { error } = require("console");
 
 exports.getCowInfo = async (req, res) => {
     const cowId = req.params.cowId;
     try {
         const data = await driveService.getCowDELBundle(cowId);
-
-        if (!data || data.success !== true) {
+        console.log("Datos obtenidos de Drive para la vaca:", data.cowId);
+        if (!data.cowId) {
             return showErrorModal(res, "cows", {
                 errorType: "error_drive",
                 errorMessage: `No se pudieron cargar los datos de la vaca ${cowId}.`,
                 errorDetail: "Faltan archivos o hubo un fallo en Drive.",
-                redirectUrl: "/cows",
+                redirectUrl: "/",
                 actionLabel: "Volver"
             });
         }
@@ -54,7 +55,9 @@ exports.getCowInfo = async (req, res) => {
                 BCS,
                 Semaforo: estado
             });
+
         } catch (err) {
+            console.log("ERROR al generar gráfica:", err);
             return showErrorModal(res, "cows", {
                 errorType: "grafica_fallo",
                 errorMessage: "No fue posible generar la gráfica.",
@@ -63,23 +66,22 @@ exports.getCowInfo = async (req, res) => {
                 actionLabel: "Volver"
             });
         }
-
-        return showSuccessModal(res, "cowInfo", {
-            successMessage: "Datos del Drive cargados exitosamente.",
-            redirectUrl: `/cow/${cowId}/info`,
-            actionLabel: "Continuar"
-        });
-
+        console.log("Gráfica generada exitosamente para la vaca:", data.cowId);
         return res.render("cowInfo", {
+            successMessage: "Datos del Drive cargados exitosamente.",
+            errorMessage: null,
+            errorDetail: null,
+            errorAction: null, 
             cowID: data.cowId,
             bcs: BCS,
             diasLeche: data.DEL,
             estado,
             status: estado.toLowerCase(),
             graphImg: graphDataUri,
-            showError: false,
-            showSuccess: false
+            showSuccess: true,  
         });
+
+
     } catch (err) {
         console.error("ERROR getCowInfo():", err);
         return showErrorModal(res, "cows", {

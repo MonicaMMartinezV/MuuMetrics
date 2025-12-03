@@ -4,10 +4,6 @@ const path = require("path");
 const fs = require("fs");
 const KEY_FILE = "credentials.json";
 const folderInfo = require("../../folder_info.json");
-const csv = require("csv-parser");
-const { get } = require("http");
-const { showSuccessModal, showErrorModal } = require("../utils/modalHelper");
-
 
 const FOLDER_ID = folderInfo.folder_id;
 // Define the path for downloaded files
@@ -47,186 +43,33 @@ async function getDriveClient() {
  */
 async function getFiles() {
     const drive = await getDriveClient();
- // 1. Find the "img" folder inside your root folder
-    console.log("Searching for 'img' folder inside root folder...");
 
+    // 1. Find the 'img' folder ID
     const folderSearch = await drive.files.list({
-        q: `'${FOLDER_ID}' in parents and name='img' and mimeType='application/vnd.google-apps.folder' and trashed=false`,
+        // FIX: Consolidated query string to prevent newlines/spaces from breaking it
+        q: `'${FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and name='img' and trashed=false`,
         fields: "files(id, name)",
     });
 
-    if (!folderSearch.data.files.length) {
-        console.log("ERROR: No 'img' folder found.");
-        return [];
-    }
+    if (!folderSearch.data.files.length) return [];
 
     const imgFolderId = folderSearch.data.files[0].id;
 
-    console.log("Image folder found (ID: " + imgFolderId + ")");
-
-    // 2. Get ALL images inside the IMG folder
-    const imgSearch = await drive.files.list({
+    // 2. List image files inside the 'img' folder
+    const fileSearch = await drive.files.list({
+        // FIX: Consolidated query string
         q: `'${imgFolderId}' in parents and mimeType contains 'image/' and trashed=false`,
         fields: "files(id, name, mimeType)",
     });
 
-    if (!imgSearch.data.files.length) {
-        console.log("No images found inside img/");
-        return [];
-    }
-    console.log(`Found ${imgSearch.data.files.length} image(s) inside img/ folder.`);
-
-    return imgSearch.data.files;
+    return fileSearch.data.files;
 }
-
-async function getImageDates() {
-
-    const files = await getFiles();
-    console.log("Files:", files);
-
-    if (!files.length) {
-        throw new Error("No image files found inside 'img' folder.");
-    }
-
-    const results = [];
-
-    for (const file of files) {
-        try {
-            const name = file.name;
-            console.log("Processing:", name);
-
-            // Extract ALL numeric blocks in order
-            // Example: "2025-07-15-07-50-44_cam0_cap4.jpg"
-            // → ["2025", "07", "15", "07", "50", "44"]
-            const numbers = name.match(/\d+/g);
-
-            if (!numbers || numbers.length < 6) {
-                console.warn(`Skipping invalid filename (not enough numbers): ${name}`);
-                continue;
-            }
-
-            const [year, month, day, hour, minute, seconds] = numbers;
-
-            const dateString = `${year}-${month}-${day}T${hour}:${minute}:${seconds}`;
-            const dt = new Date(dateString);
-
-            if (isNaN(dt.getTime())) {
-                console.warn(`Skipping invalid date in filename: ${name}`);
-                continue;
-            }
-
-            results.push({
-                name,
-                date: dt,
-            });
-
-        } catch (err) {
-            console.warn("Error processing file:", file, err);
-            continue;
-        }
-    }
-    console.log("Image dates extracted:", results);
-    return results;
-}
-
-function pad(n) {
-    return n.toString().padStart(2, "0");
-}
-
-function parsePatadaDate(dateStr) {
-
-    if (!dateStr) return NaN;
-
-    const [datePart, timePart, ampm1, ampm2] = dateStr.split(" ");
-    // NOTE: "a. m." splits into ["a.", "m."]
-
-    const ampmPart = (ampm1 + ampm2).toLowerCase(); // "a.m." or "p.m."
-
-    const [day, month, year] = datePart.split("/").map(Number);
-    let [hour, minute] = timePart.split(":").map(Number);
-
-    const isPM = ampmPart.includes("p");
-
-    // Convert to 24h format
-    if (isPM && hour !== 12) hour += 12;
-    if (!isPM && hour === 12) hour = 0;
-
-    const isoString = `${pad(year)}-${pad(month)}-${pad(day)}T${pad(hour)}:${pad(minute)}:00`;
-    console.log("ISO:", isoString);
-
-    return new Date(isoString).getTime();
-}
+// -------------------------------------------------------------
 
 
-
-
-
-async function getIdImag() {
-    const imgData = await getImageDates();
-
-    if (!imgData || imgData.length === 0) {
-        throw new Error("No valid image dates found.");
-    }
-
-    // Sort newest → oldest is optional; we will still iterate all
-    //imgData.sort((a, b) => b.date - a.date);
-
-    // Load Patadas CSV
-    const { localPath } = await downloadPatadas();
-
-    // Read CSV
-    const cowData = await new Promise((resolve, reject) => {
-        const rows = [];
-        fs.createReadStream(localPath)
-            .pipe(csv())
-            .on("data", (row) => rows.push(row))
-            .on("end", () => resolve(rows))
-            .on("error", reject);
-    });
-
-    console.log("CSV rows loaded:", cowData.length);
-
-    // Convert cow row times to timestamps for speed
-    const formattedCowData = cowData.map((row) => ({
-        id: row["Número del animal"],
-        end: parsePatadaDate(row["Hora Inicio Ordeño"])
-    }));
-
-    // Build result array
-    const results = [];
-
-    for (const img of imgData) {
-        const imgTime = img.date.getTime();
-
-        let matchedId = null;
-
-        // Iterate backward to find the last cow event before image
-        for (let i = formattedCowData.length - 1; i >= 0; i--) {
-            if (formattedCowData[i].end < imgTime) {
-                matchedId = formattedCowData[i].id;
-                break;
-            }
-        }
-
-        console.log(`Image ${img.name} matched to cow ID: ${matchedId}`);
-
-        results.push({
-            imageName: img.name,
-            imageDate: img.date,
-            cowId: matchedId,
-            mimeType: "image/jpeg" 
-        });
-    }
-
-    console.log("Final image → cow mapping:", results);
-    return results;
-}
-
-function formatDateForName(date) {
-    const pad = (n) => String(n).padStart(2, "0");
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-           `-${pad(date.getHours())}-${pad(date.getMinutes())}-${pad(date.getSeconds())}`;
-}
+// =============================================================
+// Helper — robust exporter/downloader for ANY Google Drive file
+// =============================================================
 
 /**
  * Downloads a file from Google Drive (or exports a Google app file) to disk.
@@ -413,23 +256,6 @@ function clearDownloadedImages() {
     console.log("✔ All images deleted.");
 }
 
-function extractTimestampFromFilename(filename) {
-    // Handles:
-    // 2025-07-18-07-53-00.jpg
-    // 2025-07-15-07-50-44_cam0_cap4.jpg
-
-    const cleanName = filename.split("_")[0]; // remove cam0_cap4 etc.
-    const parts = cleanName.split("-");
-
-    if (parts.length < 6) {
-        throw new Error(`Invalid image filename format: ${filename}`);
-    }
-
-    const [year, month, day, hour, minute, second] = parts;
-
-    return new Date(`${year}-${month}-${day}T${hour}:${minute}:${second}`);
-}
-
 // =============================================================
 // IMAGE DOWNLOADER
 // =============================================================
@@ -441,75 +267,55 @@ function extractTimestampFromFilename(filename) {
  */
 async function downloadImage(cowId) {
     const drive = await getDriveClient();
-
-    clearDownloadedImages();
+    
+    // --- 1. PREPARE PATHS AND CLEANUP ---
+    clearDownloadedImages(); // Attempt to clear all previous images
     const shortId = String(cowId).slice(0, 4);
 
-    // Buscar carpeta img
+    // Find img folder
     const folderSearch = await drive.files.list({
         q: `'${FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and name='img' and trashed=false`,
-        fields: "files(id, name)"
+        fields: "files(id, name)",
     });
 
-    if (!folderSearch.data.files.length) {
-        console.warn("⚠ No 'img' folder found. Skipping image.");
-        return { success: false, cowId, localPath: null };
-    }
+    if (!folderSearch.data.files.length)
+        throw new Error("Folder 'img' not found inside root folder.");
 
     const imgFolderId = folderSearch.data.files[0].id;
 
-    // Buscar imagen por ID corto
+    // Search image by FIRST 4 digits only
     const fileSearch = await drive.files.list({
-        q: `'${imgFolderId}' in parents 
-            and mimeType contains 'image/' 
-            and trashed=false 
-            and name contains '${shortId}'`,
-        fields: "files(id, name, mimeType)"
+        q: `'${imgFolderId}' in parents and mimeType contains 'image/' and trashed = false and name contains '${shortId}'`,
+        fields: "files(id, name, mimeType)",
     });
 
-    // ⚠ Si no hay imagen → no explotar
-    if (!fileSearch.data.files.length) {
-        console.warn(`⚠ No image found for cowId ${cowId}. Skipping this cow.`);
-        return { success: false, cowId, localPath: null };
-    }
+    if (!fileSearch.data.files.length)
+        throw new Error(`Image starting with '${shortId}' not found inside /img folder.`);
 
-    // Tenemos una imagen
     const file = fileSearch.data.files[0];
     const outPath = path.join(DOWNLOAD_DIR, "images", file.name);
-
+    
+    // Ensure the output directory exists
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
-    // Si ya está descargada
+    // -----------------------------------------------------------------
+    // 🔥 NEW LOGIC: ABORT DOWNLOAD IF FILE STILL EXISTS AFTER CLEANUP
+    // -----------------------------------------------------------------
     if (fs.existsSync(outPath)) {
-        return {
-            id: file.id,
-            name: file.name,
-            localPath: outPath,
-            success: true,
-            message: "Imagen existente reutilizada."
-        };
+        console.warn(`⚠️ Target image file ${file.name} still exists at ${outPath} after cleanup. Skipping download to avoid file lock crash.`);
+        
+        // Return the existing file's information
+        return { id: file.id, name: file.name, localPath: outPath };
     }
+    // -----------------------------------------------------------------
 
-    // Descargarla
+    console.log("Downloading image file:", file.name);
+
+    // Use the corrected downloadToDisk function
     await downloadToDisk(drive, file, outPath);
 
-    // Renombrar por timestamp
-    const imgDate = extractTimestampFromFilename(file.name);
-    const formatted = formatDateForName(imgDate);
-    const newName = `${cowId}_${formatted}${path.extname(file.name)}`;
-    const newPath = path.join(DOWNLOAD_DIR, "images", newName);
-
-    fs.renameSync(outPath, newPath);
-
-    return {
-        id: file.id,
-        name: newName,
-        localPath: newPath,
-        success: true,
-        message: "Imagen descargada correctamente."
-    };
+    return { id: file.id, name: file.name, localPath: outPath };
 }
-
 
 
 // =============================================================
@@ -558,13 +364,7 @@ async function downloadCsv(cowId) {
     // Use the specialized CSV downloader
     await downloadToDiskCSV(drive, file, outPath);
 
-    return {
-    id: file.id,
-    name: file.name,
-    localPath: outPath,
-    success: true,
-    message: "CSV individual descargado correctamente."
-    };
+    return { id: file.id, name: file.name, localPath: outPath };
 }
 
 
@@ -620,13 +420,7 @@ async function downloadPatadas() {
     // Use the corrected downloadToDisk function (which is now downloadToDiskCSV for consistency)
     await downloadToDiskCSV(drive, file, outPath);
 
-    return {
-    id: file.id,
-    name: file.name,
-    localPath: outPath,
-    success: true,
-    message: "Archivo de ordeño (patadas) descargado exitosamente."
-    };
+    return { id: file.id, name: file.name, localPath: outPath };
 }
 
 
@@ -647,9 +441,6 @@ async function getCowDELBundle(cowId) {
         const csv = await downloadCsv(cowId);
         const patadas = await downloadPatadas();
 
-        if (!image.success) {
-            throw new Error(`No hay imagen disponible para la vaca ${cowId}.`);
-        }
         // 2. Compute the DEL using the downloaded files
         const { ID, DEL } = await computeDELFromFiles(
             cowId,
@@ -660,20 +451,13 @@ async function getCowDELBundle(cowId) {
 
         // 3. Return the results
         return {
-            success: true,
             cowId,
             ID,
             DEL,
             imagePath: image.localPath,
             csvPath: csv.localPath,
             patadasPath: patadas.localPath,
-            messages: [
-                image.message,
-                csv.message,
-                patadas.message
-            ]
         };
-
     } catch (err) {
         console.error("getCowDELBundle error:", err);
         throw err;
@@ -681,24 +465,9 @@ async function getCowDELBundle(cowId) {
 }
 
 
-
-// --- Modified/Implemented Functions ---
-
-/**
- * Reads the cow data file from the local path, parses it, and sorts it.
- * @param {string} filePath - The local path to the cow data CSV file.
- * @returns {Promise<CowDataRow[]>} An array of sorted cow data objects.
- */
-
-
-
 // Export the primary functions
 module.exports = {
     getDriveClient,
-    getImageDates,
-    getCowDELBundle,
     getFiles,
-    getIdImag,
-    downloadImage,
-    downloadCsv,
+    getCowDELBundle,
 };
