@@ -9,6 +9,12 @@
 </head>
 
 <body>
+    <%
+        // Evitar errores si cows NO viene del backend
+        const _cows = Array.isArray(cows) ? cows : [];
+    %>
+
+
     <%- include("components/modal") %>
     <%- include("components/background") %>
     <%- include("components/header") %>
@@ -19,7 +25,7 @@
         <select id="cowSelector" class="cow-dropdown">
             <option>Selecciona el ID de la vaca</option>
 
-            <% cows.forEach(cow => { %>
+            <% _cows.forEach(cow => { %>
                 <option value="<%= cow.IDCow %>"><%= cow.IDCow %></option>
             <% }) %>
         </select>

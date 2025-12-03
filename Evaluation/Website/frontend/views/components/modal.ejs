@@ -1,13 +1,15 @@
 <%
+    const _cows = Array.isArray(cows) ? cows : [];
+
     const _showError = typeof showError === "boolean" ? showError : false;
     const _showSuccess = typeof showSuccess === "boolean" ? showSuccess : false;
-    const _errorMessage = typeof errorMessage !== "undefined" ? errorMessage : "";
-    const _successMessage = typeof successMessage !== "undefined" ? successMessage : "";
-    const _errorDetail = typeof errorDetail !== "undefined" ? errorDetail : "";
-    const _errorAction = (typeof errorAction !== "undefined" && errorAction) 
-                         ? errorAction 
-                         : { label: "Aceptar", url: "" };
+    const _errorMessage = errorMessage || "";
+    const _successMessage = successMessage || "";
+    const _errorDetail = errorDetail || "";
+
+    const _errorAction = errorAction || { label: "Aceptar", url: "" };
 %>
+
 
 <link rel="stylesheet" href="/css/modal.css" />
 
@@ -63,7 +65,7 @@
 <% } %>
 
 <script>
-// 🔥 Esta función solo se usa en errores (botón)
+// 🔥 Esta función solo se ausa en errores (botón)
 function handleModalAction(url) {
     const modal = document.getElementById("app-modal");
     modal.classList.remove("active");

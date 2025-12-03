@@ -6,10 +6,13 @@ exports.getCowData = async (req, res) => {
     try {
 
         return showSuccessModal(res, "cows", {
-            successMessage: "La prueba del modal de éxito funciona correctamente.",
+            successMessage: "Datos cargados correctamente desde Drive.",
+            redirectUrl: "/",
             actionLabel: "Continuar",
-            redirectUrl: "/"
+            cows,
+            filesFound: cowFiles.length
         });
+
         
 
         let files;
