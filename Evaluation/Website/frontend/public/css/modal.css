@@ -12,7 +12,7 @@
 }
 
 .modal.active {
-    opacity: 10;
+    opacity: 1;
     pointer-events: auto;
 }
 

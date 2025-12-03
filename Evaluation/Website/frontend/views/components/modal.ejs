@@ -8,67 +8,71 @@
                          ? errorAction 
                          : { label: "Aceptar", url: "" };
 %>
+
 <link rel="stylesheet" href="/css/modal.css" />
 
 <% if (_showError || _showSuccess) { %>
 
 <div id="app-modal" class="modal active">
-
     <div class="modal-content">
 
+        <!-- ICONO -->
         <img 
-            src="/images/<%= _showError ? 'cowSad.png' : _showSuccess ? 'cowHappy.png' : '' %>"
+            src="/images/<%= _showError ? 'cowSad.png' : 'cowHappy.png' %>"
             class="modal-icon"
             alt="Cow icon"
         >
 
+        <!-- TITULO -->
         <h2 class="modal-title">
-            <% if (_showError) { %>
-                Muu...
-            <% } else if (_showSuccess) { %>
-                ¡Muu!
-            <% } %>
+            <%= _showError ? "Muu..." : "¡Muu!" %>
         </h2>
 
+        <!-- SUBTITULO (tipo de error) -->
         <% if (_showError) { %>
-            <button class="modal-btn"
-                    onclick="handleModalAction('<%= _errorAction.url %>')">
-                <%= _errorAction.label %>
-            </button>
+            <h3 class="modal-subtitle">
+                <%= errorType || "Error desconocido" %>
+            </h3>
         <% } %>
 
-        
-
+        <!-- MENSAJE -->
         <p class="modal-message">
             <%= _errorMessage || _successMessage %>
         </p>
 
+        <!-- DETALLES OPCIONALES -->
         <% if (_errorDetail) { %>
             <p class="modal-detail">
                 <strong>Detalles:</strong><br>
                 <%= _errorDetail %>
             </p>
         <% } %>
+
+        <!-- BOTON SIEMPRE ABAJO -->
+        <button class="modal-btn"
+            onclick="handleModalAction('<%= _errorAction.url %>')">
+            <%= _errorAction.label %>
+        </button>
+
     </div>
 </div>
+
 <% } %>
 
 <script>
 function handleModalAction(url) {
-    document.getElementById("app-modal").classList.remove("active");
-    if (url) window.location.href = url;
-}
-</script>
 
-<script>
-function handleModalAction(url) {
-    document.getElementById("app-modal").classList.remove("active");
-    if (url) window.location.href = url;
-}
+    const modal = document.getElementById("app-modal");
 
-<% if (_showSuccess) { %>
+    // Ocultar modal visualmente
+    modal.classList.remove("active");
+
+    // Esperar transición antes de redirigir
     setTimeout(() => {
-        handleModalAction('<%= successAction?.url || "/" %>');
-    }, 1200);
-<% } %>
+        if (url && url.trim() !== "") {
+            window.location.href = url;
+        }
+    }, 200);
+}
+
 </script>
