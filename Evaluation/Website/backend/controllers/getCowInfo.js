@@ -2,22 +2,23 @@ const driveService = require("../models/driveServices.js");
 const { generateCowGraph } = require("../utils/graphService");
 const path = require("path");
 const onnxPredictModel = require("../utils/onnxPredictModel.js");
-const { showErrorModal } = require("../utils/modalHelper");
+const { showErrorModal, showSuccessModal} = require("../utils/modalHelper");
 
 exports.getCowInfo = async (req, res) => {
     const cowId = req.params.cowId;
     try {
         const data = await driveService.getCowDELBundle(cowId);
-        
-        if (!data) {
+
+        if (!data || data.success !== true) {
             return showErrorModal(res, "cows", {
-                errorType: "ID no encontrado",
-                errorMessage: `La vaca ${cowId} no existe.`,
-                errorDetail: "Drive no devolvió ningún archivo asociado a ese ID.",
-                redirectUrl: "/",
-                actionLabel: "Volver a intentar"
+                errorType: "error_drive",
+                errorMessage: `No se pudieron cargar los datos de la vaca ${cowId}.`,
+                errorDetail: "Faltan archivos o hubo un fallo en Drive.",
+                redirectUrl: "/cows",
+                actionLabel: "Volver"
             });
         }
+
 
         if (!data.imagePath) {
             return showErrorModal(res, "cows", {
@@ -44,28 +45,32 @@ exports.getCowInfo = async (req, res) => {
 
         const estado = semaforo(BCS, data.DEL);
 
-        const cowData = {
-            img: data.imagePath,
-            ID: data.cowId,
-            DEL: data.DEL,
-            BCS: BCS,
-            Semaforo: estado
-        };
-
         let graphDataUri;
         try {
-            graphDataUri = await generateCowGraph(cowData);
+            graphDataUri = await generateCowGraph({
+                img: data.imagePath,
+                ID: data.cowId,
+                DEL: data.DEL,
+                BCS,
+                Semaforo: estado
+            });
         } catch (err) {
             return showErrorModal(res, "cows", {
-                errorType: "Fallo en la graficación",
+                errorType: "grafica_fallo",
                 errorMessage: "No fue posible generar la gráfica.",
                 errorDetail: err.message,
-                redirectUrl: "/",
-                actionLabel: "Volver al inicio"
+                redirectUrl: "/cows",
+                actionLabel: "Volver"
             });
         }
 
-        res.render("cowInfo", {
+        return showSuccessModal(res, "cowInfo", {
+            successMessage: "Datos del Drive cargados exitosamente.",
+            redirectUrl: `/cow/${cowId}/info`,
+            actionLabel: "Continuar"
+        });
+
+        return res.render("cowInfo", {
             cowID: data.cowId,
             bcs: BCS,
             diasLeche: data.DEL,
@@ -75,7 +80,6 @@ exports.getCowInfo = async (req, res) => {
             showError: false,
             showSuccess: false
         });
-
     } catch (err) {
         console.error("ERROR getCowInfo():", err);
         return showErrorModal(res, "cows", {

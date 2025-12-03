@@ -1,35 +1,41 @@
-exports.showErrorModal = function (res, view, {
-    errorType = "error",
-    errorMessage = "Ha ocurrido un error",
-    errorDetail = "",
-    redirectUrl = "/",
-    actionLabel = "Aceptar"
-} = {}) {
+exports.showErrorModal = function (res, view, data = {}) {
     return res.render(view, {
         showError: true,
         showSuccess: false,
-        errorType,
-        errorMessage,
-        errorDetail,
-        errorAction: {
-            label: actionLabel,
-            url: redirectUrl
-        }
+        errorType: data.errorType || "generic",
+        errorMessage: data.errorMessage || "Ocurrió un error.",
+        errorDetail: data.errorDetail || null,
+        errorAction: data.errorAction || null,
+
+        // 🔥 IMPORTANTÍSIMO: evitar crash en cows.ejs
+        cows: data.cows || [],
+        filesFound: data.filesFound || 0,
+
+        // Para que no reviente el modal si no hay success
+        successMessage: null,
+        successAction: null
     });
 };
 
-exports.showSuccessModal = function (res, view, {
-    successMessage = "Operación exitosa",
-    redirectUrl = "/",
-    actionLabel = "Continuar"
-} = {}) {
+exports.showSuccessModal = function (res, view, data = {}) {
     return res.render(view, {
         showError: false,
         showSuccess: true,
-        successMessage,
+
+        successMessage: data.successMessage || "Operación exitosa",
         successAction: {
-            label: actionLabel,
-            url: redirectUrl
-        }
+            label: data.actionLabel || "Continuar",
+            url: data.redirectUrl || "/"
+        },
+
+        // 🔥 IMPORTANTE — Estos deben pasarse SIEMPRE
+        cows: data.cows || [],
+        filesFound: data.filesFound || 0,
+
+        // Para evitar reventar la vista
+        errorType: null,
+        errorMessage: null,
+        errorDetail: null,
+        errorAction: null
     });
 };

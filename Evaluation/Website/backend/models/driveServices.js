@@ -6,6 +6,8 @@ const KEY_FILE = "credentials.json";
 const folderInfo = require("../../folder_info.json");
 const csv = require("csv-parser");
 const { get } = require("http");
+const { showSuccessModal, showErrorModal } = require("../utils/modalHelper");
+
 
 const FOLDER_ID = folderInfo.folder_id;
 // Define the path for downloaded files
@@ -497,8 +499,13 @@ async function downloadImage(cowId) {
     // 3. Rename
     fs.renameSync(outPath, newPath);
 
-    return { id: file.id, name: newName, localPath: newPath };
-
+    return { 
+        id: file.id, 
+        name: newName, 
+        localPath: newPath,
+        success: true,
+        message: "Imagen descargada correctamente."
+    };
 }
 
 
@@ -548,7 +555,13 @@ async function downloadCsv(cowId) {
     // Use the specialized CSV downloader
     await downloadToDiskCSV(drive, file, outPath);
 
-    return { id: file.id, name: file.name, localPath: outPath };
+    return {
+    id: file.id,
+    name: file.name,
+    localPath: outPath,
+    success: true,
+    message: "CSV individual descargado correctamente."
+    };
 }
 
 
@@ -604,7 +617,13 @@ async function downloadPatadas() {
     // Use the corrected downloadToDisk function (which is now downloadToDiskCSV for consistency)
     await downloadToDiskCSV(drive, file, outPath);
 
-    return { id: file.id, name: file.name, localPath: outPath };
+    return {
+    id: file.id,
+    name: file.name,
+    localPath: outPath,
+    success: true,
+    message: "Archivo de ordeño (patadas) descargado exitosamente."
+    };
 }
 
 
@@ -635,13 +654,20 @@ async function getCowDELBundle(cowId) {
 
         // 3. Return the results
         return {
+            success: true,
             cowId,
             ID,
             DEL,
             imagePath: image.localPath,
             csvPath: csv.localPath,
             patadasPath: patadas.localPath,
+            messages: [
+                image.message,
+                csv.message,
+                patadas.message
+            ]
         };
+
     } catch (err) {
         console.error("getCowDELBundle error:", err);
         throw err;

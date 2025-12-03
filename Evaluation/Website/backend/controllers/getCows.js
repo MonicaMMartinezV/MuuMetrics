@@ -1,10 +1,12 @@
 const driveService = require('../models/driveServices.js');
 const path = require('path');
-const { showErrorModal } = require("../utils/modalHelper");
+const { showErrorModal, showSuccessModal } = require("../utils/modalHelper");
 
 exports.getCowData = async (req, res) => {
     try {
         let files;
+
+        // --- ERROR AL CARGAR DRIVE ---
         try {
             files = await driveService.getIdImag();
         } catch (err) {
@@ -17,16 +19,19 @@ exports.getCowData = async (req, res) => {
             });
         }
 
+        // --- NO HAY ARCHIVOS ---
         if (!files || files.length === 0) {
             return showErrorModal(res, "cows", {
                 errorType: "sin_archivos",
                 errorMessage: "No se encontraron imágenes de vacas en Google Drive.",
                 errorDetail: "La carpeta está vacía o los archivos no tienen formato válido.",
                 redirectUrl: "/",
-                actionLabel: "Actualizar"
+                actionLabel: "Actualizar",
+                cows: []
             });
         }
 
+        // --- FILTRAR SOLO IMÁGENES CON cowId ---
         const cowFiles = files.filter(f =>
             f.cowId &&
             /^[0-9]{4}$/.test(f.cowId) &&
@@ -39,47 +44,50 @@ exports.getCowData = async (req, res) => {
             return showErrorModal(res, "cows", {
                 errorType: "sin_ids_validos",
                 errorMessage: "No se encontraron IDs de vacas válidos.",
-                errorDetail: "Aunque existen imágenes, ninguna contiene un ID válido asociado.",
+                errorDetail: "Las imágenes no contienen IDs válidos asociados.",
                 redirectUrl: "/",
-                actionLabel: "Volver a intentar"
+                actionLabel: "Volver a intentar",
+                cows: []
             });
         }
-        
+
+        // --- EXTRAER IDS ÚNICOS ---
         const cowIds = [
-            ...new Set(
-                cowFiles
-                    .map(f => f.cowId)
-                    .filter(id => id !== null && id !== undefined)
-            )
+            ...new Set(cowFiles.map(f => f.cowId))
         ].sort();
 
         if (cowIds.length === 0) {
             return showErrorModal(res, "cows", {
                 errorType: "ids_nulos",
                 errorMessage: "Los archivos encontrados no tienen IDs válidos.",
-                errorDetail: "Es posible que el naming de las imágenes no siga el formato esperado.",
+                errorDetail: "El naming de las imágenes podría no seguir el formato esperado.",
                 redirectUrl: "/",
-                actionLabel: "Revisar Drive"
+                actionLabel: "Revisar Drive",
+                cows: []
             });
         }
 
         const cows = cowIds.map(id => ({ IDCow: id }));
 
-        return res.render("cows", {
-            cows,
-            filesFound: cowFiles.length,
-            showError: false,
-            showSuccess: false
+        // --- MODAL DE ÉXITO ---
+        return showSuccessModal(res, "cows", {
+            successMessage: "Datos cargados correctamente desde Drive.",
+            redirectUrl: "/",
+            actionLabel: "Continuar",
+            cows,                    // 🔥 NECESARIO PARA QUE NO TRUENE
+            filesFound: cowFiles.length
         });
 
     } catch (error) {
         console.error("Error inesperado en getCowData:", error);
+
         return showErrorModal(res, "cows", {
             errorType: "error_interno",
             errorMessage: "Hubo un error inesperado cargando las vacas.",
             errorDetail: error.message,
             redirectUrl: "/",
-            actionLabel: "Volver"
+            actionLabel: "Volver",
+            cows: []
         });
     }
 };
