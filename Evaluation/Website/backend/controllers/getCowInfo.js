@@ -2,23 +2,45 @@ const driveService = require("../models/driveServices.js");
 const { generateCowGraph } = require("../utils/graphService");
 const path = require("path");
 const onnxPredictModel = require("../utils/onnxPredictModel.js");
+const { showErrorModal } = require("../utils/modalHelper");
 
 exports.getCowInfo = async (req, res) => {
+    const cowId = req.params.cowId;
     try {
-        const cowId = req.params.cowId;
         const data = await driveService.getCowDELBundle(cowId);
+        
         if (!data) {
-            return res.render("cows", {
-                showError: true,
-                errorType: "id_no_encontrado",
-                errorMessage: `La vaca ${cowId} no fue encontrada.`,
-                errorDetail: "Drive no devolvió archivos asociados a este ID.",
-                errorAction: { label: "Volver", url: "/cows" }
+            return showErrorModal(res, "cows", {
+                errorType: "ID no encontrado",
+                errorMessage: `La vaca ${cowId} no existe.`,
+                errorDetail: "Drive no devolvió ningún archivo asociado a ese ID.",
+                redirectUrl: "/",
+                actionLabel: "Volver a intentar"
             });
         }
 
+        if (!data.imagePath) {
+            return showErrorModal(res, "cows", {
+                errorType: "Imagen no encontrada",
+                errorMessage: `La imagen asociada a la vaca ${cowId} no existe en Drive.`,
+                errorDetail: "No se encontró ninguna imagen asociada a la vaca",
+                redirectUrl: "/",
+                actionLabel: "Regresar"
+            });
+        }
 
-        const BCS = await onnxPredictModel.predict(data.imagePath);
+        let BCS;
+        try {
+            BCS = await onnxPredictModel.predict(data.imagePath);
+        } catch (err) {
+            return showErrorModal(res, "cows", {
+                errorType: "Fallo en el modelo",
+                errorMessage: "El modelo no pudo procesar la imagen",
+                errorDetail: err.message,
+                redirectUrl: "/",
+                actionLabel: "Regresar"
+            });
+        }
 
         const estado = semaforo(BCS, data.DEL);
 
@@ -30,8 +52,18 @@ exports.getCowInfo = async (req, res) => {
             Semaforo: estado
         };
 
-        const graphDataUri = await generateCowGraph(cowData);
-        console.log("graphImg length:", graphDataUri.length);
+        let graphDataUri;
+        try {
+            graphDataUri = await generateCowGraph(cowData);
+        } catch (err) {
+            return showErrorModal(res, "cows", {
+                errorType: "Fallo en la graficación",
+                errorMessage: "No fue posible generar la gráfica.",
+                errorDetail: err.message,
+                redirectUrl: "/",
+                actionLabel: "Volver al inicio"
+            });
+        }
 
         res.render("cowInfo", {
             cowID: data.cowId,
@@ -45,16 +77,13 @@ exports.getCowInfo = async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
-        return res.render("cows", {
-            showError: true,
-            errorType: "-Error interno-",
-            errorMessage: "Ocurrió un error inesperado procesando la información de esta vaca",
+        console.error("ERROR getCowInfo():", err);
+        return showErrorModal(res, "cows", {
+            errorType: "Error interno",
+            errorMessage: "Ocurrió un error interno procesando la información.",
             errorDetail: err.message,
-            errorAction: {
-                label: "Volver al inicio",
-                url: "/"
-            }
+            redirectUrl: "/",
+            actionLabel: "Volver al inicio"
         });
     }
 };
