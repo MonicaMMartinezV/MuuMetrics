@@ -1,9 +1,7 @@
 const driveService = require("../models/driveServices.js");
 const { generateCowGraph } = require("../utils/graphService");
-const path = require("path");
 const onnxPredictModel = require("../utils/onnxPredictModel.js");
 const { showErrorModal, showSuccessModal} = require("../utils/modalHelper");
-const { error } = require("console");
 
 exports.getCowInfo = async (req, res) => {
     const cowId = req.params.cowId;
