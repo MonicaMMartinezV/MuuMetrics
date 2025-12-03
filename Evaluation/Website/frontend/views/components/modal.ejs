@@ -31,10 +31,12 @@
         </h2>
 
         <% if (_showError) { %>
-            <h3 class="modal-subtitle">
-                <%= errorType || "Error desconocido" %>
-            </h3>
+            <button class="modal-btn"
+                    onclick="handleModalAction('<%= _errorAction.url %>')">
+                <%= _errorAction.label %>
+            </button>
         <% } %>
+
         
 
         <p class="modal-message">
@@ -47,12 +49,6 @@
                 <%= _errorDetail %>
             </p>
         <% } %>
-
-        <button class="modal-btn"
-                onclick="handleModalAction('<%= _errorAction.url %>')">
-            <%= _errorAction.label %>
-        </button>
-
     </div>
 </div>
 <% } %>
@@ -62,4 +58,17 @@ function handleModalAction(url) {
     document.getElementById("app-modal").classList.remove("active");
     if (url) window.location.href = url;
 }
+</script>
+
+<script>
+function handleModalAction(url) {
+    document.getElementById("app-modal").classList.remove("active");
+    if (url) window.location.href = url;
+}
+
+<% if (_showSuccess) { %>
+    setTimeout(() => {
+        handleModalAction('<%= successAction?.url || "/" %>');
+    }, 1200);
+<% } %>
 </script>

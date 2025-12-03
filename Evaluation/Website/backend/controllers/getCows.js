@@ -69,14 +69,13 @@ exports.getCowData = async (req, res) => {
 
         const cows = cowIds.map(id => ({ IDCow: id }));
 
-        // --- MODAL DE ÉXITO ---
-        return showSuccessModal(res, "cows", {
-            successMessage: "Datos cargados correctamente desde Drive.",
-            redirectUrl: "/",
-            actionLabel: "Continuar",
-            cows,                    // 🔥 NECESARIO PARA QUE NO TRUENE
-            filesFound: cowFiles.length
+        return res.render("cows", {
+            cows,
+            filesFound: cowFiles.length,
+            showError: false,
+            showSuccess: false
         });
+
 
     } catch (error) {
         console.error("Error inesperado en getCowData:", error);
