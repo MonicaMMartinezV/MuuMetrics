@@ -2,7 +2,6 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Seleccionar vaca</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/base.css">
     <link rel="stylesheet" href="/css/layout.css">
@@ -18,7 +17,7 @@
         <h2 class="select-title">Selecciona una vaca</h2>
 
         <select id="cowSelector" class="cow-dropdown">
-            <option value="">-- Selecciona el ID de la vaca --</option>
+            <option>Selecciona el ID de la vaca</option>
 
             <% cows.forEach(cow => { %>
                 <option value="<%= cow.IDCow %>"><%= cow.IDCow %></option>

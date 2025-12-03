@@ -24,7 +24,7 @@
 .title {
     display: flex;
     margin: 0;
-    padding: 20px;
+    padding: 20px 20px 0px 20px;
     align-items: center;
     color: white;
     font-size: 42px;
@@ -140,4 +140,18 @@
 .warning-text {
     text-align: left;
     max-width: 800px;
+}
+
+.title-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.subtitle {
+    margin-top: -5px;
+    font-size: 16px;
+    color: #ffffffcc;
+    letter-spacing: 1px;
+    font-weight: 300;
 }
