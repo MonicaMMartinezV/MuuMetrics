@@ -4,6 +4,14 @@ const { showErrorModal, showSuccessModal } = require("../utils/modalHelper");
 
 exports.getCowData = async (req, res) => {
     try {
+
+        return showSuccessModal(res, "cows", {
+            successMessage: "La prueba del modal de éxito funciona correctamente.",
+            actionLabel: "Continuar",
+            redirectUrl: "/"
+        });
+        
+
         let files;
 
         // --- ERROR AL CARGAR DRIVE ---

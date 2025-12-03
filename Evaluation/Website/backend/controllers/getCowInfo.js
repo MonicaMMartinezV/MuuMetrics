@@ -59,10 +59,16 @@ exports.getCowInfo = async (req, res) => {
                 errorType: "grafica_fallo",
                 errorMessage: "No fue posible generar la gráfica.",
                 errorDetail: err.message,
-                redirectUrl: "/",
+                redirectUrl: "/cows",
                 actionLabel: "Volver"
             });
         }
+
+        return showSuccessModal(res, "cowInfo", {
+            successMessage: "Datos del Drive cargados exitosamente.",
+            redirectUrl: `/cow/${cowId}/info`,
+            actionLabel: "Continuar"
+        });
 
         return res.render("cowInfo", {
             cowID: data.cowId,
@@ -74,7 +80,6 @@ exports.getCowInfo = async (req, res) => {
             showError: false,
             showSuccess: false
         });
-        
     } catch (err) {
         console.error("ERROR getCowInfo():", err);
         return showErrorModal(res, "cows", {

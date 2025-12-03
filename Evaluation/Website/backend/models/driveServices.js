@@ -441,72 +441,75 @@ function extractTimestampFromFilename(filename) {
  */
 async function downloadImage(cowId) {
     const drive = await getDriveClient();
-    
-    // --- 1. PREPARE PATHS AND CLEANUP ---
-    clearDownloadedImages(); // Attempt to clear all previous images
+
+    clearDownloadedImages();
     const shortId = String(cowId).slice(0, 4);
 
-    // Find img folder
+    // Buscar carpeta img
     const folderSearch = await drive.files.list({
         q: `'${FOLDER_ID}' in parents and mimeType='application/vnd.google-apps.folder' and name='img' and trashed=false`,
-        fields: "files(id, name)",
+        fields: "files(id, name)"
     });
 
-    if (!folderSearch.data.files.length)
-        throw new Error("Folder 'img' not found inside root folder.");
+    if (!folderSearch.data.files.length) {
+        console.warn("⚠ No 'img' folder found. Skipping image.");
+        return { success: false, cowId, localPath: null };
+    }
 
     const imgFolderId = folderSearch.data.files[0].id;
 
-    // Search image by FIRST 4 digits only
+    // Buscar imagen por ID corto
     const fileSearch = await drive.files.list({
-        q: `'${imgFolderId}' in parents and mimeType contains 'image/' and trashed = false and name contains '${shortId}'`,
-        fields: "files(id, name, mimeType)",
+        q: `'${imgFolderId}' in parents 
+            and mimeType contains 'image/' 
+            and trashed=false 
+            and name contains '${shortId}'`,
+        fields: "files(id, name, mimeType)"
     });
 
-    if (!fileSearch.data.files.length)
-        throw new Error(`Image starting with '${shortId}' not found inside /img folder.`);
+    // ⚠ Si no hay imagen → no explotar
+    if (!fileSearch.data.files.length) {
+        console.warn(`⚠ No image found for cowId ${cowId}. Skipping this cow.`);
+        return { success: false, cowId, localPath: null };
+    }
 
+    // Tenemos una imagen
     const file = fileSearch.data.files[0];
     const outPath = path.join(DOWNLOAD_DIR, "images", file.name);
-    
-    // Ensure the output directory exists
+
     fs.mkdirSync(path.dirname(outPath), { recursive: true });
 
-    // -----------------------------------------------------------------
-    // 🔥 NEW LOGIC: ABORT DOWNLOAD IF FILE STILL EXISTS AFTER CLEANUP
-    // -----------------------------------------------------------------
+    // Si ya está descargada
     if (fs.existsSync(outPath)) {
-        console.warn(`⚠️ Target image file ${file.name} still exists at ${outPath} after cleanup. Skipping download to avoid file lock crash.`);
-        
-        // Return the existing file's information
-        return { id: file.id, name: file.name, localPath: outPath };
+        return {
+            id: file.id,
+            name: file.name,
+            localPath: outPath,
+            success: true,
+            message: "Imagen existente reutilizada."
+        };
     }
-    // -----------------------------------------------------------------
 
-    console.log("Downloading image file:", file.name);
-
-    // Use the corrected downloadToDisk function
+    // Descargarla
     await downloadToDisk(drive, file, outPath);
 
-    // 1. Extract timestamp
+    // Renombrar por timestamp
     const imgDate = extractTimestampFromFilename(file.name);
-
-    // 2. Format new name
     const formatted = formatDateForName(imgDate);
     const newName = `${cowId}_${formatted}${path.extname(file.name)}`;
     const newPath = path.join(DOWNLOAD_DIR, "images", newName);
 
-    // 3. Rename
     fs.renameSync(outPath, newPath);
 
-    return { 
-        id: file.id, 
-        name: newName, 
+    return {
+        id: file.id,
+        name: newName,
         localPath: newPath,
         success: true,
         message: "Imagen descargada correctamente."
     };
 }
+
 
 
 // =============================================================
@@ -644,6 +647,9 @@ async function getCowDELBundle(cowId) {
         const csv = await downloadCsv(cowId);
         const patadas = await downloadPatadas();
 
+        if (!image.success) {
+            throw new Error(`No hay imagen disponible para la vaca ${cowId}.`);
+        }
         // 2. Compute the DEL using the downloaded files
         const { ID, DEL } = await computeDELFromFiles(
             cowId,

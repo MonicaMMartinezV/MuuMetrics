@@ -6,10 +6,12 @@
     align-items: center;
     justify-content: center;
     pointer-events: none;
-    transition: 0.3s ease-in-out;
+    opacity: 0;              /* 🔥🔥🔥 ESTA LÍNEA ES LA SOLUCIÓN 🔥🔥🔥 */
+    transition: opacity .3s ease;
     z-index: 9000;
     padding: 20px;
 }
+
 
 .modal.active {
     opacity: 1;

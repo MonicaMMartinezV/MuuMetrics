@@ -48,11 +48,14 @@
             </p>
         <% } %>
 
-        <!-- BOTON SIEMPRE ABAJO -->
+        <!-- BOTON SOLO SI ES ERROR -->
+        <% if (_showError) { %>
         <button class="modal-btn"
             onclick="handleModalAction('<%= _errorAction.url %>')">
             <%= _errorAction.label %>
         </button>
+        <% } %>
+
 
     </div>
 </div>
@@ -60,14 +63,11 @@
 <% } %>
 
 <script>
+// 🔥 Esta función solo se usa en errores (botón)
 function handleModalAction(url) {
-
     const modal = document.getElementById("app-modal");
-
-    // Ocultar modal visualmente
     modal.classList.remove("active");
 
-    // Esperar transición antes de redirigir
     setTimeout(() => {
         if (url && url.trim() !== "") {
             window.location.href = url;
@@ -75,4 +75,26 @@ function handleModalAction(url) {
     }, 200);
 }
 
+// 🔥 AUTO CLOSE SI ES SUCCESS
+document.addEventListener("DOMContentLoaded", function() {
+
+    <% if (_showSuccess) { %>
+        console.log("Auto close SUCCESS activado");
+        
+        const modal = document.getElementById("app-modal");
+
+        if (!modal) {
+            console.log("No hay modal en DOM");
+            return;
+        }
+
+        // 🔥 Forzar cierre después de 1 segundo
+        setTimeout(() => {
+            console.log("Cerrando modal…");
+            modal.classList.remove("active");
+        }, 1000);
+
+    <% } %>
+
+});
 </script>
