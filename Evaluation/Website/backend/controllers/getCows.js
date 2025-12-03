@@ -1,13 +1,8 @@
 const driveService = require('../models/driveServices.js');
 const path = require('path');
 
-
-/**
- * Handles the main request to find, download, and process cow data. (Route /cow-data)
- */
 exports.getCowData = async (req, res) => {
     try {
-        //const files = await driveService.readCowData();
         const files = await driveService.getIdImag();
 
         // Get all files whose filename begins with 4 digits and are images

@@ -7,12 +7,21 @@ exports.getCowInfo = async (req, res) => {
     try {
         const cowId = req.params.cowId;
         const data = await driveService.getCowDELBundle(cowId);
+        if (!data) {
+            return res.render("cows", {
+                showError: true,
+                errorType: "id_no_encontrado",
+                errorMessage: `La vaca ${cowId} no fue encontrada.`,
+                errorDetail: "Drive no devolvió archivos asociados a este ID.",
+                errorAction: { label: "Volver", url: "/cows" }
+            });
+        }
+
 
         const BCS = await onnxPredictModel.predict(data.imagePath);
 
         const estado = semaforo(BCS, data.DEL);
 
-        //  Construir objeto para el EXE (lo que antes hacía dataset.json)
         const cowData = {
             img: data.imagePath,
             ID: data.cowId,
@@ -21,7 +30,6 @@ exports.getCowInfo = async (req, res) => {
             Semaforo: estado
         };
 
-        //  Generate graph with the cowData object
         const graphDataUri = await generateCowGraph(cowData);
         console.log("graphImg length:", graphDataUri.length);
 
@@ -36,11 +44,18 @@ exports.getCowInfo = async (req, res) => {
 
     } catch (err) {
         console.error(err);
-        res.status(500).json({ error: "Failed to generate graph" });
+        return res.render("cows", {
+            showError: true,
+            errorType: "errorInterno",
+            errorMessage: "Ocurrió un error inesperado procesando la información de esta vaca",
+            errorDetail: err.message,
+            errorAction: {
+                label: "Volver al inicio",
+                url: "/cows"
+            }
+        });
     }
 };
-
-
 
 function discretizeValue(x) {
     return Math.round(x * 100) / 100;   

@@ -1,0 +1,46 @@
+<link rel="stylesheet" href="/css/modal.css" />
+
+<div id="app-modal" class="modal <%= (showError === true || showSuccess === true) ? 'active' : '' %>">
+    <div class="modal-content">
+
+        <img 
+            src="/images/<%= showError ? 'cowSad.png' : 'cowHappy.png' %>"
+            class="modal-icon"
+            alt="Cow icon"
+        >
+
+        <h2 class="modal-title">
+            <% if (showError) { %>
+                Error: <%= errorType ? errorType.replace(/_/g, " ") : "Ocurrió un problema" %>
+            <% } else { %>
+                ¡Operación exitosa!
+            <% } %>
+        </h2>
+
+        <p class="modal-message">
+            <%= errorMessage || successMessage || "" %>
+        </p>
+
+        <% if (errorDetail) { %>
+            <p class="modal-detail">
+                <strong>Detalles técnicos:</strong><br>
+                <%= errorDetail %>
+            </p>
+        <% } %>
+
+        <button 
+            class="modal-btn"
+            onclick="handleModalAction('<%= errorAction?.url || '' %>')"
+        >
+            <%= errorAction?.label || "Aceptar" %>
+        </button>
+
+    </div>
+</div>
+
+<script>
+function handleModalAction(url) {
+    document.getElementById("app-modal").classList.remove("active");
+    if (url) window.location.href = url;
+}
+</script>
