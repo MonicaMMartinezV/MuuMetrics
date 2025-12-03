@@ -1,42 +1,61 @@
+<%
+    const _showError = typeof showError === "boolean" ? showError : false;
+    const _showSuccess = typeof showSuccess === "boolean" ? showSuccess : false;
+    const _errorMessage = typeof errorMessage !== "undefined" ? errorMessage : "";
+    const _successMessage = typeof successMessage !== "undefined" ? successMessage : "";
+    const _errorDetail = typeof errorDetail !== "undefined" ? errorDetail : "";
+    const _errorAction = (typeof errorAction !== "undefined" && errorAction) 
+                         ? errorAction 
+                         : { label: "Aceptar", url: "" };
+%>
 <link rel="stylesheet" href="/css/modal.css" />
 
-<div id="app-modal" class="modal <%= (showError === true || showSuccess === true) ? 'active' : '' %>">
+<% if (_showError || _showSuccess) { %>
+
+<div id="app-modal" class="modal active">
+
     <div class="modal-content">
 
         <img 
-            src="/images/<%= showError ? 'cowSad.png' : 'cowHappy.png' %>"
+            src="/images/<%= _showError ? 'cowSad.png' : _showSuccess ? 'cowHappy.png' : '' %>"
             class="modal-icon"
             alt="Cow icon"
         >
 
         <h2 class="modal-title">
-            <% if (showError) { %>
-                Error: <%= errorType ? errorType.replace(/_/g, " ") : "Ocurrió un problema" %>
-            <% } else { %>
-                ¡Operación exitosa!
+            <% if (_showError) { %>
+                Muu...
+            <% } else if (_showSuccess) { %>
+                ¡Muu!
             <% } %>
         </h2>
 
+        <% if (_showError) { %>
+            <h3 class="modal-subtitle">
+                <%= errorType || "Error desconocido" %>
+            </h3>
+        <% } %>
+        
+
         <p class="modal-message">
-            <%= errorMessage || successMessage || "" %>
+            <%= _errorMessage || _successMessage %>
         </p>
 
-        <% if (errorDetail) { %>
+        <% if (_errorDetail) { %>
             <p class="modal-detail">
-                <strong>Detalles técnicos:</strong><br>
-                <%= errorDetail %>
+                <strong>Detalles:</strong><br>
+                <%= _errorDetail %>
             </p>
         <% } %>
 
-        <button 
-            class="modal-btn"
-            onclick="handleModalAction('<%= errorAction?.url || '' %>')"
-        >
-            <%= errorAction?.label || "Aceptar" %>
+        <button class="modal-btn"
+                onclick="handleModalAction('<%= _errorAction.url %>')">
+            <%= _errorAction.label %>
         </button>
 
     </div>
 </div>
+<% } %>
 
 <script>
 function handleModalAction(url) {

@@ -39,19 +39,21 @@ exports.getCowInfo = async (req, res) => {
             diasLeche: data.DEL,
             estado,
             status: estado.toLowerCase(),
-            graphImg: graphDataUri
+            graphImg: graphDataUri,
+            showError: false,
+            showSuccess: false
         });
 
     } catch (err) {
         console.error(err);
         return res.render("cows", {
             showError: true,
-            errorType: "errorInterno",
+            errorType: "-Error interno-",
             errorMessage: "Ocurrió un error inesperado procesando la información de esta vaca",
             errorDetail: err.message,
             errorAction: {
                 label: "Volver al inicio",
-                url: "/cows"
+                url: "/"
             }
         });
     }

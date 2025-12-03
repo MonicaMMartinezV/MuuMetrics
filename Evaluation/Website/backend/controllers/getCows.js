@@ -31,7 +31,9 @@ exports.getCowData = async (req, res) => {
 
         res.render("cows", {
             filesFound: cowFiles.length,
-            cows
+            cows,
+            showError: false,
+            showSuccess: false
         });
 
     } catch (error) {
