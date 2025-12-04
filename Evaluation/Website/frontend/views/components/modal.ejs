@@ -1,0 +1,99 @@
+<%
+    const _showError = typeof showError === "boolean" ? showError : false;
+    const _showSuccess = typeof showSuccess === "boolean" ? showSuccess : false;
+    const _errorMessage = errorMessage || "";
+    const _successMessage = successMessage || "";
+    const _errorDetail = errorDetail || "";
+    const _errorAction = errorAction || { label: "Aceptar", url: "" };
+%>
+
+
+<link rel="stylesheet" href="/css/modal.css" />
+
+<% if (_showError || _showSuccess) { %>
+
+<div id="app-modal" class="modal active">
+    <div class="modal-content">
+
+        <!-- ICONO -->
+        <img 
+            src="/images/<%= _showError ? 'cowSad.png' : 'cowHappy.png' %>"
+            class="modal-icon"
+            alt="Cow icon"
+        >
+
+        <!-- TITULO -->
+        <h2 class="modal-title">
+            <%= _showError ? "Muu..." : "¡Muu!" %>
+        </h2>
+
+        <!-- SUBTITULO (tipo de error) -->
+        <% if (_showError) { %>
+            <h3 class="modal-subtitle">
+                <%= errorType || "Error desconocido" %>
+            </h3>
+        <% } %>
+
+        <!-- MENSAJE -->
+        <p class="modal-message">
+            <%= _errorMessage || _successMessage %>
+        </p>
+
+        <!-- DETALLES OPCIONALES -->
+        <% if (_errorDetail) { %>
+            <p class="modal-detail">
+                <strong>Detalles:</strong><br>
+                <%= _errorDetail %>
+            </p>
+        <% } %>
+
+        <!-- BOTON SOLO SI ES ERROR -->
+        <% if (_showError) { %>
+        <button class="modal-btn"
+            onclick="handleModalAction('<%= _errorAction.url %>')">
+            <%= _errorAction.label %>
+        </button>
+        <% } %>
+
+
+    </div>
+</div>
+
+<% } %>
+
+<script>
+// 🔥 Esta función solo se ausa en errores (botón)
+function handleModalAction(url) {
+    const modal = document.getElementById("app-modal");
+    modal.classList.remove("active");
+
+    setTimeout(() => {
+        if (url && url.trim() !== "") {
+            window.location.href = url;
+        }
+    }, 200);
+}
+
+// 🔥 AUTO CLOSE SI ES SUCCESS
+document.addEventListener("DOMContentLoaded", function() {
+
+    <% if (_showSuccess) { %>
+        console.log("Auto close SUCCESS activado");
+        
+        const modal = document.getElementById("app-modal");
+
+        if (!modal) {
+            console.log("No hay modal en DOM");
+            return;
+        }
+
+        // 🔥 Forzar cierre después de 1 segundo
+        setTimeout(() => {
+            console.log("Cerrando modal…");
+            modal.classList.remove("active");
+        }, 1000);
+
+    <% } %>
+
+});
+</script>
