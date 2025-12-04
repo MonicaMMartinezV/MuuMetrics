@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <title>MuuMetrics</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="/images/mWhite.ico"/>
+    <link rel="stylesheet" href="/css/base.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/cowInfo.css" />
+</head>
+
+<body>
+    <%- include("components/modal") %>
+    <%- include("components/background") %>
+    <%- include("components/header") %>
+
+    <main class="content">
+        <div class="panel-container">
+            <section class="back-panel">
+                <a href="/" class="back-button">
+                    <img src="/images/backIcon.png" alt="Regresar" class="back-icon">
+                </a>
+            </section>
+            
+            <section class="left-panel">
+                <h2 class="cow-id"><%= cowID %></h2>
+                    <table class="info-table">
+                        <tr>
+                            <td class="label">Índice de condición corporal</td>
+                            <td class="value"><%= bcs %></td>
+                        </tr>
+                        <tr>
+                            <td class="label">Días en leche</td>
+                            <td class="value"><%= diasLeche %></td>
+                        </tr>
+                    </table>
+                <div class="mini-graph">
+                    <div id="graph-loader" class="graph-skeleton"></div>
+                    <img 
+                        id="graph-img"
+                        src=""
+                        class="graph-placeholder"
+                        style="display:none;"
+                        onload="showGraph()"
+                        
+                    >
+                </div>
+            </section>
+
+            <section class="health-meter">
+                <h2 class="health-title">Nivel de Riesgo</h2>
+
+                <div class="circles-container">
+                    <% console.log("Status:", status); %>
+                    <% if (status === "rojo") { %>
+                        <div class="circle-item">
+                            <img src="/images/healthRed.png" class="health-circle" />
+                            <p>Potencialmente <br> enferma</p>
+                        </div>
+                    <% } %>
+                    
+                    <% if (status === "amarillo") { %>
+                        <div class="circle-item">
+                            <img src="/images/healthYellow.png" class="health-circle" />
+                            <p>Propensa a <br> enfermedades</p>
+                        </div>
+                    <% } %>
+                    
+                    <% if (status === "verde") { %>
+                        <div class="circle-item">
+                            <img src="/images/healthGreen.png" class="health-circle" />
+                            <p>Saludable</p>
+                        </div>
+                    <% } %>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <%- include("components/footer") %>
+
+    <script>
+    function showGraph() {
+        document.getElementById("graph-loader").style.display = "none";
+        const img = document.getElementById("graph-img");
+        img.style.display = "block";
+        img.style.opacity = "1";
+    }
+
+    
+
+    window.addEventListener("DOMContentLoaded", () => {
+    const img = document.getElementById("graph-img");
+    img.src = "<%= graphImg %>";  // do NOT add ?t=
+    });
+    </script>
+
+</body>
+</html>

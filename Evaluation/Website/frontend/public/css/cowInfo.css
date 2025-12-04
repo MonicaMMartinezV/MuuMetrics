@@ -1,0 +1,129 @@
+.content {
+    padding: 20px 40px 40px 40px;
+}
+
+.panel-container {
+    display: flex;
+    grid-template-columns: 1fr 1fr 1fr; 
+    align-items: start;
+}
+
+.back-panel {
+    margin-top: 50px;
+}
+
+.back-button { 
+    color: #0d1b2a; 
+    cursor: pointer; 
+    width: fit-content; 
+}
+
+.back-button:hover {
+    opacity: 0.8;
+}
+
+.back-icon {
+    width: 60px;
+}
+
+.left-panel {
+    width: 50%;
+    padding: 40px 40px 40px 0px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.cow-id {
+    font-size: 60px;
+    color: #0d1b2a;
+    margin-bottom: 10px;
+    margin-top: 0px;
+}
+
+.info-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.info-table td {
+    padding: 0px 15px 10px 0px;
+}
+
+.info-table .label {
+    font-size: 22px;
+    color: #333;
+    font-weight: 400;
+}
+
+.info-table .value {
+    font-size: 22px;
+    font-weight: 600;
+}
+
+.mini-graph {
+    width: 100%;
+    max-width: 450px; /* 🔥 tamaño máximo recomendado */
+    position: relative;
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.graph-skeleton {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #ececec 0%, #f7f7f7 50%, #ececec 100%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.2s infinite;
+    margin-top: 0px;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+.graph-placeholder {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    margin-top: 0px;
+    border-radius: 12px;
+    transition: opacity 0.4s ease-in-out;
+    object-fit: contain;
+    display: block;
+}
+
+.health-meter {
+    width: 50%;
+    padding: 40px 0px 40px 0px;
+    text-align: center;
+}
+
+.health-meter h2 {
+    font-size: 45px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+
+.circles-container {
+    display: flex;
+    justify-content: space-around;
+}
+
+.circle-item {
+    text-align: center;
+}
+
+.health-circle {
+    width: 150px;
+}
+
+.circle-item p {
+    font-size: 15px;
+    margin-top: 12px;
+}
