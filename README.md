@@ -23,53 +23,85 @@ Categorizar las vacas con base en el Body Condition Score (BCS) mediante anális
 ---
 # Documentación del proyecto por fases – CRISP DM
 
-## 1. Business Understanding
+## 1. Entendimiento del negocio
 
 Comprensión del problema, valor, métricas y alcance del sistema.
 
-* [Costos y beneficios de la propuesta](https://docs.google.com/document/d/1axHWBpxGsrn9QVdPUJeygye9eDbLdAcZ7ko9TrVk25Q/edit?usp=drive_link)
+* [Costos y beneficios de la propuesta](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Business%20understanding/Documents/Costos%20y%20beneficios%20de%20la%20propuesta.pdf)
 
-* [Memorandum of Understanding](https://docs.google.com/document/d/1tYcf_IZtEkEOe9UCz-_T2OchvPhVjKgmgM2hHVNGLng/edit?usp=drive_link)
+* [Memorandum of Understanding](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Business%20understanding/Documents/Memor%C3%A1ndum%20de%20entendimiento.pdf)
 
-* [One Page](https://docs.google.com/document/d/14SVaxU6H1D9KXOrdEGhBX7wAiB8Rpp0HaM8QdhwLCMM/edit?usp=drive_link)
+* [One Page](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Business%20understanding/Documents/One%20Page.pdf)
 
-* [Plan de proyecto](https://docs.google.com/document/d/1GDUuPcwiWfw8lML1qjwhfHZnJxiaok3kdK2LeJ2aGeU/edit?usp=drive_link)
+* [Plan de proyecto](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Business%20understanding/Documents/Plan%20de%20proyecto.pdf)
 
-* [Requisitos, supuestos y restricciones](https://docs.google.com/document/d/1Ntk5xScPihZ8uVgNhvC22ws1OZoXs8glfD6ZlE7sbc0/edit?usp=drive_link)
+* [Requisitos, supuestos y restricciones](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Business%20understanding/Documents/Requisitos%2C%20supuestos%20y%20restricciones.pdf)
 
-* [Riesgos y Contingencias](https://docs.google.com/spreadsheets/d/1EoaOeYx3wXS2SlOxsyF6TGpr9R5Bg61pAWiOXN_AG3s/edit?usp=drive_link)
+* [Riesgos y Contingencias](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Business%20understanding/Documents/Riesgos%20y%20Contingencias.xlsx)
 
-* [Terminología](https://docs.google.com/document/d/1neou0geSbUkJyFNGNxVD9ZDgjk0CXehBwzSbDcNRqlo/edit?usp=drive_link)
+* [Terminología](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Business%20understanding/Documents/Terminolog%C3%ADa.pdf)
 
 ---
 
-## **2. Data Understanding**
+## **2. Entendimiento de datos**
 
 Exploración inicial, calidad, estructura, fuentes y análisis preliminar.
 
-* [Reporte inicial de descripción, calidad y exploración de datos](https://docs.google.com/document/d/1WhQmHc2qq-8_rN0itn5pkU3iVGKg_o5az70WhDmiizo/edit?usp=drive_link)
+* [Reporte inicial de descripción, calidad y exploración de datos](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Data%20understanding/Documents/Reporte%20inicial%20de%20descripci%C3%B3n%2C%20calidad%20y%20exploraci%C3%B3n%20de%20datos.pdf)
 
 ---
 
-## **3. Data Preparation**
+## **3. Preparación de datos**
 
 Limpieza, anonimización, normalización, construcción del dataset final y generación de inputs para los modelos.
 
-* [Reporte de preparación de datos](https://docs.google.com/document/d/1qIsYqbSzOVww6H6zMj_zZK4gRgvr10D3PGJZjH1DQJU/edit?usp=drive_link)
+* [Reporte de preparación de datos](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Data%20preparation/Documents/Reporte%20de%20preparaci%C3%B3n%20de%20datos.pdf)
 
-## **4. Modeling**
+## **4. Modelado**
 
 Generación de herramientas de modelado.
 
-* [Reporte de modelado](https://docs.google.com/document/d/1zcVGs0B-E2b9gopeleu4nHDKnNw2mz7b_IlUiWJcM_M/edit?usp=drive_link)
+* [Reporte de modelado](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Modeling/Documents/Reporte%20de%20modelado.pdf)
 
 ---
 
-## **5. Evaluation**
+## **5. Evaluación**
 
 Integración con DEL + reglas del negocio: semáforo de salud.
 
-* [Reporte de evaluación](https://docs.google.com/document/d/1zdos6Q2AgchOKDK-zVP-26Q-k1CCMgpIdLVJDA_MHdg/edit?usp=drive_link)
+* [Reporte de evaluación](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Evaluation/Documents/Reporte%20de%20evaluaci%C3%B3n.pdf)
+
+## **6. Despliegue**
+
+Despliegue de resultados
+
+* [Reporte final](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Deployment/Documentos/Reporte%20Final.pdf)
+
+* [Plan de entrega](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Deployment/Documentos/Plan%20de%20entrega.pdf)
+
+* [Plan de monitoreo y mantenimiento](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Deployment/Documentos/Plan%20de%20monitoreo%20y%20mantenimiento.pdf)
+
+* [Documentación de la experiencia](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Deployment/Documentos/Documentaci%C3%B3n%20de%20la%20Experiencia.pdf)
+
+* [Guía de despliegue](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Deployment/Documentos/Gu%C3%ADa%20de%20Despliegue.pdf)
+
+* [One Page para socio formador](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Deployment/Documentos/One%20Page%20para%20los%20Socio%20Formadores.pdf)
+
+---
+
+## **Privacidad y seguridad de datos**
+
+* [Log de seguridad de acceso MuuMetrics](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Data%20privacy%20and%20security/Log%20de%20Seguridad%20y%20Acceso%20MuuMetrics.pdf)
+
+* [Políticas de privacidad y seguridad de los datos MuuMetrics](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Data%20privacy%20and%20security/PrivacidadyseguridaddelosdatosMuuMetrics.pdf)
+
+* [Tablas de acceso](https://github.com/MonicaMMartinezV/MuuMetrics/blob/main/Data%20privacy%20and%20security/Tabla%20de%20Accesos.pdf)
+
+## Respaldos documentación
+
+* [Respaldo Notion](https://www.notion.so/Backups-Notion-2bf1c55762fc8092b12ef38bcdf84f92)
+
+* [Respaldo Drive](https://drive.google.com/drive/u/5/folders/1a3VMGGWeMT5UpOKqpeJ7kKPpBm-s-3J7)
 
 
 ## Prerequisitos
@@ -99,3 +131,31 @@ cd MuuMetrics
 | Bárbara Alcántara                     | A01799609     |
 
 ---
+
+## Correcciones realizadas
+
+### Módulo de Reto
+
+Se aplicó el enfoque iterativo de la metodolgía CRISP-DM. 
+
+Se documentó la adaptación de la metodología CRISP-DM. 
+
+Se hizo revisión de la ortografía y redacción de los documentos. 
+
+Se añadieron accesos directos a cada entregable por fase de la metodología en el README.md del repositorio del equipo. 
+
+Se corrigió la introducción del reporte de modelado, haciendo más explícito el propósito de cada modelo desarrolado. 
+
+Se añadieron accesos directos al documento de logs auditables, bitacora de cambios y tablas de acceso en el reporte grupal de privacidad de datos. 
+
+### Módulo de Cómputo en la nube
+
+Se añadió una sección resumiendo las observaciones del reporte. 
+
+Se agregaron imágenes que retratan el tratamiento de los datos. 
+
+Se agregaron referencias al contenido. 
+
+Se agregó justificación de las herramientas a utilizar en cada fase del proyecto. 
+
+Se añadió jsutificación al digrama de despliegue. 
