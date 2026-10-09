@@ -1,0 +1,33 @@
+# =============================================================
+# docker-compose para entrenar finalModel.py (ConvNeXt) con GPU.
+#
+# Uso:
+#   DATASET_DIR=/ruta/a/tu/dataset OUTPUT_DIR=/ruta/a/outputs \
+#     docker compose up --build
+#
+# DATASET_DIR debe tener la estructura:
+#   train/<label>/*.jpg   val/<label>/*.jpg   test/<label>/*.jpg
+# =============================================================
+services:
+  convnext-train:
+    build: .
+    image: muumetrics-convnext:latest
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ${DATASET_DIR:-./dataset}:/data
+      - ${OUTPUT_DIR:-./outputs}:/outputs
+    command:
+      - "--data_dir"
+      - "/data"
+      - "--output_dir"
+      - "/outputs"
+      - "--model"
+      - "convnext_base"
+      - "--epochs"
+      - "40"

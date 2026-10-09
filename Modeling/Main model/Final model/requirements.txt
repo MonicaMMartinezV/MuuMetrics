@@ -1,0 +1,7 @@
+# torch==2.9.1 y torchvision==0.24.1 se instalan por separado en el
+# Dockerfile (necesitan el índice de wheels CUDA de PyTorch).
+# Este archivo cubre el resto de dependencias de finalModel.py.
+timm==1.0.22
+numpy==2.2.6
+pillow==11.3.0
+scikit-learn==1.7.2

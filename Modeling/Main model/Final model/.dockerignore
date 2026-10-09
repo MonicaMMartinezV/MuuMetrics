@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.git/
+.gitignore
+outputs_ft/
+outputs/
+dataset/
+*.pth
+*.onnx
+*.onnx.data
+*.npz

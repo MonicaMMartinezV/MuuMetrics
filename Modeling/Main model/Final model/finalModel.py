@@ -393,31 +393,39 @@ def main(args):
             else:
                 p.requires_grad = False
 
-    best_val_mae = float("inf")
+    select_key = f"val_{args.select_by}"  # "val_mae" o "val_rmse", según --select_by
+    best_val_metric = float("inf")
     best_ckpt = None
-    history = {"train_mae": [], "val_mae": []}
+    history = {"train_mae": [], "val_mae": [], "train_rmse": [], "val_rmse": []}
 
     for epoch in range(1, args.epochs+1):
         t0 = time.time()
         train_loss, train_preds, train_trues = train_one_epoch(model, train_loader, optimizer, criterion, device, scaler, args.use_amp, scheduler, args)
         val_loss, val_preds, val_trues, val_paths = evaluate(model, val_loader, criterion, device, use_amp=args.use_amp)
-        train_mae = float(np.mean(np.abs(np.array(train_preds) - np.array(train_trues))))
-        val_mae = float(np.mean(np.abs(np.array(val_preds) - np.array(val_trues))))
+        train_preds_arr, train_trues_arr = np.array(train_preds), np.array(train_trues)
+        val_preds_arr, val_trues_arr = np.array(val_preds), np.array(val_trues)
+        train_mae = float(np.mean(np.abs(train_preds_arr - train_trues_arr)))
+        val_mae = float(np.mean(np.abs(val_preds_arr - val_trues_arr)))
+        train_rmse = float(np.sqrt(np.mean((train_preds_arr - train_trues_arr) ** 2)))
+        val_rmse = float(np.sqrt(np.mean((val_preds_arr - val_trues_arr) ** 2)))
         history["train_mae"].append(train_mae); history["val_mae"].append(val_mae)
+        history["train_rmse"].append(train_rmse); history["val_rmse"].append(val_rmse)
 
-        print(f"Epoch {epoch}/{args.epochs}  train_MAE={train_mae:.4f}  val_MAE={val_mae:.4f}  time={(time.time()-t0):.1f}s")
+        print(f"Epoch {epoch}/{args.epochs}  train_MAE={train_mae:.4f}  val_MAE={val_mae:.4f}  "
+              f"train_RMSE={train_rmse:.4f}  val_RMSE={val_rmse:.4f}  time={(time.time()-t0):.1f}s")
 
         if epoch == args.freeze_epochs + 1:
             print("[UNFREEZE] Unfreezing all parameters.")
             for p in model.parameters(): p.requires_grad = True
 
-        if val_mae < best_val_mae:
-            best_val_mae = val_mae
-            best_ckpt = Path(args.output_dir)/"best_checkpoint_by_val_mae.pth"
+        val_metric = val_mae if args.select_by == "mae" else val_rmse
+        if val_metric < best_val_metric:
+            best_val_metric = val_metric
+            best_ckpt = Path(args.output_dir)/f"best_checkpoint_by_{select_key}.pth"
             torch.save({"epoch": epoch, "model_state": model.state_dict(), "optimizer_state": optimizer.state_dict(), "label_map": label_map, "args": vars(args)}, str(best_ckpt))
             print("[SAVE] best checkpoint saved:", best_ckpt)
 
-        if epoch - (np.argmin(history["val_mae"]) + 1) >= args.early_stop_patience:
+        if epoch - (np.argmin(history[select_key]) + 1) >= args.early_stop_patience:
             print("Early stopping patience reached.")
             break
 
@@ -468,6 +476,8 @@ def parse_args():
     p.add_argument("--scheduler", type=str, choices=["onecycle", "cosine"], default="onecycle")
     p.add_argument("--weight_decay", type=float, default=1e-5)
     p.add_argument("--early_stop_patience", type=int, default=6)
+    p.add_argument("--select_by", type=str, choices=["mae", "rmse"], default="mae",
+                   help="Métrica de validación usada para elegir el mejor checkpoint y el early stopping.")
     p.add_argument("--grad_accum_steps", type=int, default=1)
     p.add_argument("--seed", type=int, default=42)
     return p.parse_args()
