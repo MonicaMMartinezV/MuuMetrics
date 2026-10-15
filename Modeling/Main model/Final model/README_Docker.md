@@ -70,3 +70,24 @@ por `python:3.11-slim`, instala `torch`/`torchvision` sin
 `--index-url` (build CPU-only) y quita el bloque `deploy.resources` del
 `docker-compose.yml` (o usa `docker run` sin `--gpus all`). El
 entrenamiento será considerablemente más lento.
+
+## Variante FiLM con días en leche (filmModel.py)
+
+`filmModel.py` condiciona el ConvNeXt con el DEL de `dataset_del.csv`
+mediante FiLM a la salida de los stages 1-3 (inicializado como
+identidad). Las imágenes y el BCS salen del CSV (buscando `ImgName` en
+`Dataset/Images/`) y el split train/val/test es **por vaca** (k-fold
+agrupado, guardado en `split.json`). `--no_film` entrena el baseline
+con el mismo split.
+
+```bash
+cd "Modeling/Main model/Final model"
+docker compose build convnext-film
+./run_film_cv.sh                       # 5 folds x {film, nofilm} + resumen
+FOLDS="0" ./run_film_cv.sh --epochs 20 # un fold, flags extra a filmModel.py
+```
+
+Resultados en `Dataset/outputs_film_cv/{film,nofilm}/fold<k>/` (mismos
+archivos que arriba + `split.json` y `test_metrics.json`; los `.npz`
+incluyen `del_days`). `make_paper_figures.py --run_dir` funciona sobre
+cualquier carpeta `fold<k>`.

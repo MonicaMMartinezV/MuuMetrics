@@ -31,3 +31,34 @@ services:
       - "convnext_base"
       - "--epochs"
       - "40"
+
+  # Variante con FiLM sobre días en leche (filmModel.py).
+  # Uso:
+  #   IMAGES_DIR=/ruta/Dataset/Images DEL_CSV=/ruta/dataset_del.csv \
+  #   OUTPUT_DIR=/ruta/outputs_film FOLD=0 docker compose run --rm convnext-film
+  # Para baseline (--no_film) o varios folds usa run_film_cv.sh.
+  convnext-film:
+    build: .
+    image: muumetrics-convnext:latest
+    shm_size: 2gb
+    entrypoint: ["python", "filmModel.py"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ${IMAGES_DIR:-../../../Dataset/Images}:/data/images:ro
+      - ${DEL_CSV:-../../../dataset_del.csv}:/data/dataset_del.csv:ro
+      - ${OUTPUT_DIR:-./outputs_film}:/outputs
+    command:
+      - "--csv"
+      - "/data/dataset_del.csv"
+      - "--images_dir"
+      - "/data/images"
+      - "--output_dir"
+      - "/outputs/fold${FOLD:-0}"
+      - "--fold"
+      - "${FOLD:-0}"

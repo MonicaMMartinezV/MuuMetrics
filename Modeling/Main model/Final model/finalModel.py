@@ -232,30 +232,30 @@ def train_one_epoch(
     model.train()
     running_loss = 0.0
     preds = []; trues = []
-    for imgs, labels, _ in loader:
+    optimizer.zero_grad()
+    for step, (imgs, labels, _) in enumerate(loader, start=1):
         imgs = imgs.to(device, non_blocking=True)
         labels = labels.to(device, non_blocking=True)
         if args.use_mixup:
             imgs, labels = mixup_regression(imgs, labels, alpha=args.mixup_alpha)
         if args.use_cutmix and (not args.use_mixup):
             imgs, labels = cutmix_regression(imgs, labels, alpha=args.cutmix_alpha)
-        optimizer.zero_grad()
         with torch.cuda.amp.autocast(enabled=use_amp):
             outputs = model(imgs)
             loss = criterion(outputs, labels)
             loss = loss / args.grad_accum_steps
         scaler.scale(loss).backward()
-        if (0+1) % args.grad_accum_steps == 0:
+        # Paso del optimizador cada grad_accum_steps batches (y en el último
+        # batch de la época, para no perder gradientes acumulados)
+        if step % args.grad_accum_steps == 0 or step == len(loader):
             scaler.unscale_(optimizer)
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()
-        if scheduler is not None:
-            try:
+            # OneCycleLR avanza por paso de optimizador; Cosine se avanza por época en main()
+            if args.scheduler == "onecycle":
                 scheduler.step()
-            except Exception:
-                pass
         running_loss += loss.item() * imgs.size(0) * args.grad_accum_steps
         preds.extend(outputs.detach().cpu().numpy().reshape(-1).tolist())
         trues.extend(labels.detach().cpu().numpy().reshape(-1).tolist())
@@ -376,7 +376,7 @@ def main(args):
     criterion = nn.SmoothL1Loss()
     optimizer = optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
-    steps_per_epoch = max(1, math.ceil(len(train_loader)))
+    steps_per_epoch = max(1, math.ceil(len(train_loader) / args.grad_accum_steps))
     total_steps = args.epochs * steps_per_epoch
     if args.scheduler == "onecycle":
         scheduler = optim.lr_scheduler.OneCycleLR(optimizer, max_lr=args.lr, total_steps=total_steps, pct_start=0.1)
@@ -401,6 +401,8 @@ def main(args):
     for epoch in range(1, args.epochs+1):
         t0 = time.time()
         train_loss, train_preds, train_trues = train_one_epoch(model, train_loader, optimizer, criterion, device, scaler, args.use_amp, scheduler, args)
+        if args.scheduler == "cosine":
+            scheduler.step()
         val_loss, val_preds, val_trues, val_paths = evaluate(model, val_loader, criterion, device, use_amp=args.use_amp)
         train_preds_arr, train_trues_arr = np.array(train_preds), np.array(train_trues)
         val_preds_arr, val_trues_arr = np.array(val_preds), np.array(val_trues)

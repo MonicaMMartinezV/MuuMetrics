@@ -40,7 +40,7 @@ RUN pip install --upgrade pip && \
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY finalModel.py .
+COPY finalModel.py filmModel.py ./
 
 # Punto de montaje esperado para el dataset (train/val/test) y
 # para los checkpoints/resultados generados
