@@ -11,6 +11,13 @@ import pandas as pd
 from calculoDELvacas.calculoDELvacas import completeDirectory
 from model                           import dfPredict
 from range                           import Semaforo
+import psutil
+# Get CPU percentage over 1 second
+cpu_usage = psutil.cpu_percent(interval=1)
+# Get RAM details
+ram = psutil.virtual_memory()
+print(f"CPU: {cpu_usage}%")
+print(f"RAM Used: {ram.percent}%")
 
 def predictDf(pathCows,pathPatadas,pathImages,checkpoint):
     """
