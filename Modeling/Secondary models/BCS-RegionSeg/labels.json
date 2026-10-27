@@ -1,0 +1,50 @@
+{
+ "2025-06-14-18-43-55_cam4_cap1_jpg.rf.XiBICtnV7QEF1MLO8rZX.json": {
+  "0": "hips",
+  "1": "rump",
+  "2": "loin",
+  "3": "thigh_L",
+  "4": "thigh_R",
+  "5": "tailhead"
+ },
+ "2025-06-19-10-46-17_cam4_cap1_jpg.rf.quPhYFDXcZFPjEkRDbZm.json": {
+  "0": "rump",
+  "1": "hips",
+  "2": "loin",
+  "3": "thigh_L",
+  "4": "thigh_R",
+  "5": "tailhead"
+ },
+ "2025-06-19-10-53-08_cam4_cap4_jpg.rf.a28K9AXey6BEEJe61OCx.json": {
+  "0": "rump",
+  "1": "tailhead",
+  "2": "hips",
+  "3": "loin",
+  "4": "thigh_L",
+  "5": "thigh_R"
+ },
+ "2025-06-23-08-43-52_cam0_cap3_jpg.rf.50nj448mGKIUCeASeSf6.json": {
+  "0": "hips",
+  "1": "rump",
+  "2": "loin",
+  "3": "thigh_L",
+  "4": "thigh_R",
+  "5": "tailhead"
+ },
+ "2025-06-25-06-17-03_cam4_cap3_jpg.rf.hIraxgIpVEhKRVxDGLFJ.json": {
+  "0": "hips",
+  "1": "rump",
+  "2": "loin",
+  "3": "thigh_L",
+  "4": "thigh_R",
+  "5": "tailhead"
+ },
+ "2025-06-26-06-23-44_cam0_cap2_jpg.rf.iJQ2CliP4e9Rv7arMHnq.json": {
+  "0": "tailhead",
+  "1": "rump",
+  "2": "hips",
+  "3": "loin",
+  "4": "thigh_L",
+  "5": "thigh_R"
+ }
+}
