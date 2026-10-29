@@ -1,4 +1,29 @@
+# Datos (fotos de vacas, registros del robot): no van al repo
 Dataset/
+GeneralidadesOrdeno/
 Final Dataset-20260926T005534Z-1-001.zip
+
+# Python
 __pycache__/
 *.pyc
+.ipynb_checkpoints/
+
+# Checkpoints y salidas de entrenamiento (cientos de MB)
+*.pth
+*.ckpt
+outputs_*/
+
+# LaTeX (archivos auxiliares de compilación)
+*.aux
+*.log
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.out
+*.toc
+
+# Editor / sistema / herramientas locales
+.vscode/
+.idea/
+.DS_Store
+.claude/settings.local.json

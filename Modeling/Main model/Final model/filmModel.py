@@ -70,7 +70,7 @@ def load_records(csv_path: str, images_dir: str, only_valid: bool,
         if p.is_file() and p.suffix.lower() in IMG_EXTS:
             if labels_from_folder and label_from_folder(p) is None:
                 continue
-            index.setdefault(p.stem, str(p))
+            index.setdefault(p.stem.split("__")[-1], str(p))  # "ByIDxx__<foto>" -> "<foto>"
 
     records, missing = [], []
     with open(csv_path, newline="") as f:
@@ -134,6 +134,44 @@ def load_records_by_id(ids_dir: str, labels_dir: str) -> List[Dict]:
         raise RuntimeError(f"No se encontró ninguna imagen con BCS en {ids_dir}.")
     return records
 
+MONTHS = {"ENERO": 1, "FEBRERO": 2, "MARZO": 3, "ABRIL": 4, "MAYO": 5, "JUNIO": 6, "JULIO": 7,
+          "AGOSTO": 8, "SEPTIEMBRE": 9, "OCTUBRE": 10, "NOVIEMBRE": 11, "DICIEMBRE": 12}
+
+def load_records_cow_bcs(cow_bcs_dir: str) -> List[Dict]:
+    """
+    Registros a partir de carpetas <vacaId>_<BCS>/img.jpg (p.ej. Dataset_Fr_BCS),
+    con vaca y BCS corregidos a mano en el nombre de la carpeta.
+    - "<id>_MAYO4.25_JUNIO4_JULIO3.5": BCS por mes, según la fecha
+      "...__AAAA-MM-..." del nombre de archivo.
+    - Carpetas que no se pueden leer (p.ej. dos vacas mezcladas,
+      "1552_Vaca1es2.5_Vaca2es4.75") se ignoran y se reportan.
+    - No hay DEL (del_days = 0): solo sirve con --no_film.
+    """
+    records, skipped = [], []
+    for cow_dir in sorted(d for d in Path(cow_bcs_dir).iterdir() if d.is_dir()):
+        cow, _, spec = cow_dir.name.partition("_")
+        imgs = sorted(p for p in cow_dir.iterdir() if p.is_file() and p.suffix.lower() in IMG_EXTS)
+        by_month = {}
+        for tok in spec.split("_"):
+            name = tok.rstrip("0123456789.")
+            if name.upper() in MONTHS:
+                by_month[MONTHS[name.upper()]] = float(tok[len(name):])
+        try:
+            fixed = None if by_month else float(spec)
+        except ValueError:
+            skipped.append(f"{cow_dir.name} ({len(imgs)} imgs)")
+            continue
+        for p in imgs:
+            bcs = fixed if fixed is not None else by_month.get(int(p.stem.split("__")[-1][5:7]))
+            if bcs is None:
+                skipped.append(f"{cow_dir.name}/{p.name} (mes sin BCS)")
+                continue
+            records.append({"path": str(p), "bcs": bcs, "del_days": 0.0, "vaca": cow})
+    print(f"[cow_bcs] {len(records)} imágenes, {len({r['vaca'] for r in records})} vacas | ignoradas: {skipped}")
+    if not records:
+        raise RuntimeError(f"No se encontró ninguna imagen en {cow_bcs_dir}.")
+    return records
+
 def group_kfold_split(records: List[Dict], n_folds: int, fold: int, seed: int):
     """
     Reparte las vacas en n_folds grupos balanceados por número de
@@ -160,6 +198,32 @@ def group_kfold_split(records: List[Dict], n_folds: int, fold: int, seed: int):
         "val": sorted(folds[val_f]),
         "test": sorted(folds[test_f]),
     }
+
+def holdout_split(records: List[Dict], ratios: List[float], by: str, seed: int) -> Dict[str, List[Dict]]:
+    """
+    Split único train/val/test con proporciones `ratios` (p.ej. 0.8,0.1,0.1).
+    by="img": reparte imágenes al azar (split clásico; la misma vaca puede
+    quedar en train y test). by="cow": reparte vacas, con las proporciones
+    medidas en imágenes.
+
+    Returns:
+        dict: {"train": [...], "val": [...], "test": [...]} con registros.
+    """
+    rng = np.random.RandomState(seed)
+    if by == "img":
+        idx = rng.permutation(len(records))
+        a, b = int(round(ratios[0] * len(idx))), int(round((ratios[0] + ratios[1]) * len(idx)))
+        return {"train": [records[i] for i in idx[:a]], "val": [records[i] for i in idx[a:b]],
+                "test": [records[i] for i in idx[b:]]}
+    cows = sorted({r["vaca"] for r in records})
+    rng.shuffle(cows)
+    out, total, acc = {"train": [], "val": [], "test": []}, len(records), 0
+    counts = {c: sum(r["vaca"] == c for r in records) for c in cows}
+    for c in cows:
+        k = "train" if acc < ratios[0] * total else "val" if acc < (ratios[0] + ratios[1]) * total else "test"
+        out[k] += [r for r in records if r["vaca"] == c]
+        acc += counts[c]
+    return out
 
 class DelRegressionDataset(Dataset):
     """
@@ -352,7 +416,12 @@ def main(args):
     film_stages = [] if args.no_film else [int(s) for s in args.film_stages.split(",") if s.strip()]
     print("FiLM stages:", film_stages or "ninguno (baseline sin DEL)")
 
-    if args.ids_dir:
+    if args.cow_bcs_dir:
+        if not args.no_film or args.target != "bcs":
+            raise ValueError("--cow_bcs_dir no trae DEL: úsalo con --no_film y --target bcs.")
+        records = load_records_cow_bcs(args.cow_bcs_dir)
+        print(f"Vacas y BCS: nombres de carpeta de {args.cow_bcs_dir}")
+    elif args.ids_dir:
         if not args.no_film or args.target != "bcs":
             raise ValueError("--ids_dir no trae DEL: úsalo con --no_film y --target bcs.")
         records = load_records_by_id(args.ids_dir, args.labels_dir)
@@ -360,15 +429,21 @@ def main(args):
     else:
         records = load_records(args.csv, args.images_dir, args.only_valid, args.labels_from_folder)
         print("Etiquetas BCS:", "carpetas de --images_dir" if args.labels_from_folder else "CSV")
-    split = group_kfold_split(records, args.n_folds, args.fold, args.split_seed)
-    if args.final:
-        # Modelo final: el grupo de test se suma a train; val solo para early stopping
-        split["train"], split["test"] = sorted(split["train"] + split["test"]), []
-        print("[final] Sin test: train = todas las vacas menos las de val.")
-    by_split = {k: [r for r in records if r["vaca"] in set(v)] for k, v in split.items()}
+    if args.holdout:
+        by_split = holdout_split(records, [float(x) for x in args.holdout.split(",")], args.holdout_by, args.split_seed)
+        split = {k: sorted({r["vaca"] for r in v}) for k, v in by_split.items()}
+        shared = len(set(split["test"]) & set(split["train"]))
+        print(f"[holdout {args.holdout} por {args.holdout_by}] vacas de test que también están en train: {shared}")
+    else:
+        split = group_kfold_split(records, args.n_folds, args.fold, args.split_seed)
+        if args.final:
+            # Modelo final: el grupo de test se suma a train; val solo para early stopping
+            split["train"], split["test"] = sorted(split["train"] + split["test"]), []
+            print("[final] Sin test: train = todas las vacas menos las de val.")
+        by_split = {k: [r for r in records if r["vaca"] in set(v)] for k, v in split.items()}
     with open(out_dir / "split.json", "w") as f:
-        json.dump({"fold": args.fold, "n_folds": args.n_folds, "vacas": split,
-                   "n_images": {k: len(v) for k, v in by_split.items()}}, f, indent=2)
+        json.dump({"fold": args.fold, "n_folds": args.n_folds, "holdout": args.holdout, "holdout_by": args.holdout_by,
+                   "vacas": split, "n_images": {k: len(v) for k, v in by_split.items()}}, f, indent=2)
     for k in ("train", "val", "test"):
         print(f"{k}: {len(by_split[k])} imágenes, {len(split[k])} vacas")
 
@@ -515,6 +590,9 @@ def parse_args():
                         "ignorando el CSV. Requiere --no_film.")
     p.add_argument("--labels_dir", type=str, default="Images",
                    help="Con --ids_dir: carpeta <BCS>/img.jpg de donde sale el BCS (por nombre de archivo).")
+    p.add_argument("--cow_bcs_dir", type=str, default=None,
+                   help="Carpeta <vacaId>_<BCS>/img.jpg (p.ej. Dataset/Dataset_Fr_BCS): vaca y BCS del nombre de "
+                        "la carpeta, ignorando el CSV. Requiere --no_film.")
     p.add_argument("--square_resize", action="store_true", default=False,
                    help="Reescalar la imagen completa a cuadrado (sin recorte central); para fotos sin recortar.")
     p.add_argument("--only_valid", action="store_true", default=False,
@@ -523,6 +601,10 @@ def parse_args():
     p.add_argument("--fold", type=int, default=0, help="Fold de test; val = fold+1.")
     p.add_argument("--final", action="store_true", default=False,
                    help="Modelo final: sin test, train = todas las vacas salvo el grupo de val (fold+1).")
+    p.add_argument("--holdout", type=str, default=None,
+                   help="Split único train,val,test (p.ej. 0.8,0.1,0.1) en vez del k-fold por vaca.")
+    p.add_argument("--holdout_by", type=str, choices=["img", "cow"], default="cow",
+                   help="Con --holdout: repartir imágenes al azar (img, split clásico) o vacas (cow).")
     p.add_argument("--split_seed", type=int, default=42,
                    help="Semilla del reparto de vacas en folds (independiente de --seed).")
     p.add_argument("--target", type=str, choices=["bcs", "del"], default="bcs",
