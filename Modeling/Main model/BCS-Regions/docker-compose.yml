@@ -1,0 +1,32 @@
+# =============================================================
+# docker-compose del modelo de BCS por regiones.
+#
+# Uso (desde esta carpeta):
+#   printf "UID=%s\nGID=%s\n" $(id -u) $(id -g) > .env    # una vez
+#   docker compose build
+#   docker compose run --rm bcs all          # masks + features + evaluate + train
+#   docker compose run --rm bcs evaluate
+#   docker compose run --rm bcs predict --input /data/Dataset_Fr_BCS/6003_2
+#
+# Rutas configurables (variables de entorno o .env):
+#   DATA_DIR     carpeta Dataset/ (debe contener Dataset_Fr_BCS/)
+#   WEIGHTS_DIR  carpeta con final_all40.pt
+#   WORK_DIR     caché y resultados
+# =============================================================
+services:
+  bcs:
+    build: .
+    image: muumetrics-bcs-regions:latest
+    user: "${UID:-1000}:${GID:-1000}"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - .:/app                                   # el código se monta: los cambios no requieren rebuild
+      - ${DATA_DIR:-../../../Dataset}:/data:ro
+      - ${WEIGHTS_DIR:-./weights}:/weights:ro
+      - ${WORK_DIR:-./work}:/work
