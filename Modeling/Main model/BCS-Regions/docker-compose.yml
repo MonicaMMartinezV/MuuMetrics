@@ -12,6 +12,7 @@
 #   DATA_DIR     carpeta Dataset/ (debe contener Dataset_Fr_BCS/)
 #   WEIGHTS_DIR  carpeta con final_all40.pt
 #   WORK_DIR     caché y resultados
+#   ORDENO_DIR   carpeta GeneralidadesOrdeno (frente DEL)
 # =============================================================
 services:
   bcs:
@@ -30,3 +31,4 @@ services:
       - ${DATA_DIR:-../../../Dataset}:/data:ro
       - ${WEIGHTS_DIR:-./weights}:/weights:ro
       - ${WORK_DIR:-./work}:/work
+      - ${ORDENO_DIR:-../../../GeneralidadesOrdeno}:/ordeno:ro   # solo para del/build_del.py

@@ -93,6 +93,7 @@ docker compose build
 | `DATA_DIR` | `../../../Dataset` (el `Dataset/` de la raíz del repo) | Carpeta que contiene `Dataset_Fr_BCS/`; se monta en solo lectura en `/data` |
 | `WEIGHTS_DIR` | `./weights` | Carpeta con `final_all40.pt` (`/weights`) |
 | `WORK_DIR` | `./work` | Caché de máscaras y descriptores, resultados y caché de Hugging Face (`/work`) |
+| `ORDENO_DIR` | `../../../GeneralidadesOrdeno` | Exportes del robot para calcular el DEL (`/ordeno`, solo rama `model/del`) |
 
 El código se monta en el contenedor (`.:/app`). Si cambias un `.py`, no necesitas
 volver a correr `docker compose build`; solo si cambias el `Dockerfile` o
@@ -178,3 +179,53 @@ docker run --rm --gpus all --user $(id -u):$(id -g) \
 - **Usa solo `Dataset/Dataset_Fr_BCS`.**
 - **Con 37 vacas, diferencias de ±0.02 en MAE son ruido.** Fíjate en el IC 95 %.
 - **No subas datos, pesos ni `work/`.** Ya están en `.gitignore`.
+
+## 9. Frente DEL (rama `model/del`)
+
+Esta rama agrega el DEL (días en leche) de cada foto de `Dataset_Fr_BCS`. El DEL
+se calcula a partir de los exportes diarios del robot en `GeneralidadesOrdeno/`.
+Esa carpeta no se sube al repo: ponla junto a `Dataset/`, en la raíz, o indica su
+ruta con `ORDENO_DIR` en el `.env`.
+
+```
+MuuMetrics/
+├── Dataset/Dataset_Fr_BCS/
+└── GeneralidadesOrdeno/          <- "Generalidades Ordeño_AAAAMMDD 000001.csv"
+```
+
+| Archivo | Qué contiene |
+|---|---|
+| `BCS-Regions/del/build_del.py` | Calcula el DEL de cada foto: vaca de la carpeta, fecha del nombre del archivo y "Días en ordeño" del archivo de Generalidades más cercano (máximo 7 días). Escribe `work/del.csv` |
+| `BCS-Regions/del/del_data.py` | `load_del(names)`: DEL y lactación alineados con `features.npz` (NaN si falta; solo 1 de las 369 fotos no tiene DEL) |
+| `BCS-Regions/del/del_baseline.py` | Experimento de partida: regiones solas, + DEL lineal y + spline del DEL |
+
+```bash
+docker compose run --rm bcs all                                       # si aún no tienes work/features.npz
+docker compose run --rm --entrypoint python bcs del/build_del.py      # -> work/del.csv
+docker compose run --rm --entrypoint python bcs del/del_baseline.py   # -> work/del_baseline.csv
+```
+
+En `del_baseline.py`, el DEL se estandariza y se multiplica por un peso w, porque
+si no el ridge lo ignora frente a las 6150 columnas de la imagen. El peso y el
+alpha se eligen dentro del train de cada fold.
+
+**Resultado de partida (369 fotos, 37 vacas):** el DEL no mejora el modelo.
+
+| Validación | Base | + DEL lineal | + DEL spline |
+|---|---|---|---|
+| Una vaca fuera (MAE) | **0.583** | 0.616 | 0.634 |
+| 5 folds × 10 (MAE) | **0.629** | 0.630 | 0.632 |
+
+Ninguna diferencia contra la base es significativa; el IC 95 % por bootstrap de
+vacas incluye el 0. Con FiLM sobre ConvNeXt (rama `Adri`) tampoco mejoró: MAE 0.81
+contra 0.82.
+
+**Por qué cuesta:** 36 de las 37 vacas tienen un solo BCS para todas sus fotos, así
+que el DEL solo puede aprender diferencias entre vacas, y la imagen ya captura casi
+todo eso. La relación tiene forma de U: la vaca pierde condición después del parto,
+toca fondo alrededor de 60–120 días y la recupera al final. Hay muy pocas vacas en
+cada tramo; entre 120 y 200 días hay una sola.
+
+**Ideas por probar:** interacción del DEL con cada región, distancia al punto más
+bajo de la curva, la lactación como entrada, o conseguir vacas con varios BCS en
+distintas etapas de la lactancia.
