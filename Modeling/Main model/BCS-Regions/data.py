@@ -5,8 +5,11 @@
 #   Lectura de Dataset_Fr_BCS: carpetas <vacaId>_<BCS>/ con los
 #   recortes dorsales del robot (ByIDxx__AAAA-MM-DD-hh-mm-ss_camX_capY.jpg).
 #   La vaca y el BCS salen del nombre de la carpeta (confirmados a mano).
-#   - "<id>_MAYO4.25_JUNIO4_JULIO3.5": BCS por mes, según la fecha del
-#     nombre de archivo.
+#   - "<id>_.../<BCS>/foto.jpg": si la carpeta de la vaca tiene
+#     subcarpetas, el BCS de cada foto es el nombre de su subcarpeta
+#     (manda sobre el nombre de la carpeta; p.ej. 9008 cambia a mitad de junio).
+#   - "<id>_MAYO4.25_JUNIO4_JULIO3.5" sin subcarpetas: BCS por mes, según
+#     la fecha del nombre de archivo.
 #   - Carpetas que no se pueden leer (p.ej. dos vacas mezcladas,
 #     "1552_Vaca1es2.5_Vaca2es4.75") se ignoran y se reportan.
 # =============================================================
@@ -23,6 +26,15 @@ def load_records(data_dir: str, verbose: bool = True) -> List[Dict]:
     for cow_dir in sorted(d for d in Path(data_dir).iterdir() if d.is_dir()):
         cow, _, spec = cow_dir.name.partition("_")
         imgs = sorted(p for p in cow_dir.iterdir() if p.is_file() and p.suffix.lower() in IMG_EXTS)
+        subs = sorted(d for d in cow_dir.iterdir() if d.is_dir())
+        if subs:                                       # <id>_.../<BCS>/foto.jpg: el BCS sale de la subcarpeta
+            for sub in subs:
+                try: bcs = float(sub.name)
+                except ValueError: skipped.append(f"{cow_dir.name}/{sub.name}/ (subcarpeta sin BCS)"); continue
+                for p in sorted(q for q in sub.iterdir() if q.is_file() and q.suffix.lower() in IMG_EXTS):
+                    records.append({"path": str(p), "name": f"{cow_dir.name}/{sub.name}/{p.name}", "vaca": cow, "bcs": bcs})
+            skipped += [f"{cow_dir.name}/{p.name} (suelta junto a subcarpetas)" for p in imgs]
+            continue
         by_month = {}
         for tok in spec.split("_"):
             name = tok.rstrip("0123456789.")

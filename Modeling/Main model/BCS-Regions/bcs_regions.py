@@ -7,11 +7,15 @@
 #     2. features  DINOv2-L/14 congelado a 378 px; promedio de los tokens
 #                  de parche dentro de cada región + indicador de región
 #                  ausente -> vector de 6x1024 + 6 (caché <work>/features.npz)
-#     3. evaluate  ridge validado por vaca: dejar una vaca fuera (LOCO) y
-#                  5 folds por vaca x 10 semillas; alpha elegido con
-#                  GroupKFold(4) por vaca dentro del train de cada fold
-#     4. train     ridge final con todas las fotos -> <work>/ridge_model.npz
-#     5. predict   fotos nuevas -> BCS estimado (csv)
+#     3. evaluate  ridge + recalibración lineal, validado por vaca: dejar una
+#                  vaca fuera (LOCO) y 5 folds por vaca x 10 semillas; alpha
+#                  y la recta de calibración salen de un GroupKFold(4) por
+#                  vaca dentro del train de cada fold. Dos líneas:
+#                    todas     todas las fotos (modelo base)
+#                    filtrada  solo fotos con lomo+cadera >= --min_lomo_cadera
+#     4. train     modelo final de cada línea -> <work>/ridge_model.npz y
+#                  <work>/ridge_model_filtrada.npz
+#     5. predict   fotos nuevas -> BCS estimado + lomo+cadera visible (csv)
 #
 # Uso: python bcs_regions.py <paso> [--data_dir ...] [--work_dir ...]
 # =============================================================
@@ -112,6 +116,29 @@ def fit_predict(Xtr, ytr, gtr, Xte):
     al = select_alpha(Xtr, ytr, gtr); A, B, _, _ = standardize(Xtr, Xte)
     return ridge_dual(A, B, ytr, [al])[al][0], al
 
+# ---------- Calibración y calidad ----------
+def fit_model(X, y, groups):
+    """Ridge + recalibración lineal. El GroupKFold(4) por vaca que elige alpha deja predicciones fuera de
+    fold; con ellas se ajusta y ~ a + b*pred, que corrige parte del 'jalar al centro' del ridge."""
+    oof = {al: np.zeros(len(y)) for al in ALPHAS}
+    for i, v in GroupKFold(4).split(X, y, groups):
+        A, B, _, _ = standardize(X[i], X[v])
+        for al, (p, _) in ridge_dual(A, B, y[i], ALPHAS).items(): oof[al][v] = p
+    al = min(ALPHAS, key=lambda a_: np.abs(oof[a_] - y).mean())
+    A, _, mu, sd = standardize(X, X[:1]); coef = ridge_dual(A, A[:1], y, [al])[al][1] / sd   # coeficientes en el espacio original
+    b, a = np.polyfit(oof[al], y, 1)
+    return {"coef": coef, "intercept": y.mean() - coef @ mu, "alpha": al, "cal_a": a, "cal_b": b}
+
+def apply_model(m, X):
+    return np.clip(m["cal_a"] + m["cal_b"] * (X @ m["coef"] + m["intercept"]), 1, 5)
+
+def lomo_cadera(masks: np.ndarray) -> float:
+    """Fracción de la foto cubierta por lomo + cadera (masks [6,h,w] en [0,1])."""
+    return float((masks[[REGIONS.index("loin"), REGIONS.index("hips")]] > 0.5).mean((1, 2)).sum())
+
+def cached_quality(work: Path, names) -> np.ndarray:
+    return np.array([lomo_cadera(np.load(work / "masks" / Path(n).with_suffix(".npz"))["masks"] / 255.0) for n in names])
+
 # ---------- 3. Evaluación ----------
 def r2(p, y): return 1 - ((p - y) ** 2).sum() / ((y - y.mean()) ** 2).sum()
 
@@ -120,68 +147,88 @@ def metrics(p, y, cows):
     rd = np.clip(np.round(p / 0.25) * 0.25, 2.0, 5.0)
     per_cow = np.array([np.abs(p - y)[cows == c].mean() for c in uc])
     rng = np.random.RandomState(0); bs = [per_cow[rng.randint(0, len(uc), len(uc))].mean() for _ in range(5000)]
-    lo, hi = np.percentile(bs, [2.5, 97.5])
+    lo, hi = np.percentile(bs, [2.5, 97.5]); b = np.round(y * 2)
     return {"mae": np.abs(p - y).mean(), "rmse": np.sqrt(((p - y) ** 2).mean()), "r2_fotos": r2(p, y), "r2_vacas": r2(cp, cy),
-            "acc_05": np.mean(np.abs(rd - y) <= 0.5 + 1e-9), "mae_vaca": per_cow.mean(), "mae_vaca_ic95_lo": lo, "mae_vaca_ic95_hi": hi}
+            "acc_05": np.mean(np.abs(rd - y) <= 0.5 + 1e-9), "mae_vaca": per_cow.mean(), "mae_vaca_ic95_lo": lo, "mae_vaca_ic95_hi": hi,
+            "mae_balanceado": np.mean([np.abs(p - y)[b == v].mean() for v in np.unique(b)]), "pendiente": np.polyfit(y, p, 1)[0]}
 
 def load_features(work: Path):
     f = work / "features.npz"
     if not f.exists(): raise SystemExit(f"No existe {f}: corre primero 'masks' y 'features'.")
     z = np.load(f); return z["X"].astype(np.float64), z["y"], z["vaca"], z["name"]
 
-def cmd_evaluate(a):
-    t0 = time.time(); work = Path(a.work_dir); X, y, cows, names = load_features(work); uc = np.unique(cows)
+def splits_for(y, cows, seeds):
     strata = np.round(y * 2).astype(int)
-    schemes = {"loco": [list(GroupKFold(len(uc)).split(X, y, cows))],
-               "rep5x10": [list(StratifiedGroupKFold(5, shuffle=True, random_state=s).split(X, strata, cows)) for s in range(a.seeds)]}
-    p0 = np.zeros(len(y))
-    for tr, te in schemes["loco"][0]: p0[te] = y[tr].mean()
+    return {"loco": [list(GroupKFold(len(np.unique(cows))).split(y, y, cows))],
+            "rep5x10": [list(StratifiedGroupKFold(5, shuffle=True, random_state=s).split(y, strata, cows)) for s in range(seeds)]}
+
+def cmd_evaluate(a):
+    """Dos líneas: 'todas' (todas las fotos) y 'filtrada' (solo fotos con lomo+cadera >= --min_lomo_cadera,
+    en train y en test). La línea 'todas' se reporta también sobre las fotos buenas, para comparar en las mismas fotos."""
+    t0 = time.time(); work = Path(a.work_dir); X, y, cows, names = load_features(work)
+    ok = cached_quality(work, names) >= a.min_lomo_cadera
+    sin_foto = sorted(set(cows) - set(cows[ok]))
+    print(f"{len(y)} fotos, {len(np.unique(cows))} vacas | lomo+cadera < {a.min_lomo_cadera}: {(~ok).sum()} fotos "
+          f"de {len(set(cows[~ok]))} vacas; vacas sin ninguna foto evaluable: {sin_foto or 'ninguna'}")
     rows = []
-    for sch, reps in schemes.items():
-        P, maes = [], []
-        for splits in reps:
-            p = np.zeros(len(y))
-            for tr, te in splits: p[te], _ = fit_predict(X[tr], y[tr], cows[tr], X[te])
-            P.append(p); maes.append(np.abs(p - y).mean())
-        P = np.mean(P, 0); m = metrics(P, y, cows)
-        rows.append({"esquema": sch, **{k: round(float(v), 4) for k, v in m.items()},
-                     "mae_reps_sd": round(float(np.std(maes)), 4), "fotos": len(y), "vacas": len(uc)})
-        with open(work / f"preds_{sch}.csv", "w", newline="") as fh:
-            w = csv.writer(fh); w.writerow(["foto", "vaca", "bcs_real", "bcs_pred"])
-            w.writerows([[n, c, yy, round(float(pp), 4)] for n, c, yy, pp in zip(names, cows, y, P)])
+    for linea, keep in (("todas", np.ones(len(y), bool)), ("filtrada", ok)):
+        idx = np.where(keep)[0]; Xl, yl, cl, nl = X[idx], y[idx], cows[idx], names[idx]
+        for sch, reps in splits_for(yl, cl, a.seeds).items():
+            P, maes = [], []
+            for splits in reps:
+                p = np.zeros(len(yl))
+                for tr, te in splits: p[te] = apply_model(fit_model(Xl[tr], yl[tr], cl[tr]), Xl[te])
+                P.append(p); maes.append(np.abs(p - yl).mean())
+            P = np.mean(P, 0)
+            evals = [("todas", np.ones(len(yl), bool)), ("buenas", ok[idx])] if linea == "todas" else [("buenas", np.ones(len(yl), bool))]
+            for ev, e in evals:
+                m = metrics(P[e], yl[e], cl[e])
+                rows.append({"linea": linea, "evaluado_en": ev, "esquema": sch, **{k: round(float(v), 4) for k, v in m.items()},
+                             "mae_reps_sd": round(float(np.std(maes)), 4), "fotos": int(e.sum()), "vacas": len(np.unique(cl[e]))})
+            suf = "" if linea == "todas" else "_filtrada"
+            with open(work / f"preds_{sch}{suf}.csv", "w", newline="") as fh:
+                w = csv.writer(fh); w.writerow(["foto", "vaca", "bcs_real", "bcs_pred", "evaluable"])
+                w.writerows([[n, c, yy, round(float(pp), 4), "si" if ok[i] else "no"] for n, c, yy, pp, i in zip(nl, cl, yl, P, idx)])
     with open(work / "metrics.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
-    print(f"\n{len(y)} fotos, {len(uc)} vacas | MAE prediciendo la media del train (LOCO): {np.abs(p0 - y).mean():.3f}")
+    print(f"\n{'línea':9s} {'evaluado':8s} {'esquema':8s} {'MAE':>6s} {'R2fot':>6s} {'R2vac':>6s} {'±0.5':>5s} {'pend':>5s} {'MAEvaca [IC95]':>22s} {'fotos':>5s} {'vacas':>5s}")
     for r in rows:
-        print(f"[{r['esquema']:7s}] MAE={r['mae']:.3f}  RMSE={r['rmse']:.3f}  R2 fotos={r['r2_fotos']:.2f}  R2 vacas={r['r2_vacas']:.2f}  "
-              f"±0.5={r['acc_05']:.0%}  MAE por vaca={r['mae_vaca']:.3f} [{r['mae_vaca_ic95_lo']:.3f}, {r['mae_vaca_ic95_hi']:.3f}]")
+        print(f"{r['linea']:9s} {r['evaluado_en']:8s} {r['esquema']:8s} {r['mae']:6.3f} {r['r2_fotos']:6.3f} {r['r2_vacas']:6.3f} {r['acc_05']:5.0%} "
+              f"{r['pendiente']:5.2f} {r['mae_vaca']:.3f} [{r['mae_vaca_ic95_lo']:.3f}, {r['mae_vaca_ic95_hi']:.3f}] {r['fotos']:5d} {r['vacas']:5d}")
     print(f"-> {work / 'metrics.csv'} ({time.time() - t0:.0f}s)")
 
 # ---------- 4. Modelo final ----------
 def cmd_train(a):
-    work = Path(a.work_dir); X, y, cows, _ = load_features(work)
-    al = select_alpha(X, y, cows); A, _, mu, sd = standardize(X, X[:1])
-    coef = ridge_dual(A, A[:1], y, [al])[al][1] / sd                                   # coeficientes en el espacio original
-    np.savez_compressed(work / "ridge_model.npz", coef=coef, intercept=y.mean() - coef @ mu, alpha=al,
-                        meta=json.dumps({"backbone": BACKBONE, "size": SIZE, "regions": REGIONS, "fotos": len(y),
-                                         "vacas": len(np.unique(cows))}))
-    print(f"[train] alpha={al:g}, {len(y)} fotos -> {work / 'ridge_model.npz'}")
+    """Entrena las dos líneas: ridge_model.npz (todas las fotos) y ridge_model_filtrada.npz."""
+    work = Path(a.work_dir); X, y, cows, names = load_features(work)
+    ok = cached_quality(work, names) >= a.min_lomo_cadera
+    for suf, keep in (("", np.ones(len(y), bool)), ("_filtrada", ok)):
+        m = fit_model(X[keep], y[keep], cows[keep]); dst = work / f"ridge_model{suf}.npz"
+        np.savez_compressed(dst, **m, min_lomo_cadera=a.min_lomo_cadera,
+                            meta=json.dumps({"backbone": BACKBONE, "size": SIZE, "regions": REGIONS, "fotos": int(keep.sum()),
+                                             "vacas": len(np.unique(cows[keep])), "filtrada": bool(suf)}))
+        print(f"[train] {dst.name}: alpha={m['alpha']:g}, calibración {m['cal_a']:+.3f} + {m['cal_b']:.3f}*pred, {keep.sum()} fotos")
 
 # ---------- 5. Predicción ----------
 def cmd_predict(a):
+    """Cada foto: BCS estimado + fracción de lomo+cadera visible y si pasa el umbral. Es informativo: en la
+    validación, promediar solo las fotos que pasan no mejoró el BCS por vaca (0.492 vs 0.482 con todas)."""
     if not a.input: raise SystemExit("predict necesita --input <imagen o carpeta>")
-    work, dev = Path(a.work_dir), device(); m = np.load(Path(a.model or work / "ridge_model.npz"))
+    work, dev = Path(a.work_dir), device(); m = dict(np.load(Path(a.model or work / "ridge_model.npz")))
+    umbral = float(m.get("min_lomo_cadera", a.min_lomo_cadera))
     src = Path(a.input)
     paths = sorted(p for p in src.rglob("*") if p.suffix.lower() in IMG_EXTS) if src.is_dir() else [src]
     net, bb = load_segmenter(a.seg_weights, dev), load_backbone(dev); out = []
     for p in paths:
-        img = read_rgb(p); x = describe(bb, img, segment(net, img, dev), dev)
-        out.append([str(p.relative_to(src) if src.is_dir() else p.name), round(float(x @ m["coef"] + m["intercept"]), 3)])
+        img = read_rgb(p); masks = segment(net, img, dev); q = lomo_cadera(masks)
+        bcs = float(apply_model(m, describe(bb, img, masks, dev)[None])[0])
+        out.append([str(p.relative_to(src) if src.is_dir() else p.name), round(bcs, 3), round(q, 3), "si" if q >= umbral else "no"])
     dst = Path(a.output or work / "predicciones.csv")
     with open(dst, "w", newline="") as fh:
-        w = csv.writer(fh); w.writerow(["foto", "bcs_pred"]); w.writerows(out)
-    for row in out[:10]: print(f"  {row[0]}: {row[1]}")
-    print(f"[predict] {len(out)} fotos -> {dst}")
+        w = csv.writer(fh); w.writerow(["foto", "bcs_pred", "lomo_cadera", "evaluable"]); w.writerows(out)
+    for row in out[:10]: print(f"  {row[0]}: {row[1]} ({'evaluable' if row[3] == 'si' else 'NO evaluable'})")
+    ev = sum(r[3] == "si" for r in out)
+    print(f"[predict] {len(out)} fotos ({ev} con lomo+cadera suficiente) -> {dst} | BCS promedio: {np.mean([r[1] for r in out]):.2f}")
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Modelo de BCS por regiones: masks, features, evaluate, train, predict")
@@ -190,6 +237,8 @@ if __name__ == "__main__":
     ap.add_argument("--work_dir", default="/work", help="caché de máscaras/features y resultados")
     ap.add_argument("--seg_weights", default="/weights/final_all40.pt")
     ap.add_argument("--seeds", type=int, default=10, help="repeticiones del esquema 5 folds por vaca")
+    ap.add_argument("--min_lomo_cadera", type=float, default=0.13,
+                    help="fracción mínima de la foto con lomo+cadera para que sea evaluable (≈ percentil 10 de Dataset_Fr_BCS)")
     ap.add_argument("--overwrite", action="store_true", help="masks: recalcular aunque ya existan")
     ap.add_argument("--input", help="predict: imagen o carpeta de imágenes")
     ap.add_argument("--model", help="predict: ridge_model.npz (por defecto <work_dir>/ridge_model.npz)")
