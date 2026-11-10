@@ -23,11 +23,12 @@ import torch, torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bcs_regions as br
-from comun import splits_for, fit_apply, tokens, grid
+from comun import splits_for, fit_apply, tokens, grid, modelo, cache_ok, guardar_cache
+from segmenter import REGIONS
 from data import load_records
 from quitar_zonas import RULES, ZN, assign
 
-D = 1024
+D = None                          # dimensión del backbone: de features.npz
 VARIANTES = {"6_regiones": [], "sin_cadera_sola": ["cadera_sola"], "sin_muslo_solo": ["muslo_solo"],
              "sin_rojas": ["cadera_sola", "muslo_solo"], "sin_lomo_solo": ["lomo"],
              "sin_rojas_y_lomo_solo": ["cadera_sola", "muslo_solo", "lomo"]}
@@ -41,7 +42,7 @@ def region_weights(fuera):
     return torch.from_numpy(out)
 
 @torch.no_grad()
-def compute(work, recs, out):
+def compute(work, recs, out, firma):
     dev = br.device(); bb = br.load_backbone(dev); G = grid(bb); bits = torch.tensor([1, 2, 4, 8, 16, 32], dtype=torch.long)
     W = {v: region_weights(f) for v, f in VARIANTES.items()}; X = {v: np.zeros((len(recs), 6 * D + 6), np.float32) for v in VARIANTES}
     for i, r in enumerate(recs):
@@ -54,15 +55,17 @@ def compute(work, recs, out):
             w = W[v] @ fr; tot = w.sum(1, keepdim=True); f = (w @ tok) / tot.clamp_min(1e-6); miss = tot[:, 0] < 0.5; f[miss] = 0
             X[v][i, :6 * D] = f.reshape(-1).numpy(); X[v][i, 6 * D:] = miss.float().numpy()
         if (i + 1) % 100 == 0: print(f"  {i + 1}/{len(recs)}", flush=True)
-    for v in VARIANTES: np.savez_compressed(out / f"feat_recorte_{v}.npz", X=X[v])
+    for v in VARIANTES: guardar_cache(out / f"feat_recorte_{v}.npz", firma, X=X[v])
 
 def main(a):
     work = Path(a.work_dir); out = work / "ablaciones"; out.mkdir(exist_ok=True)
-    X6, y, cows, names = br.load_features(work); recs = load_records(a.data_dir)
+    global D
+    X6, y, cows, names, firma, regs, D = modelo(work); recs = load_records(a.data_dir)
     assert [r["name"] for r in recs] == list(names), "features.npz no coincide con los datos"
-    if not all((out / f"feat_recorte_{v}.npz").exists() for v in VARIANTES): compute(work, recs, out)
+    if not all(cache_ok(out / f"feat_recorte_{v}.npz", firma) for v in VARIANTES): compute(work, recs, out, firma)
     V = {v: np.load(out / f"feat_recorte_{v}.npz")["X"].astype(np.float64) for v in VARIANTES}
-    print(f"comprobación 6_regiones vs features.npz: máx |dif| = {np.abs(V['6_regiones'] - X6).max():.4f}")
+    if regs == list(REGIONS): print(f"comprobación 6_regiones vs features.npz: máx |dif| = {np.abs(V['6_regiones'] - X6).max():.4f}")
+    else: print(f"[aviso] el modelo usa {regs}: 6_regiones aquí es la referencia de 6 regiones, no el modelo")
     schemes = splits_for(y, cows, a.seeds); keys = sorted(set(zip(cows, y)))
     nuevas = np.array([c.startswith("90") for c, _ in keys]); rows, ce = [], {}; rng = np.random.RandomState(0); t0 = time.time()
     for v, Xv in V.items():
