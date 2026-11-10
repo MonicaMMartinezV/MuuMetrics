@@ -6,7 +6,8 @@
 #     1. masks     segmentador -> 6 máscaras por foto (caché en <work>/masks)
 #     2. features  DINOv3-L/16 congelado a 384 px; promedio de los tokens
 #                  de parche del bloque 21 (de 24) dentro de cada región + indicador de región
-#                  ausente -> vector de 6x1024 + 6 (caché <work>/features.npz)
+#                  ausente -> vector de 6x1024 + 6 (caché <work>/features.npz,
+#                  con la firma del modelo: backbone, bloque, regiones, segmentador)
 #     3. evaluate  ridge validado por vaca: dejar una vaca fuera (LOCO) y
 #                  5 folds por vaca x 10 semillas; alpha elegido con
 #                  GroupKFold(4) por vaca dentro del train de cada fold
@@ -15,7 +16,7 @@
 #
 # Uso: python bcs_regions.py <paso> [--data_dir ...] [--work_dir ...]
 # =============================================================
-import argparse, csv, json, time
+import argparse, csv, hashlib, json, time
 from pathlib import Path
 import numpy as np
 import torch, torch.nn.functional as F
@@ -29,6 +30,8 @@ from segmenter import load_segmenter, segment, REGIONS, MEAN, STD
 BACKBONE, SIZE = "vit_large_patch16_dinov3.lvd1689m", 384   # EXPERIMENTOS [24]/[25]: DINOv3-L/16 a 384 px (malla 24x24)
 LAYER = 20                        # bloque 21 de 24 (0-based). Antes: DINOv2-L/14 224 px bloque 17 (work/base_v7_dinov2_224_b17)
 ALPHAS = (1, 10, 100, 1e3, 1e4, 1e5)
+FEAT_REGIONS = list(REGIONS)     # regiones del descriptor, en orden (EXPERIMENTOS [27]: candidato quitar "loin")
+FIRMA_MASKS = "_firma.json"      # en <work>/masks: md5 del segmentador que generó las máscaras
 
 def device():
     return torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -49,8 +52,13 @@ def save_masks(path: Path, probs: np.ndarray):
 
 def cmd_masks(a):
     work, dev = Path(a.work_dir), device(); recs = load_records(a.data_dir)
+    seg_md5, ff = file_md5(a.seg_weights), work / "masks" / FIRMA_MASKS
+    previo = json.loads(ff.read_text()).get("seg_md5") if ff.exists() else None
+    if previo and previo != seg_md5 and not a.overwrite:
+        raise SystemExit(f"Las máscaras en caché son de otro segmentador ({previo[:8]} vs {seg_md5[:8]}): usa --overwrite.")
     todo = [r for r in recs if a.overwrite or not mask_file(work, r).exists()]
-    print(f"[masks] {len(recs) - len(todo)} ya existen, faltan {len(todo)}")
+    print(f"[masks] {len(recs) - len(todo)} ya existen, faltan {len(todo)} | segmentador md5 {seg_md5[:8]}")
+    ff.parent.mkdir(parents=True, exist_ok=True); ff.write_text(json.dumps({"seg_md5": seg_md5, "seg_weights": a.seg_weights}))
     if not todo: return
     net = load_segmenter(a.seg_weights, dev); empty = {c: 0 for c in REGIONS}
     for i, r in enumerate(todo):
@@ -63,20 +71,60 @@ def cmd_masks(a):
 def load_backbone(dev):
     return timm.create_model(BACKBONE, pretrained=True, num_classes=0, img_size=SIZE).to(dev).eval()
 
+# describe() = patch_tokens -> region_weights -> pool_regions. Las ablaciones y los baselines
+# (ramas model/ablations y model/baselines) usan estas mismas piezas, así siguen al modelo
+# si cambia el backbone, el bloque o las regiones.
 @torch.no_grad()
-def describe(bb, img: np.ndarray, masks: np.ndarray, dev) -> np.ndarray:
-    """img RGB [h,w,3], masks [6,h',w'] en [0,1] -> [6*1024 promedios por región, 6 indicadores de ausencia]."""
-    x = np.asarray(Image.fromarray(img).resize((SIZE, SIZE), Image.BICUBIC)) / 255.0   # aplasta a cuadrado
+def patch_tokens(bb, img: np.ndarray, dev):
+    """img RGB [h,w,3] -> (CLS [D], tokens de parche [g*g, D], g): bloque LAYER con la LayerNorm final."""
+    x = np.asarray(Image.fromarray(np.ascontiguousarray(img)).resize((SIZE, SIZE), Image.BICUBIC)) / 255.0   # aplasta a cuadrado
     x = torch.from_numpy(((x - MEAN) / STD).transpose(2, 0, 1)).float()[None].to(dev)
     with torch.autocast(device_type=dev.type, enabled=dev.type == "cuda"):
-        sp = bb.forward_intermediates(x, indices=[LAYER], norm=True, output_fmt="NCHW", intermediates_only=True)[0]
+        sp, pre = bb.forward_intermediates(x, indices=[LAYER], norm=True, return_prefix_tokens=True,
+                                           output_fmt="NCHW", intermediates_only=True)[0]
     g = sp.shape[-1]                                                                  # malla de parches (24 con DINOv3 384/16)
-    patches = sp[0].float().reshape(sp.shape[1], -1).T                                # [g*g, 1024], bloque LAYER
-    m = F.interpolate(torch.from_numpy((masks > 0.5).astype(np.float32))[None], size=(SIZE, SIZE), mode="nearest")
-    w = F.adaptive_avg_pool2d(m, (g, g))[0].reshape(6, -1).to(dev)  # fracción de cada parche en la región
-    tot = w.sum(1, keepdim=True); vec = (w @ patches) / tot.clamp_min(1e-6)
+    return pre[0, 0].float(), sp[0].float().reshape(sp.shape[1], -1).T, g
+
+def region_weights(masks: np.ndarray, g: int, regions=None) -> torch.Tensor:
+    """masks [6,h',w'] en [0,1] -> [R, g*g]: fracción de cada parche dentro de cada región (orden de FEAT_REGIONS)."""
+    idx = [REGIONS.index(r) for r in (regions or FEAT_REGIONS)]
+    m = F.interpolate(torch.from_numpy((masks[idx] > 0.5).astype(np.float32))[None], size=(SIZE, SIZE), mode="nearest")
+    return F.adaptive_avg_pool2d(m, (g, g))[0].reshape(len(idx), -1)
+
+def pool_regions(patches: torch.Tensor, w: torch.Tensor) -> np.ndarray:
+    """tokens [P, D], pesos [R, P] -> [R*D promedios por región, R indicadores de ausencia]."""
+    w = w.to(patches.device); tot = w.sum(1, keepdim=True); vec = (w @ patches) / tot.clamp_min(1e-6)
     miss = tot[:, 0] < 0.5; vec[miss] = 0                                             # menos de medio parche -> ausente
     return np.concatenate([vec.reshape(-1).cpu().numpy(), miss.float().cpu().numpy()])
+
+@torch.no_grad()
+def describe(bb, img: np.ndarray, masks: np.ndarray, dev) -> np.ndarray:
+    """img RGB [h,w,3], masks [6,h',w'] en [0,1] -> [R*D promedios por región, R indicadores de ausencia]."""
+    _, patches, g = patch_tokens(bb, img, dev)
+    return pool_regions(patches, region_weights(masks, g))
+
+# ---------- Firma del modelo ----------
+def file_md5(path) -> str:
+    h = hashlib.md5()
+    with open(path, "rb") as fh:
+        for b in iter(lambda: fh.read(1 << 22), b""): h.update(b)
+    return h.hexdigest()
+
+def firma(work: Path) -> dict:
+    """Qué produce los descriptores: backbone, resolución, bloque, regiones y segmentador de las máscaras.
+    Se guarda en features.npz; las cachés de ablaciones y baselines se recalculan si no coincide."""
+    seg = json.loads((work / "masks" / FIRMA_MASKS).read_text()) if (work / "masks" / FIRMA_MASKS).exists() else {}
+    return {"backbone": BACKBONE, "size": SIZE, "layer": LAYER + 1, "regions": list(FEAT_REGIONS), "seg_md5": seg.get("seg_md5")}
+
+def load_firma(work: Path):
+    """Firma guardada en features.npz (None si es de antes de que existiera)."""
+    z = np.load(work / "features.npz"); return json.loads(str(z["firma"])) if "firma" in z.files else None
+
+def check_features(work: Path):
+    """Avisa (y detiene) si features.npz no lo generó el modelo de este código."""
+    f, actual = load_firma(work), firma(work)
+    if f is None: print("[aviso] features.npz no tiene firma (es de una versión anterior); corre 'features' para regenerarlo")
+    elif f != actual: raise SystemExit(f"features.npz es de otro modelo:\n  guardado {f}\n  actual   {actual}\nCorre 'features' (y 'masks --overwrite' si cambió el segmentador).")
 
 def cmd_features(a):
     work, dev = Path(a.work_dir), device(); recs = load_records(a.data_dir)
@@ -88,8 +136,9 @@ def cmd_features(a):
         X.append(describe(bb, read_rgb(r["path"]), m, dev))
         if (i + 1) % 50 == 0: print(f"  {i + 1}/{len(recs)}", flush=True)
     np.savez_compressed(work / "features.npz", X=np.stack(X).astype(np.float32), y=np.array([r["bcs"] for r in recs]),
-                        vaca=np.array([r["vaca"] for r in recs]), name=np.array([r["name"] for r in recs]))
-    print(f"[features] {len(X)} x {len(X[0])} -> {work / 'features.npz'}")
+                        vaca=np.array([r["vaca"] for r in recs]), name=np.array([r["name"] for r in recs]),
+                        firma=json.dumps(firma(work)))
+    print(f"[features] {len(X)} x {len(X[0])} -> {work / 'features.npz'} | firma {firma(work)}")
 
 # ---------- Ridge ----------
 def standardize(tr, te):
@@ -135,7 +184,7 @@ def load_features(work: Path):
     z = np.load(f); return z["X"].astype(np.float64), z["y"], z["vaca"], z["name"]
 
 def cmd_evaluate(a):
-    t0 = time.time(); work = Path(a.work_dir); X, y, cows, names = load_features(work); uc = np.unique(cows)
+    t0 = time.time(); work = Path(a.work_dir); check_features(work); X, y, cows, names = load_features(work); uc = np.unique(cows)
     strata = np.round(y * 2).astype(int)
     schemes = {"loco": [list(GroupKFold(len(uc)).split(X, y, cows))],
                "rep5x10": [list(StratifiedGroupKFold(5, shuffle=True, random_state=s).split(X, strata, cows)) for s in range(a.seeds)]}
@@ -164,18 +213,22 @@ def cmd_evaluate(a):
 
 # ---------- 4. Modelo final ----------
 def cmd_train(a):
-    work = Path(a.work_dir); X, y, cows, _ = load_features(work)
+    work = Path(a.work_dir); check_features(work); X, y, cows, _ = load_features(work)
     al = select_alpha(X, y, cows); A, _, mu, sd = standardize(X, X[:1])
     coef = ridge_dual(A, A[:1], y, [al])[al][1] / sd                                   # coeficientes en el espacio original
     np.savez_compressed(work / "ridge_model.npz", coef=coef, intercept=y.mean() - coef @ mu, alpha=al,
-                        meta=json.dumps({"backbone": BACKBONE, "layer": LAYER + 1, "size": SIZE, "regions": REGIONS, "fotos": len(y),
-                                         "vacas": len(np.unique(cows))}))
+                        firma=json.dumps(firma(work)),
+                        meta=json.dumps({**firma(work), "fotos": len(y), "vacas": len(np.unique(cows))}))
     print(f"[train] alpha={al:g}, {len(y)} fotos -> {work / 'ridge_model.npz'}")
 
 # ---------- 5. Predicción ----------
 def cmd_predict(a):
     if not a.input: raise SystemExit("predict necesita --input <imagen o carpeta>")
     work, dev = Path(a.work_dir), device(); m = np.load(Path(a.model or work / "ridge_model.npz"))
+    if "firma" in m.files:                                 # el ridge solo sirve con los descriptores con que se entrenó
+        f = {k: v for k, v in json.loads(str(m["firma"])).items() if k != "seg_md5"}
+        actual = {k: v for k, v in firma(work).items() if k != "seg_md5"}
+        if f != actual: raise SystemExit(f"ridge_model.npz es de otro modelo:\n  {f}\n  actual {actual}\nCorre 'features' y 'train'.")
     src = Path(a.input)
     paths = sorted(p for p in src.rglob("*") if p.suffix.lower() in IMG_EXTS) if src.is_dir() else [src]
     net, bb = load_segmenter(a.seg_weights, dev), load_backbone(dev); out = []
