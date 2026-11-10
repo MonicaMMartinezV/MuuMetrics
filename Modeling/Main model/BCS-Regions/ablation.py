@@ -38,7 +38,10 @@ from bcs_regions import (device, load_backbone, describe, read_rgb, mask_file, l
                          fit_predict, metrics, BACKBONE, SIZE, ALPHAS)
 from segmenter import REGIONS
 
-ORDER = ["A0", "A0-DUP", "A1", "A2", "A3", "A4", "A5", "A6"]
+ORDER = ["A0", "A0-DUP", "A1", "A2", "A3", "A4", "A5", "A6"]                 # etapa A (reporte work/aug/report)
+A1_SEEDS = [f"A1@s{s}" for s in range(1, 11)]                                # etapa B: A1 con otras 10 semillas
+PHOTOMETRIC = ["B-BR05", "B-BR10", "B-CT05", "B-CT10"]                       # etapa B: fotometría aislada
+GROUPS = {"all": ORDER, "a1seeds": A1_SEEDS, "photometric": PHOTOMETRIC}
 CONTROLS = ["A0", "A0-DUP"]
 TOL_DUP = 1e-6          # |pred A0-DUP - pred A0| máximo aceptado
 TOL_CANON = 6e-5        # A0 vs preds_*.csv canónicos (guardados con 4 decimales)
@@ -72,15 +75,15 @@ def feat_file(a, pol): return Path(a.out_dir) / "features" / f"{pol}.npz"
 
 def cmd_extract(a, pol):
     out = feat_file(a, pol)
-    if AG.POLICIES[pol] is None or (out.exists() and not a.overwrite): return
+    if AG.spec(pol) is None or (out.exists() and not a.overwrite): return
     X, y, cows, names, recs = load_canon(a); dev = device(); bb = load_backbone(dev)
-    work, K, spec = Path(a.work_dir), AG.K_VARIANTS, AG.POLICIES[pol]
+    work, K, spec = Path(a.work_dir), AG.K_VARIANTS, AG.spec(pol); seed = AG.parse_policy(pol)[1]
     Xa = np.zeros((len(recs), K, X.shape[1]), np.float32); rows = []; t0 = time.time()
     qc = Path(a.out_dir) / "qc" / pol; qc.mkdir(parents=True, exist_ok=True)
     for i, r in enumerate(recs):
         img = read_rgb(r["path"]); m = np.load(mask_file(work, r))["masks"].astype(np.float32) / 255.0
         for k in range(K):
-            e = AG.resolve(spec, AG.sample_params(r["name"], k)); im2, m2 = AG.apply(img, m, e)
+            e = AG.resolve(spec, AG.sample_params(r["name"], k, seed)); im2, m2 = AG.apply(img, m, e)
             Xa[i, k] = describe(bb, im2, m2, dev)
             b = m2 > 0.5; xs = np.arange(m2.shape[2])
             cx = [float((b[c].sum(0) * xs).sum() / max(b[c].sum(), 1)) for c in (4, 5)]
@@ -91,7 +94,7 @@ def cmd_extract(a, pol):
             if i < 4 and k == 0: save_qc(qc / f"{i}_{Path(r['name']).stem}.jpg", img, m, im2, m2)
         if (i + 1) % 50 == 0: print(f"  [{pol}] {i + 1}/{len(recs)} ({time.time() - t0:.0f}s)", flush=True)
     out.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(out, Xaug=Xa, name=names, policy=json.dumps(spec), k=K, base_seed=AG.BASE_SEED)
+    np.savez_compressed(out, Xaug=Xa, name=names, policy=json.dumps(spec), k=K, base_seed=seed)
     with open(out.with_suffix(".params.csv"), "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
     bad = sum(not r["thighL_left_of_thighR"] for r in rows)
@@ -135,7 +138,7 @@ def alphas_for(a, X, y, cows, sch):
 
 # ---------- Evaluación ----------
 def predict_policy(a, pol, X, y, cows, sch, reg):
-    spec = AG.POLICIES[pol]; out = {}
+    spec = AG.spec(pol); out = {}
     Xa = None if spec is None else np.load(feat_file(a, pol))["Xaug"].astype(np.float64)
     K = 0 if Xa is None else Xa.shape[1]
     for name, reps in sch.items():
@@ -174,11 +177,12 @@ def cmd_evaluate(a, pol):
     with open(res / "metrics.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
     code = {f: sha256(Path(__file__).parent / f) for f in ("ablation.py", "augment.py", "bcs_regions.py", "segmenter.py", "data.py")}
-    jdump({"policy": pol, "spec": AG.POLICIES[pol], "k_variants": 0 if AG.POLICIES[pol] is None else AG.K_VARIANTS,
-           "row_weight": None if AG.POLICIES[pol] is None else 1 / (AG.K_VARIANTS + 1), "base_seed": AG.BASE_SEED,
+    sp = AG.spec(pol)
+    jdump({"policy": pol, "spec": sp, "k_variants": 0 if sp is None else AG.K_VARIANTS,
+           "row_weight": None if sp is None else 1 / (AG.K_VARIANTS + 1), "base_seed": AG.parse_policy(pol)[1],
            "cv_seeds": list(range(a.seeds)), "bootstrap": {"n": N_BOOT, "seed": 0, "unit": "vaca"},
            "backbone": BACKBONE, "size": SIZE, "regions": REGIONS, "features_sha256": reg["features_sha256"],
-           "aug_features_sha256": None if AG.POLICIES[pol] is None else sha256(feat_file(a, pol)),
+           "aug_features_sha256": None if sp is None else sha256(feat_file(a, pol)),
            "code_sha256": code, "torch": torch.__version__, "python": platform.python_version(),
            "gpu": torch.cuda.get_device_name() if torch.cuda.is_available() else "cpu",
            "fecha": time.strftime("%Y-%m-%d %H:%M:%S")}, res / "config.json")
@@ -219,8 +223,14 @@ def paired(p, p0, y, cows, rng):
             "d_mae_vaca": dc.mean(), "d_mae_vaca_ic95": q(bc), "vacas_mejor": int((dc < -1e-9).sum()), "vacas_peor": int((dc > 1e-9).sum())}
 
 def cmd_report(a):
-    X, y, cows, names, _ = load_canon(a); R = Path(a.out_dir) / "results"; rep = Path(a.out_dir) / "report"
-    pols = [p for p in ORDER if (R / p / "preds_loco_reps.npy").exists()]
+    """Sin --report_name: reporte de la etapa A en <out>/report (como antes). Con --report_name X: <out>/report_X,
+    con las políticas de --policy (A0 se agrega siempre como referencia)."""
+    X, y, cows, names, _ = load_canon(a); R = Path(a.out_dir) / "results"
+    rep = Path(a.out_dir) / ("report" if not a.report_name else f"report_{a.report_name}")
+    want = ORDER if not a.report_name else ["A0"] + [p for p in expand(a.policy) if p != "A0"]
+    pols = [p for p in want if (R / p / "preds_loco_reps.npy").exists()]
+    missing = [p for p in want if p not in pols]
+    if missing and a.report_name: raise SystemExit(f"Faltan resultados de: {missing}")
     if "A0" not in pols: raise SystemExit("Falta A0.")
     rows = []
     for name in ("loco", "rep5x10"):
@@ -248,16 +258,47 @@ def cmd_report(a):
                   ("—" if r["politica"] == "A0" else ci(r, "d_mae")) + " | " + ("—" if r["politica"] == "A0" else ci(r, "d_mae_vaca")) +
                   f" | {'—' if r['politica'] == 'A0' else str(r['vacas_mejor']) + '/' + str(r['vacas_peor'])} |")
     (rep / "comparison.md").write_text("\n".join(md) + "\n"); print("\n".join(md))
-    plot(rows, [p for p in pols if p != "A0"], rep)
+    seeds = [p for p in pols if p == "A1" or p.startswith("A1@s")]
+    if a.report_name and len(seeds) > 1:
+        stability(rows, seeds, rep)
+        plot(rows, seeds, rep, "stability_A1", "A1 (flip) con distintas semillas de augmentation: ΔMAE vs A0 (IC 95 %, bootstrap por vaca)")
+        others = [p for p in pols if p not in seeds and p != "A0"]
+        if others: plot(rows, ["A1"] + others if "A1" in pols else others, rep)
+    else:
+        plot(rows, [p for p in pols if p != "A0"], rep)
 
-def plot(rows, pols, rep):
+def stability(rows, seeds, rep):
+    """Tabla por semilla y resumen descriptivo entre semillas (las semillas no son observaciones independientes)."""
+    out = ["| Esquema | Semilla | MAE fotos | MAE vaca | ΔMAE fotos vs A0 [IC 95 %] | ΔMAE vaca vs A0 [IC 95 %] | Vacas mejor/peor |",
+           "|---|---|---|---|---|---|---|"]
+    summ = []
+    for name in ("loco", "rep5x10"):
+        rs = [r for r in rows if r["esquema"] == name and r["politica"] in seeds]
+        for r in rs:
+            out.append(f"| {name} | {r['politica']} | {r['mae']:.4f} | {r['mae_vaca']:.4f} | {r['d_mae']:+.4f} [{r['d_mae_lo']:+.4f}, {r['d_mae_hi']:+.4f}] | "
+                       f"{r['d_mae_vaca']:+.4f} [{r['d_mae_vaca_lo']:+.4f}, {r['d_mae_vaca_hi']:+.4f}] | {r['vacas_mejor']}/{r['vacas_peor']} |")
+        for k in ("d_mae", "d_mae_vaca"):
+            v = np.array([r[k] for r in rs])
+            summ.append({"esquema": name, "metrica": k, "semillas": len(v), "media": v.mean(), "sd": v.std(ddof=1), "min": v.min(),
+                         "max": v.max(), "n_negativas": int((v < 0).sum()),
+                         "n_ic_excluye_0_mejor": int(sum(r[k + "_hi"] < 0 for r in rs)), "n_ic_excluye_0_peor": int(sum(r[k + "_lo"] > 0 for r in rs))})
+    out += ["", "| Esquema | Métrica | Semillas | Media Δ | SD Δ | Mín | Máx | Δ < 0 | IC excluye 0 (mejor) | IC excluye 0 (peor) |",
+            "|---|---|---|---|---|---|---|---|---|---|"]
+    out += [f"| {s['esquema']} | {s['metrica']} | {s['semillas']} | {s['media']:+.4f} | {s['sd']:.4f} | {s['min']:+.4f} | {s['max']:+.4f} | "
+            f"{s['n_negativas']}/{s['semillas']} | {s['n_ic_excluye_0_mejor']} | {s['n_ic_excluye_0_peor']} |" for s in summ]
+    (rep / "stability_A1.md").write_text("\n".join(out) + "\n"); print("\n".join(out))
+    with open(rep / "stability_A1_summary.csv", "w", newline="") as fh:
+        w = csv.DictWriter(fh, fieldnames=list(summ[0])); w.writeheader()
+        w.writerows([{k: (round(float(v), 5) if isinstance(v, (float, np.floating)) else v) for k, v in s.items()} for s in summ])
+
+def plot(rows, pols, rep, fname="delta_mae_vs_A0", title="Diferencia pareada de MAE respecto a A0 (IC 95 %, bootstrap por vaca)"):
     if not pols: return
     import os; os.environ.setdefault("MPLCONFIGDIR", "/tmp/mpl")       # el usuario del contenedor no tiene $HOME
-    import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
+    import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt, matplotlib.ticker
     ink, ink2, grid, surf = "#0b0b0b", "#52514e", "#e4e3df", "#fcfcfb"
     series = [("d_mae", "MAE por foto", "#2a78d6", "o"), ("d_mae_vaca", "MAE promedio por vaca", "#eb6834", "s")]
     fig, axs = plt.subplots(1, 2, figsize=(9, 1.1 + 0.55 * len(pols)), sharey=True, facecolor=surf)
-    for ax, name, title in zip(axs, ("loco", "rep5x10"), ("Una vaca fuera (LOCO)", "5 folds por vaca × 10 semillas")):
+    for ax, name, panel in zip(axs, ("loco", "rep5x10"), ("Una vaca fuera (LOCO)", "5 folds por vaca × 10 semillas")):
         ax.set_facecolor(surf); rs = {r["politica"]: r for r in rows if r["esquema"] == name}
         for j, (k, lab, col, mk) in enumerate(series):
             yy = np.arange(len(pols)) + (j - 0.5) * 0.28
@@ -265,17 +306,17 @@ def plot(rows, pols, rep):
             ax.hlines(yy, lo, hi, color=col, lw=2, zorder=2)
             ax.plot(v, yy, mk, color=col, ms=7, mec=surf, mew=1.5, zorder=3, label=lab)
         ax.axvline(0, color=ink2, lw=1, zorder=1)
-        ax.set_title(title, color=ink, fontsize=10, loc="left"); ax.grid(axis="x", color=grid, lw=0.8); ax.set_axisbelow(True)
+        ax.set_title(panel, color=ink, fontsize=10, loc="left"); ax.xaxis.set_major_locator(matplotlib.ticker.MaxNLocator(6)); ax.grid(axis="x", color=grid, lw=0.8); ax.set_axisbelow(True)
         ax.set_xlabel("Δ MAE vs A0 (BCS)  ·  < 0 = mejor que A0", color=ink2, fontsize=9)
         for s in ("top", "right", "left"): ax.spines[s].set_visible(False)
         ax.spines["bottom"].set_color(grid); ax.tick_params(colors=ink2, labelsize=9, length=0)
     axs[0].set_yticks(np.arange(len(pols)), pols); axs[0].invert_yaxis()
-    fig.suptitle("Diferencia pareada de MAE respecto a A0 (IC 95 %, bootstrap por vaca)", color=ink, fontsize=11, x=0.02, ha="left")
+    fig.suptitle(title, color=ink, fontsize=11, x=0.02, ha="left")
     h, l = axs[0].get_legend_handles_labels()
     fig.legend(h, l, loc="upper right", ncol=2, frameon=False, fontsize=8, labelcolor=ink2, bbox_to_anchor=(0.99, 1.0))
     fig.tight_layout(rect=(0, 0, 1, 0.93))
-    for ext in ("png", "pdf"): fig.savefig(rep / f"delta_mae_vs_A0.{ext}", dpi=200, facecolor=surf)
-    print(f"[report] -> {rep / 'delta_mae_vs_A0.png'}")
+    for ext in ("png", "pdf"): fig.savefig(rep / f"{fname}.{ext}", dpi=200, facecolor=surf)
+    plt.close(fig); print(f"[report] -> {rep / (fname + '.png')}")
 
 # ---------- Verificación del flip ----------
 def cmd_checkflip(a):
@@ -295,13 +336,52 @@ def cmd_checkflip(a):
            "iou_flip_sin_intercambio": {c: round(float(np.mean(v)), 3) for c, v in iou_noswap.items()}}
     jdump(rep, Path(a.out_dir) / "checkflip.json"); print("[checkflip]", json.dumps(rep, indent=1))
 
+# ---------- Auditoría (solo lectura; escribe <out>/audit.json) ----------
+def cmd_audit(a):
+    X, y, cows, names, _ = load_canon(a); out = Path(a.out_dir); R = out / "results"
+    reg = json.load(open(out / "splits.json")); sch = schemes(X, y, cows, a.seeds); fsha = sha256(Path(a.work_dir) / "features.npz")
+    rep = {"features_sha256_actual": fsha, "splits_json_features_sha256_coincide": reg["features_sha256"] == fsha}
+    # 1. Particiones y alpha: se recalculan desde cero y se comparan con splits.json
+    bad_split = bad_alpha = n = 0
+    for name, reps in sch.items():
+        for r, splits in enumerate(reps):
+            for f, (tr, te) in enumerate(splits):
+                g = reg["schemes"][name][r][f]; n += 1
+                bad_split += sorted(np.unique(cows[te]).tolist()) != g["test_vacas"] or len(tr) != g["n_train"]
+                bad_alpha += float(select_alpha(X[tr], y[tr], cows[tr])) != g["alpha"]
+    rep["folds"] = n; rep["folds_particion_distinta"] = int(bad_split); rep["folds_alpha_distinto"] = int(bad_alpha)
+    rep["alpha_por_esquema"] = {k: sorted({g["alpha"] for rr in v for g in rr}) for k, v in reg["schemes"].items()}
+    # 2. Todas las políticas guardadas: mismo features.npz canónico y predicciones reproducibles con el código actual
+    rep["politicas"] = {}
+    for d in sorted(p for p in R.iterdir() if (p / "config.json").exists()):
+        pol = d.name; cfg = json.load(open(d / "config.json")); P = predict_policy(a, pol, X, y, cows, sch, reg)
+        rep["politicas"][pol] = {"features_canonico_ok": cfg["features_sha256"] == fsha,
+                                 "aug_features_ok": cfg["aug_features_sha256"] is None or cfg["aug_features_sha256"] == sha256(feat_file(a, pol)),
+                                 "max_abs_pred_recalculada": max(float(np.abs(P[s] - np.load(d / f"preds_{s}_reps.npy")).max()) for s in P),
+                                 "codigo_ablation_sha": cfg["code_sha256"]["ablation.py"][:12], "codigo_augment_sha": cfg["code_sha256"]["augment.py"][:12]}
+    # 3. Pesos y estandarización ponderada en un fold real (A1, LOCO fold 0 y 5x10 semilla 0 fold 0)
+    K = AG.K_VARIANTS; Xa = np.load(feat_file(a, "A1"))["Xaug"].astype(np.float64); rep["ponderacion"] = {}
+    for name, (r, f) in (("loco", (0, 0)), ("rep5x10", (0, 0))):
+        tr, _ = sch[name][r][f]; Xtr = np.concatenate([X[tr], Xa[tr].reshape(-1, X.shape[1])])
+        w = np.full(len(Xtr), 1 / (K + 1)); photo = np.concatenate([np.arange(len(tr)), np.repeat(np.arange(len(tr)), K)])
+        tot = np.bincount(photo, weights=w); sw = w.sum(); mu = w @ Xtr / sw; sd = np.sqrt(w @ (Xtr - mu) ** 2 / sw)
+        const = sd <= 1e-12 * np.maximum(1, np.abs(mu)); sd[const] = 1; A = (Xtr - mu) / sd
+        rep["ponderacion"][name] = {"filas": len(Xtr), "fotos": len(tr), "peso_por_foto_min": float(tot.min()), "peso_por_foto_max": float(tot.max()),
+                                    "peso_total": float(sw), "max_abs_media_ponderada_estandarizada": float(np.abs(w @ A / sw).max()),
+                                    "max_abs_var_ponderada_menos_1": float(np.abs(w @ A[:, ~const] ** 2 / sw - 1).max()),
+                                    "columnas_constantes": int(const.sum())}
+    # 4. Unidad del bootstrap: vacas (ver paired() y metrics()); 5x10 promedia las 10 repeticiones por foto antes
+    rep["bootstrap"] = {"unidad": "vaca", "n": N_BOOT, "semilla": 0, "rep5x10": "predicción promedio de las 10 repeticiones por foto; "
+                        "las repeticiones nunca se remuestrean como observaciones"}
+    jdump(rep, out / "audit.json"); print("[audit]", json.dumps(rep, indent=1, ensure_ascii=False))
+
 # ---------- CLI ----------
-def expand(pols): return ORDER if pols == ["all"] else pols
+def expand(pols): return [q for p in pols for q in GROUPS.get(p, [p])]
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Ablación de data augmentation sobre el modelo canónico de BCS por regiones")
-    ap.add_argument("step", choices=["run", "extract", "evaluate", "controls", "report", "checkflip"])
-    ap.add_argument("--policy", nargs="+", default=["all"], help=f"políticas: {' '.join(ORDER)} o all")
+    ap.add_argument("step", choices=["run", "extract", "evaluate", "controls", "report", "checkflip", "audit"])
+    ap.add_argument("--policy", nargs="+", default=["all"], help=f"políticas ({' '.join(list(AG.POLICIES))}, con @sN para otra semilla) o grupos: {' '.join(GROUPS)}")
     ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS")
     ap.add_argument("--work_dir", default="/work", help="caché canónico (solo lectura)")
     ap.add_argument("--out_dir", default="/work/aug", help="salidas de la ablación")
@@ -309,11 +389,13 @@ if __name__ == "__main__":
     ap.add_argument("--seeds", type=int, default=10)
     ap.add_argument("--n", type=int, default=20, help="checkflip: fotos a revisar")
     ap.add_argument("--overwrite", action="store_true", help="recalcular descriptores aumentados")
+    ap.add_argument("--report_name", help="report: carpeta <out>/report_<nombre> con las políticas de --policy")
     a = ap.parse_args(); Path(a.out_dir).mkdir(parents=True, exist_ok=True)
     if Path(a.out_dir).resolve() == Path(a.work_dir).resolve(): raise SystemExit("--out_dir no puede ser el caché canónico.")
     pols = expand(a.policy)
     for p in pols:
-        if p not in AG.POLICIES: raise SystemExit(f"Política desconocida: {p}")
+        try: AG.parse_policy(p)
+        except KeyError: raise SystemExit(f"Política desconocida: {p}")
     if a.step == "extract":
         for p in pols: cmd_extract(a, p)
     elif a.step == "evaluate":
@@ -321,10 +403,11 @@ if __name__ == "__main__":
     elif a.step == "controls": check_controls(a)
     elif a.step == "report": cmd_report(a)
     elif a.step == "checkflip": cmd_checkflip(a)
+    elif a.step == "audit": cmd_audit(a)
     else:
         ctrl = [p for p in CONTROLS if p in pols]; rest = [p for p in pols if p not in CONTROLS]
         for p in ctrl: cmd_extract(a, p); cmd_evaluate(a, p)
         if set(CONTROLS) <= set(ctrl): check_controls(a)
         if rest: require_controls(a)
         for p in rest: cmd_extract(a, p); cmd_evaluate(a, p)
-        cmd_report(a)
+        if a.report_name or set(pols) <= set(ORDER): cmd_report(a)

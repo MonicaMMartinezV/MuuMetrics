@@ -43,15 +43,30 @@ POLICIES = {
                "translate": 0.03, "scale": (0.97, 1.03)},
     "A6":     {"flip": 0.5, "bc": {"p": 0.5, "brightness": 0.10, "contrast": 0.10}, "rotate": 5.0,
                "translate": 0.03, "scale": (0.97, 1.03), "noise": 0.02},
+    # Etapa B: fotometría aislada, mismo esquema de compuerta p = 0.5 que A1/A2. Por el sorteo anidado,
+    # B-BR10 y B-CT10 son exactamente las dos componentes de A2 (mismas compuertas y mismos factores).
+    "B-BR05": {"bc": {"p": 0.5, "brightness": 0.05, "contrast": 0.0}},
+    "B-BR10": {"bc": {"p": 0.5, "brightness": 0.10, "contrast": 0.0}},
+    "B-CT05": {"bc": {"p": 0.5, "brightness": 0.0, "contrast": 0.05}},
+    "B-CT10": {"bc": {"p": 0.5, "brightness": 0.0, "contrast": 0.10}},
 }
 FILL = (MEAN * 255).astype(np.float32)          # mismo color de relleno que el lienzo del segmentador
 
-def variant_seed(name: str, k: int) -> np.random.SeedSequence:
-    return np.random.SeedSequence([BASE_SEED, zlib.crc32(name.encode()), k])
+def parse_policy(pol: str):
+    """'A1' -> ('A1', BASE_SEED); 'A1@s3' -> ('A1', 3): misma política con otra semilla de augmentation."""
+    base, _, s = pol.partition("@s")
+    if base not in POLICIES or (s and not s.isdigit()): raise KeyError(pol)
+    return base, int(s) if s else BASE_SEED
 
-def sample_params(name: str, k: int) -> dict:
+def spec(pol: str):
+    return POLICIES[parse_policy(pol)[0]]
+
+def variant_seed(name: str, k: int, seed: int = BASE_SEED) -> np.random.SeedSequence:
+    return np.random.SeedSequence([seed, zlib.crc32(name.encode()), k])
+
+def sample_params(name: str, k: int, seed: int = BASE_SEED) -> dict:
     """Sorteo completo e independiente de la política: u ~ U(0,1) para las compuertas y U(-1,1) para magnitudes."""
-    r = np.random.default_rng(variant_seed(name, k))
+    r = np.random.default_rng(variant_seed(name, k, seed))
     u = r.random(2); m = r.uniform(-1, 1, 6)
     return {"flip_u": float(u[0]), "bc_u": float(u[1]), "b": float(m[0]), "c": float(m[1]), "rot": float(m[2]),
             "tx": float(m[3]), "ty": float(m[4]), "s": float(m[5]), "noise_seed": int(r.integers(2**31))}
