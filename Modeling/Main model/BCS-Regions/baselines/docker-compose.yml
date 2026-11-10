@@ -1,0 +1,29 @@
+# =============================================================
+# docker-compose de los baselines (desde Modeling/Main model/BCS-Regions/):
+#   docker compose -f baselines/docker-compose.yml build
+#   docker compose -f baselines/docker-compose.yml run --rm baselines baselines/congelados.py
+#   docker compose -f baselines/docker-compose.yml run --rm baselines baselines/ajuste.py --modelo resnet50
+#   docker compose -f baselines/docker-compose.yml run --rm baselines baselines/yolo_cls.py
+#   docker compose -f baselines/docker-compose.yml run --rm baselines baselines/comparar.py
+# Mismas rutas que el modelo: DATA_DIR (carpeta con Dataset_Fr_BCS_v2/) y
+# WORK_DIR (necesita features.npz del modelo). Variables en baselines/.env.
+# =============================================================
+services:
+  baselines:
+    build:
+      context: ..
+      dockerfile: baselines/Dockerfile
+    image: muumetrics-bcs-baselines:latest
+    user: "${UID:-1000}:${GID:-1000}"
+    shm_size: "4gb"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - ..:/app
+      - ${DATA_DIR:-../../../../Dataset}:/data:ro
+      - ${WORK_DIR:-../work}:/work
