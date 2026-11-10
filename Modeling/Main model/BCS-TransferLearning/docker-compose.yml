@@ -1,0 +1,34 @@
+# =============================================================
+# docker-compose del transfer learning BEiT-B + máscaras.
+#
+# Uso (desde esta carpeta):
+#   printf "UID=%s\nGID=%s\n" $(id -u) $(id -g) > .env    # una vez
+#   docker compose build
+#   docker compose run --rm bcs evaluate                       # backbone ImageNet (Winkler)
+#   docker compose run --rm bcs pretrain --corpus /corpus/...   # SimMIM desde cero
+#   docker compose run --rm bcs evaluate --backbone /work/pretrain/beit_simmim
+#
+# Rutas configurables (variables de entorno o .env):
+#   DATA_DIR    carpeta Dataset/ (con Dataset_Fr_BCS/ y Dataset_Fr_BCS_masks/)
+#   CORPUS_DIR  fotos SIN etiqueta para 'pretrain' (se montan en /corpus)
+#   WORK_DIR    caché, pesos y resultados
+# =============================================================
+services:
+  bcs:
+    build: .
+    image: muumetrics-bcs-transfer:latest
+    user: "${UID:-1000}:${GID:-1000}"
+    shm_size: 8gb                                # workers del DataLoader en 'pretrain'
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    volumes:
+      - .:/app
+      - ../BCS-Regions:/regions:ro               # data.py y métricas del modelo de referencia
+      - ${DATA_DIR:-../../../Dataset}:/data:ro
+      - ${CORPUS_DIR:-../../../Dataset}:/corpus:ro
+      - ${WORK_DIR:-./work}:/work

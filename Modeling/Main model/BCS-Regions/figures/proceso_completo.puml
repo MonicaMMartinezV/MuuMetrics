@@ -1,0 +1,86 @@
+@startuml proceso_completo
+' Proceso completo de BCS-Regions (bcs_regions.py)
+' Render: plantuml figures/proceso_completo.puml
+!theme plain
+skinparam defaultFontName Helvetica
+skinparam ActivityBackgroundColor #F7F9FC
+skinparam ActivityBorderColor #34495E
+skinparam NoteBackgroundColor #FFF8E1
+skinparam ArrowColor #34495E
+skinparam PartitionBorderColor #7F8C8D
+
+title BCS-Regions: proceso completo\n<size:11>python bcs_regions.py all  =  masks -> features -> evaluate -> train</size>
+
+start
+:**Dataset_Fr_BCS**
+carpetas <vacaId>_<BCS> con recortes dorsales del robot;
+note right
+  **data.py · load_records**
+  - vaca y BCS salen del nombre de la carpeta
+  - "<id>_MAYO4.25_JUNIO4_JULIO3.5": BCS por mes
+    según la fecha del archivo
+  - carpetas ilegibles (dos vacas) se ignoran
+  -> **369 fotos, 37 vacas**, BCS 2.0 – 5.0
+end note
+
+partition "1 · masks  (segmenter.py)" {
+  if (¿máscara en work/masks/?) then (sí)
+    :reusar caché;
+  else (no)
+    :centrar recorte en lienzo 16:9
+    y reescalar a 378 x 672;
+    :segmentador DINOv2-B/14 + FPN
+    (pesos final_all40.pt)
+    TTA: promedio con la imagen volteada;
+    :probabilidades [6, h, w] para 6 regiones:
+    loin · hips · rump · tailhead · thigh_L · thigh_R;
+    :guardar uint8 a media resolución
+    -> work/masks/<foto>.npz;
+  endif
+}
+
+partition "2 · features" {
+  :reescalar foto a 378 x 378;
+  :DINOv2-L/14 **congelado**
+  -> 27 x 27 = 729 tokens de parche x 1024;
+  :promedio de tokens dentro de cada región
+  (peso = fracción del parche en la máscara);
+  :indicador de región ausente
+  (< medio parche -> vector en 0, flag = 1);
+  :vector por foto: 6 x 1024 + 6 = **6150**
+  -> work/features.npz (X, y, vaca, name);
+}
+
+partition "3 · evaluate" {
+  fork
+    :LOCO
+    dejar una vaca fuera (37 folds);
+  fork again
+    :5 folds por vaca
+    x 10 semillas (estratificado);
+  end fork
+  :ridge por fold, alpha por GroupKFold(4) interno;
+  :metrics.csv · preds_loco.csv · preds_rep5x10.csv;
+  note right
+    LOCO:     MAE 0.583 · R² 0.55 · ±0.5 = 56 %
+    5x10:     MAE 0.629 · R² 0.48 · ±0.5 = 50 %
+    Baseline (media del train): MAE 0.954
+  end note
+}
+
+partition "4 · train" {
+  :ridge final con las 369 fotos
+  (alpha elegido = 1000);
+  :work/ridge_model.npz
+  coef[6150], intercept, alpha, meta;
+}
+
+partition "5 · predict  (fotos nuevas)" {
+  :imagen o carpeta (--input);
+  :segment -> describe
+  (mismo camino que pasos 1 y 2, sin caché);
+  :BCS = x · coef + intercept;
+  :predicciones.csv;
+}
+stop
+@enduml

@@ -1,0 +1,4 @@
+# Imagen para exp_depth.py: la de BCS-Regions + transformers (Depth Anything V2)
+FROM muumetrics-bcs-regions:latest
+RUN pip install --no-cache-dir transformers==4.57.1
+RUN pip install --no-cache-dir opencv-python-headless==4.10.0.84

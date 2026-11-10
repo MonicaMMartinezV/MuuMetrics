@@ -1,0 +1,91 @@
+@startuml arquitectura_final
+' Arquitectura final de BCS-Regions (2026-11-09; EXPERIMENTOS [15], [16], [18], [20])
+' Render: plantuml figures/arquitectura_final.puml
+!theme plain
+skinparam defaultFontName Helvetica
+skinparam ActivityBackgroundColor #F7F9FC
+skinparam ActivityBorderColor #34495E
+skinparam NoteBackgroundColor #FFF8E1
+skinparam ArrowColor #34495E
+skinparam PartitionBorderColor #7F8C8D
+
+title BCS-Regions: arquitectura final\n<size:11>segmentador (pseudo-etiquetas) + DINOv2-L bloque 17 congelado (224 px) + ridge  ·  64 vacas, 542 fotos</size>
+
+start
+:**Foto dorsal del robot**
+recorte RGB, cualquier tamaño;
+
+fork
+  partition "1 · Segmentador de regiones  (segmenter.py · weights/final_all40.pt)" {
+    :centrar en lienzo 16:9 (fondo = color medio)
+    y reescalar a **378 x 672**;
+    :**DINOv2-B/14** ajustado (lr encoder x0.1)
+    salidas de los bloques 3 · 6 · 9 · 12;
+    :**FPN**: conv 1x1 -> 128 por nivel,
+    suma de arriba a abajo, concat (512);
+    :conv 3x3 128 + BN + ReLU -> conv 1x1 -> **6 canales**
+    sigmoide (multietiqueta: las regiones se enciman);
+    :TTA: promedio con la foto volteada
+    (intercambia muslo izq. <-> der.);
+    :**6 máscaras**
+    loin · hips · rump · tailhead · thigh_L · thigh_R;
+  }
+  note left
+    **Entrenamiento**
+    40 fotos anotadas (Roboflow)
+    + 345 cuadros del robot pseudo-etiquetados
+    (maestro -> acuerdo con volteo >= 0.93;
+    píxeles 0.3 < p < 0.7 ignorados)
+    BCE + Dice · 3000 iters · batch 4 (2 + 2)
+    AdamW lr 3e-4
+    **mIoU CV 0.741** (tailhead 0.618)
+  end note
+  :máscara > 0.5 -> malla 16 x 16
+  (fracción de cada parche dentro de la región);
+fork again
+  partition "2 · Descriptor  (bcs_regions.py · describe)" {
+    :aplastar a **224 x 224** (bicúbico)
+    normalización ImageNet;
+    :**DINOv2-L/14 congelado**
+    vit_large_patch14_dinov2.lvd142m
+    24 bloques · 1024 dims;
+    :salida del **bloque 17** (+ LayerNorm final)
+    -> 16 x 16 = 256 tokens de parche x 1024;
+  }
+  note right
+    **Sin entrenar**
+    preentrenado autosupervisado
+    (142 M imágenes)
+    bloques 17-20 > bloque 24 [18], [19]
+    224 px rinde igual que 378 px
+    y es ~3x más rápido [20]
+  end note
+end fork
+
+:**Promedio ponderado de tokens por región**
+6 regiones x 1024 = 6144
++ 6 indicadores de región ausente (< medio parche)
+-> vector de **6150** por foto;
+
+partition "3 · Regresor  (work/ridge_model.npz)" {
+  :estandarizar cada columna (media / sd del train);
+  :**Ridge** (L2), forma dual
+  alpha = 1000, elegido con GroupKFold(4) por vaca;
+}
+note right
+  **Entrenamiento**
+  Dataset_Fr_BCS_v2
+  542 fotos · 64 vacas · BCS 2.0 – 5.0
+  MLP y kernel ridge no mejoran [17]
+end note
+
+:**BCS continuo**  (p. ej. 3.18);
+note right
+  **Vacas no vistas (LOCO, por foto)**
+  R2 0.66 · MAE 0.464 · RMSE 0.579
+  73 % a ±0.5
+  (R2 por vaca 0.62)
+  negras subestimadas ~0.25 a igual BCS [21]
+end note
+stop
+@enduml

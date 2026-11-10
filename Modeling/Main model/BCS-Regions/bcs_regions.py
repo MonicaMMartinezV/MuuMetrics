@@ -4,8 +4,8 @@
 # Descripción:
 #   Modelo de BCS por regiones (modelo de referencia de model/main):
 #     1. masks     segmentador -> 6 máscaras por foto (caché en <work>/masks)
-#     2. features  DINOv2-L/14 congelado a 378 px; promedio de los tokens
-#                  de parche dentro de cada región + indicador de región
+#     2. features  DINOv2-L/14 congelado a 224 px; promedio de los tokens
+#                  de parche del bloque 17 (de 24) dentro de cada región + indicador de región
 #                  ausente -> vector de 6x1024 + 6 (caché <work>/features.npz)
 #     3. evaluate  ridge validado por vaca: dejar una vaca fuera (LOCO) y
 #                  5 folds por vaca x 10 semillas; alpha elegido con
@@ -26,7 +26,8 @@ from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
 from data import load_records, IMG_EXTS
 from segmenter import load_segmenter, segment, REGIONS, MEAN, STD
 
-BACKBONE, SIZE = "vit_large_patch14_dinov2.lvd142m", 378
+BACKBONE, SIZE = "vit_large_patch14_dinov2.lvd142m", 224   # EXPERIMENTOS [20]: 224 px rinde igual que 378 y es ~3x más rápido
+LAYER = 16                        # bloque 17 de 24 (0-based); EXPERIMENTOS [18]-[20]: mejor que el último bloque
 ALPHAS = (1, 10, 100, 1e3, 1e4, 1e5)
 
 def device():
@@ -68,8 +69,8 @@ def describe(bb, img: np.ndarray, masks: np.ndarray, dev) -> np.ndarray:
     x = np.asarray(Image.fromarray(img).resize((SIZE, SIZE), Image.BICUBIC)) / 255.0   # aplasta a cuadrado
     x = torch.from_numpy(((x - MEAN) / STD).transpose(2, 0, 1)).float()[None].to(dev)
     with torch.autocast(device_type=dev.type, enabled=dev.type == "cuda"):
-        tok = bb.forward_features(x)
-    patches = tok[0, bb.num_prefix_tokens:].float()                                  # [27*27, 1024]
+        sp = bb.forward_intermediates(x, indices=[LAYER], norm=True, output_fmt="NCHW", intermediates_only=True)[0]
+    patches = sp[0].float().reshape(sp.shape[1], -1).T                                # [16*16, 1024], bloque LAYER
     m = F.interpolate(torch.from_numpy((masks > 0.5).astype(np.float32))[None], size=(SIZE, SIZE), mode="nearest")
     w = F.adaptive_avg_pool2d(m, (SIZE // 14, SIZE // 14))[0].reshape(6, -1).to(dev)  # fracción de cada parche en la región
     tot = w.sum(1, keepdim=True); vec = (w @ patches) / tot.clamp_min(1e-6)
@@ -163,7 +164,7 @@ def cmd_train(a):
     al = select_alpha(X, y, cows); A, _, mu, sd = standardize(X, X[:1])
     coef = ridge_dual(A, A[:1], y, [al])[al][1] / sd                                   # coeficientes en el espacio original
     np.savez_compressed(work / "ridge_model.npz", coef=coef, intercept=y.mean() - coef @ mu, alpha=al,
-                        meta=json.dumps({"backbone": BACKBONE, "size": SIZE, "regions": REGIONS, "fotos": len(y),
+                        meta=json.dumps({"backbone": BACKBONE, "layer": LAYER + 1, "size": SIZE, "regions": REGIONS, "fotos": len(y),
                                          "vacas": len(np.unique(cows))}))
     print(f"[train] alpha={al:g}, {len(y)} fotos -> {work / 'ridge_model.npz'}")
 
@@ -186,7 +187,7 @@ def cmd_predict(a):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Modelo de BCS por regiones: masks, features, evaluate, train, predict")
     ap.add_argument("step", choices=["masks", "features", "evaluate", "train", "predict", "all"])
-    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS", help="carpetas <vacaId>_<BCS>/")
+    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS_v2", help="carpetas <vacaId>_<BCS>/ (v2: 64 vacas, 542 fotos)")
     ap.add_argument("--work_dir", default="/work", help="caché de máscaras/features y resultados")
     ap.add_argument("--seg_weights", default="/weights/final_all40.pt")
     ap.add_argument("--seeds", type=int, default=10, help="repeticiones del esquema 5 folds por vaca")

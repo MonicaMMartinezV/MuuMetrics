@@ -4,8 +4,11 @@
 # Descripción:
 #   Segmentador de las 6 regiones anatómicas (multi-etiqueta, las
 #   regiones se traslapan): encoder DINOv2-B/14 ajustado + decodificador
-#   FPN. Entrenado con 40 imágenes anotadas en Roboflow (mIoU 0.745 en
-#   test) sobre el frame completo del robot a 378x672.
+#   FPN. Entrenado con 40 imágenes anotadas en Roboflow + 345 cuadros del
+#   robot pseudo-etiquetados (train_segmenter.py all --no_unict --pseudo;
+#   mIoU CV 0.741 vs 0.735 sin pseudo-etiquetas, EXPERIMENTOS [13], [15])
+#   sobre el frame completo del robot a 378x672. Versión anterior, solo
+#   las 40 anotadas: weights/final_all40_v1.pt.
 #   Los recortes de Dataset_Fr_BCS se colocan al centro de un lienzo
 #   16:9 para que la vaca tenga la escala con la que se entrenó
 #   (IoU 0.92 contra las máscaras sacadas del frame original).
