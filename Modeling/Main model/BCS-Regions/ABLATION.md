@@ -356,3 +356,56 @@ bootstrap por vaca.
   no está corregido por multiplicidad.
 - **Sin selección.** No se elige ninguna política con esta tabla. Para adoptar el flip
   hay que usar el protocolo anidado de B4.
+
+---
+
+# Etapa C: selección anidada por vaca entre A0 y A1 (exploratoria)
+
+**Pregunta.** ¿Un **procedimiento** que elige entre A0 y A1 usando solo vacas de
+entrenamiento predice mejor que usar siempre A0?
+
+**Limitación declarada de antemano.** A1 se eligió como candidato *después* de ver las
+etapas A y B en estas mismas 37 vacas. La validación anidada elimina el sesgo de elegir
+entre A0 y A1 dentro de cada fold, pero **no** elimina el sesgo de haber elegido a A1
+como candidato. Por eso esta etapa es exploratoria. Una confirmación independiente
+requiere vacas nuevas, que no se hayan usado en ninguna etapa.
+
+## Diseño (fijado en este commit, antes de producir resultados)
+
+| Elemento | Definición |
+|---|---|
+| Externo | LOCO: los mismos 37 folds de `cmd_evaluate` (`GroupKFold(37)`) |
+| Interno | LOCO sobre las 36 vacas de train externo (36 folds; 1332 en total). Es determinista y predice cada vaca de train una sola vez |
+| Candidatos | A0 (`fit_predict` canónico) y A1 (flip p = 0.5, K = 3, semilla 0, mismas variantes de `work/aug/features/A1.npz`, ridge ponderado con peso 1/(K+1)) |
+| α interno | `select_alpha` canónico con las filas originales de las 35 vacas de train interno; no ve la vaca de validación interna ni la de test externo. A0 y A1 comparten ese α |
+| Criterio | MAE promedio por vaca sobre las 36 vacas de validación interna |
+| Regla primaria | A1 si `MAE_vaca(A1) < MAE_vaca(A0) − δ` con **δ = 0**; empate → A0 |
+| Sensibilidad | La misma regla con **δ = 0.01** (umbral propuesto en B4) |
+| Ajuste final | Política elegida reentrenada con las 36 vacas, con α = `select_alpha` sobre ese train (el α canónico del fold), y una predicción por foto de la vaca excluida |
+| Comparación | A0 canónico (`work/aug/results/A0`, idéntico a `work/preds_loco.csv`) y "A1 siempre" como referencia |
+| Métricas | MAE por foto y por vaca, RMSE, R², bias, ≤0.5, ΔMAE pareado vs A0 con IC 95 % por bootstrap de vacas (5000, semilla 0) |
+
+**Verificación de fugas** (`nested.py check` → `leakage_check.json`):
+- en cada fold externo, la vaca de test no está en el train;
+- los folds externos coinciden con el LOCO canónico;
+- en los 1332 folds internos, la vaca de test externa nunca aparece;
+- train y validación internos son disjuntos y juntos cubren exactamente el train externo;
+- las variantes A1 están alineadas por nombre con el caché canónico, y solo se usan
+  las de fotos que están en el train del ajuste.
+
+La predicción final de la vaca externa no se usa para elegir nada.
+
+**Controles integrados:**
+- el α final de cada fold debe coincidir con el de `splits.json`;
+- las predicciones finales de A0 y A1 deben reproducir `results/A0` y `results/A1`.
+
+```bash
+docker compose run --rm --entrypoint python bcs nested.py check
+docker compose run --rm --entrypoint python bcs nested.py run      # -> work/aug/nested_A0A1/
+```
+
+Salidas en `work/aug/nested_A0A1/`:
+- `prereg.json`: diseño, fecha y hashes, escrito antes de ajustar;
+- `leakage_check.json`;
+- `folds.json`: selección, MAE interno y predicciones por fold;
+- `comparison.csv`, `per_cow.csv`, `preds_nested_loco.csv`, `report.md` y `summary.json`.
