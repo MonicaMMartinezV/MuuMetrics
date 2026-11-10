@@ -40,7 +40,7 @@ from comun_b import br, cargar, particiones, interna, guardar_preds, DIVISIONES
 
 MODELOS = {
     "resnet50":        dict(timm="resnet50.a1_in1k",        lrs=(1e-4, 3e-4, 1e-3), epocas=30, batch=16),
-    "efficientnet_b0": dict(timm="efficientnet_b0.ra_in1k", lrs=(3e-4, 1e-3, 3e-3), epocas=30, batch=16),
+    "efficientnet_b0": dict(timm="efficientnet_b0.ra_in1k", lrs=(3e-4, 1e-3),       epocas=30, batch=16),   # 2 lr por costo (~4.5 h -> ~3 h)
     "dinov3_lora":     dict(timm=br.BACKBONE,               lrs=(3e-4, 1e-3),       epocas=15, batch=8, lora=8),
 }
 MEAN = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1); STD = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
