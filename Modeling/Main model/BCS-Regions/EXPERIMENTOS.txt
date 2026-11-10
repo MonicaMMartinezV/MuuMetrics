@@ -821,6 +821,51 @@ Ridge en GPU (bcs_regions.ridge_dual con torch float64): evaluate pasa de
   Log: work/run_dinov3_gpu.log.
 TransferLearning 64 vacas (BCS-TransferLearning/work_64): CANCELADO a pedido
   en la vaca 21/64 (MAE parcial por vaca ~0.60 vs 0.45 de este modelo).
+Reproducción desde cero (2026-11-10, worktree limpio, máscaras y descriptores
+  recalculados, log work/run_all.log): LOCO 0.452 / R2 0.68, rep5x10 0.464 /
+  R2 0.67, alpha 1000. Idéntico a la tabla de arriba. 6 fotos sin lomo
+  (fuera del recorte).
+
+
+-------------------------------------------------------------------
+[26] 2026-11-10 · Espejo y resolución con DINOv3 (exp_espejo_res.py)
+-------------------------------------------------------------------
+Archivos: exp_espejo_res.py (extract/eval), exp_espejo_res_ic.py (IC por vaca)
+  -> work/exp_espejo_res/ (feats_<res>_<espejo>.npz, resultados.csv, pareado.csv,
+  barrido_bloques.csv, preds_loco.csv, ic_bootstrap.csv), log work/exp_espejo_res.log
+Qué: modelo actual (seg3 + DINOv3-L/16 + ridge, 64 vacas) con resolución
+  320 | 384 | 448 | 512 px x espejo (promedio foto + foto volteada, muslos
+  intercambiados, como [4]). Principal: bloque 21 FIJO (sin selección), LOCO
+  y rep5x10 con br.fit_predict. Secundario: barrido de bloques 17-24 (LOCO).
+Resultado (bloque 21):
+                       LOCO MAE  rep5x10  R2 fotos  R2 vacas  MAE vaca  ms/foto*
+  384 sin espejo (base) 0.452    0.464    0.68      0.63      0.452     38
+  320 sin espejo        0.442    0.458    0.69      0.66      0.439     32
+  320 espejo            0.448    0.458    0.69      0.62      0.462     37
+  384 espejo            0.441    0.455    0.70      0.63      0.456     43
+  448 sin espejo        0.451    0.464    0.69      0.64      0.444     46
+  448 espejo            0.443    0.449    0.70      0.63      0.451     52
+  512 sin espejo        0.461    0.471    0.67      0.61      0.462     59
+  512 espejo            0.443    0.453    0.69      0.62      0.459     65
+  (* extrayendo 8 bloques, RTX 2080)
+  Sesgo flacas +0.54..+0.61 y gordas -0.33..-0.38 en todas.
+  Diferencia vs base, LOCO, bootstrap remuestreando VACAS (exp_espejo_res_ic.py):
+                   dR2 foto               dR2 vaca               dMAE vaca
+    384 espejo     +0.016 [-0.003,+0.039] -0.003 [-0.030,+0.021] +0.004 [-0.014,+0.022]
+    448 espejo     +0.015 [-0.013,+0.040] -0.003 [-0.037,+0.027] -0.001 [-0.022,+0.020]
+    320 sin espejo +0.014 [+0.001,+0.039] +0.025 [+0.001,+0.058] -0.013 [-0.029,+0.001]
+    448 sin espejo +0.009 [-0.009,+0.027] +0.002 [-0.027,+0.031] -0.008 [-0.026,+0.011]
+    512 sin espejo -0.008 [-0.034,+0.011] -0.026 [-0.067,+0.009] +0.009 [-0.010,+0.029]
+  Barrido de bloques: el 21 es el mejor o casi el mejor en las 8 combinaciones.
+Conclusión: el espejo baja el MAE y sube el R2 POR FOTO (0.68 -> 0.70) pero no
+  POR VACA (R2 vacas 0.63, MAE vaca +0.004): lo ganan unas pocas vacas con
+  muchas fotos. La resolución da igual entre 320 y 448; 512 empeora un poco.
+  320 px es lo único que mejora en las 4 métricas y es 16 % más rápido, pero
+  sus IC apenas excluyen 0 (+0.001) entre 7 variantes x 4 métricas sin
+  corregir por comparaciones múltiples. Nada cambia el sesgo de las flacas.
+Decisión: el modelo final NO cambia (384 px, sin espejo, bloque 21). Espejo
+  descartado. 320 px queda como CANDIDATO: entra como opción en la validación
+  cruzada anidada o se confirma con vacas nuevas.
 
 
 -------------------------------------------------------------------

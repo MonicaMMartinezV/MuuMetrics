@@ -1,3 +1,5 @@
 work/
 weights/
 .env
+# caché de Java que crea PlantUML al generar los diagramas
+figures/?/

@@ -59,7 +59,8 @@ Limitaciones conocidas:
 Lo que se probó y **no** ayudó (detalles en EXPERIMENTOS): datos externos (UNICT,
 Zenodo, incluso solo Holstein), cabezas no lineales (MLP, kernel ridge), calibración,
 pesos por vaca, profundidad monocular, forma de las máscaras, SigLIP 2, promediar
-varias fotos de una visita y transfer learning de BEiT (`Main model/BCS-TransferLearning/`).
+varias fotos de una visita, promediar con la foto en espejo, cambiar la resolución
+(320–512 px, [26]) y transfer learning de BEiT (`Main model/BCS-TransferLearning/`).
 
 ## 2. Requisitos
 
