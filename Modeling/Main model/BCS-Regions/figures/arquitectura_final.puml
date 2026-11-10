@@ -1,5 +1,5 @@
 @startuml arquitectura_final
-' Arquitectura final de BCS-Regions (2026-11-09; EXPERIMENTOS [15], [16], [18], [20])
+' Arquitectura final de BCS-Regions (2026-11-10; EXPERIMENTOS [15], [16], [24], [25])
 ' Render: plantuml figures/arquitectura_final.puml
 !theme plain
 skinparam defaultFontName Helvetica
@@ -9,7 +9,7 @@ skinparam NoteBackgroundColor #FFF8E1
 skinparam ArrowColor #34495E
 skinparam PartitionBorderColor #7F8C8D
 
-title BCS-Regions: arquitectura final\n<size:11>segmentador (pseudo-etiquetas) + DINOv2-L bloque 17 congelado (224 px) + ridge  ·  64 vacas, 542 fotos</size>
+title BCS-Regions: arquitectura final\n<size:11>segmentador (pseudo-etiquetas) + DINOv3-L bloque 21 congelado (384 px) + ridge  ·  64 vacas, 542 fotos</size>
 
 start
 :**Foto dorsal del robot**
@@ -40,25 +40,25 @@ fork
     AdamW lr 3e-4
     **mIoU CV 0.741** (tailhead 0.618)
   end note
-  :máscara > 0.5 -> malla 16 x 16
+  :máscara > 0.5 -> malla 24 x 24
   (fracción de cada parche dentro de la región);
 fork again
   partition "2 · Descriptor  (bcs_regions.py · describe)" {
-    :aplastar a **224 x 224** (bicúbico)
+    :aplastar a **384 x 384** (bicúbico)
     normalización ImageNet;
-    :**DINOv2-L/14 congelado**
-    vit_large_patch14_dinov2.lvd142m
+    :**DINOv3-L/16 congelado**
+    vit_large_patch16_dinov3.lvd1689m
     24 bloques · 1024 dims;
-    :salida del **bloque 17** (+ LayerNorm final)
-    -> 16 x 16 = 256 tokens de parche x 1024;
+    :salida del **bloque 21** (+ LayerNorm final)
+    -> 24 x 24 = 576 tokens de parche x 1024;
   }
   note right
     **Sin entrenar**
     preentrenado autosupervisado
-    (142 M imágenes)
-    bloques 17-20 > bloque 24 [18], [19]
-    224 px rinde igual que 378 px
-    y es ~3x más rápido [20]
+    (1689 M imágenes)
+    bloques 19-21 > bloque 24 [24]
+    DINOv3 384/21 vs DINOv2 224/17:
+    MAE por vaca -0.013, no significativo [25]
   end note
 end fork
 
@@ -82,9 +82,9 @@ end note
 :**BCS continuo**  (p. ej. 3.18);
 note right
   **Vacas no vistas (LOCO, por foto)**
-  R2 0.66 · MAE 0.464 · RMSE 0.579
-  73 % a ±0.5
-  (R2 por vaca 0.62)
+  R2 0.68 · MAE 0.452 · RMSE 0.565
+  71 % a ±0.5
+  (R2 por vaca 0.63)
   negras subestimadas ~0.25 a igual BCS [21]
 end note
 stop

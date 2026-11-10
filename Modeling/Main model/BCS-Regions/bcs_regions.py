@@ -4,8 +4,8 @@
 # Descripción:
 #   Modelo de BCS por regiones (modelo de referencia de model/main):
 #     1. masks     segmentador -> 6 máscaras por foto (caché en <work>/masks)
-#     2. features  DINOv2-L/14 congelado a 224 px; promedio de los tokens
-#                  de parche del bloque 17 (de 24) dentro de cada región + indicador de región
+#     2. features  DINOv3-L/16 congelado a 384 px; promedio de los tokens
+#                  de parche del bloque 21 (de 24) dentro de cada región + indicador de región
 #                  ausente -> vector de 6x1024 + 6 (caché <work>/features.npz)
 #     3. evaluate  ridge validado por vaca: dejar una vaca fuera (LOCO) y
 #                  5 folds por vaca x 10 semillas; alpha elegido con
@@ -26,8 +26,8 @@ from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
 from data import load_records, IMG_EXTS
 from segmenter import load_segmenter, segment, REGIONS, MEAN, STD
 
-BACKBONE, SIZE = "vit_large_patch14_dinov2.lvd142m", 224   # EXPERIMENTOS [20]: 224 px rinde igual que 378 y es ~3x más rápido
-LAYER = 16                        # bloque 17 de 24 (0-based); EXPERIMENTOS [18]-[20]: mejor que el último bloque
+BACKBONE, SIZE = "vit_large_patch16_dinov3.lvd1689m", 384   # EXPERIMENTOS [24]/[25]: DINOv3-L/16 a 384 px (malla 24x24)
+LAYER = 20                        # bloque 21 de 24 (0-based). Antes: DINOv2-L/14 224 px bloque 17 (work/base_v7_dinov2_224_b17)
 ALPHAS = (1, 10, 100, 1e3, 1e4, 1e5)
 
 def device():
@@ -70,9 +70,10 @@ def describe(bb, img: np.ndarray, masks: np.ndarray, dev) -> np.ndarray:
     x = torch.from_numpy(((x - MEAN) / STD).transpose(2, 0, 1)).float()[None].to(dev)
     with torch.autocast(device_type=dev.type, enabled=dev.type == "cuda"):
         sp = bb.forward_intermediates(x, indices=[LAYER], norm=True, output_fmt="NCHW", intermediates_only=True)[0]
-    patches = sp[0].float().reshape(sp.shape[1], -1).T                                # [16*16, 1024], bloque LAYER
+    g = sp.shape[-1]                                                                  # malla de parches (24 con DINOv3 384/16)
+    patches = sp[0].float().reshape(sp.shape[1], -1).T                                # [g*g, 1024], bloque LAYER
     m = F.interpolate(torch.from_numpy((masks > 0.5).astype(np.float32))[None], size=(SIZE, SIZE), mode="nearest")
-    w = F.adaptive_avg_pool2d(m, (SIZE // 14, SIZE // 14))[0].reshape(6, -1).to(dev)  # fracción de cada parche en la región
+    w = F.adaptive_avg_pool2d(m, (g, g))[0].reshape(6, -1).to(dev)  # fracción de cada parche en la región
     tot = w.sum(1, keepdim=True); vec = (w @ patches) / tot.clamp_min(1e-6)
     miss = tot[:, 0] < 0.5; vec[miss] = 0                                             # menos de medio parche -> ausente
     return np.concatenate([vec.reshape(-1).cpu().numpy(), miss.float().cpu().numpy()])
@@ -96,10 +97,13 @@ def standardize(tr, te):
     return (tr - mu) / sd, (te - mu) / sd, mu, sd
 
 def ridge_dual(A, B, ytr, alphas):
-    """Ridge con X ya estandarizada, resuelto con el kernel lineal (n << p). -> {alpha: (pred_B, coef)}"""
-    ev, V = np.linalg.eigh(A @ A.T); yc = ytr - ytr.mean(); Vy = V.T @ yc; out = {}
+    """Ridge con X ya estandarizada, resuelto con el kernel lineal (n << p). -> {alpha: (pred_B, coef)}
+    En GPU si hay (torch float64, mismo resultado que numpy salvo redondeo); si no, en CPU."""
+    dev = device(); A, B = torch.as_tensor(A, device=dev), torch.as_tensor(B, device=dev)
+    ym = float(ytr.mean()); yc = torch.as_tensor(ytr - ym, device=dev, dtype=A.dtype)
+    ev, V = torch.linalg.eigh(A @ A.T); Vy = V.T @ yc; out = {}
     for al in alphas:
-        dual = V @ (Vy / (ev + al)); out[al] = (B @ (A.T @ dual) + ytr.mean(), A.T @ dual)
+        coef = A.T @ (V @ (Vy / (ev + al))); out[al] = ((B @ coef + ym).cpu().numpy(), coef.cpu().numpy())
     return out
 
 def select_alpha(X, y, groups):

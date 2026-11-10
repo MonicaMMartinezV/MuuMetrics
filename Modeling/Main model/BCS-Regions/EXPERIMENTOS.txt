@@ -7,7 +7,7 @@ Ruido de referencia: IC95 del MAE por vaca del modelo base = [0.465, 0.633];
 diferencias de ±0.02 en MAE no son significativas.
 
 ARCHIVOS COMUNES (modelo final)
-  bcs_regions.py   pipeline: máscaras -> descriptores DINOv2 -> ridge -> evaluación
+  bcs_regions.py   pipeline: máscaras -> descriptores DINOv3 -> ridge -> evaluación
   segmenter.py     segmentador de 6 regiones (pesos en weights/, no se suben)
   data.py          lectura de Dataset_Fr_BCS(_v2)
   Dockerfile, docker-compose.yml, requirements.txt
@@ -794,7 +794,33 @@ Combinación (promedio de predicciones LOCO, peso fijo 0.5):
     mismas vacas; la combinación solo suaviza ruido.
 Conclusión: DINOv3 a 384 px empata o mejora un poco (no significativo,
   elegido entre 17 bloques). Nada corrige las flacas (+0.57..+0.60).
-Decisión: pendiente (ver respuesta al usuario). Resultados en work/exp_desc2/.
+Decisión: DINOv3 384/21 adoptado a pedido en [25]. Resultados en work/exp_desc2/.
+
+
+-------------------------------------------------------------------
+[25] 2026-11-10 · Modelo final con DINOv3-L/16 384 px / bloque 21 (a pedido)
+-------------------------------------------------------------------
+Archivos: bcs_regions.py (BACKBONE, SIZE, LAYER; malla de parches tomada del modelo),
+  figures/arquitectura_final.puml -> work/ (modelo actual), log work/run_dinov3_384_b21.log;
+  modelo anterior (DINOv2 224/17) en work/base_v7_dinov2_224_b17/
+Qué: cambiar el descriptor del modelo por la mejor variante de [24], aunque
+  la mejora no es significativa. Mismo segmentador (seg3), mismo ridge,
+  alpha 1000. Descriptor 6x1024 + 6 = 6150 (igual tamaño).
+Resultado (64 vacas, 542 fotos):
+                         LOCO MAE  RMSE   R2 fotos  R2 vacas  ±0.5  MAE vaca
+  DINOv2 224/17 (antes)  0.464     0.579  0.66      0.62      73%   0.465
+  DINOv3 384/21          0.452     0.565  0.68      0.63      71%   0.452 [0.390, 0.520]
+  rep5x10: 0.480 / R2 0.66 -> 0.464 / R2 0.67 (R2 vacas 0.63, ±0.5 70%)
+  MAE por vaca vs DINOv2 (LOCO): -0.013 [-0.053, +0.027], mejoran 35/64.
+  Sesgo flacas +0.60 -> +0.57; gordas -0.35 -> -0.34.
+Conclusión: igual o un poco mejor en los dos esquemas, pero no significativo
+  y elegido entre 17 bloques. Extracción ~2-3x más lenta que 224 px.
+Decisión: ADOPTADO (2026-11-10, a pedido del equipo). Confirmar con vacas nuevas.
+Ridge en GPU (bcs_regions.ridge_dual con torch float64): evaluate pasa de
+  1597 s (CPU) a 25 s; predicciones idénticas (dif. máx. 0.0, coef ~1e-13).
+  Log: work/run_dinov3_gpu.log.
+TransferLearning 64 vacas (BCS-TransferLearning/work_64): CANCELADO a pedido
+  en la vaca 21/64 (MAE parcial por vaca ~0.60 vs 0.45 de este modelo).
 
 
 -------------------------------------------------------------------
