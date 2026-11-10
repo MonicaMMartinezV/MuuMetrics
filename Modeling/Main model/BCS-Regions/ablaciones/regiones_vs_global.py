@@ -3,8 +3,8 @@
 #
 # Descripción:
 #   ¿Aportan las regiones anatómicas frente a describir la foto completa
-#   o un solo recorte? Mismo backbone (DINOv2-L/14 congelado, 378 px),
-#   mismo ridge + recalibración lineal (bcs_regions.fit_model) y misma
+#   o un solo recorte? Mismo backbone (DINOv3-L/16 congelado, 384 px, bloque br.LAYER),
+#   mismo ridge del modelo (comun.fit_apply = bcs_regions.fit_predict) y misma
 #   validación por vaca (LOCO y 5 folds x semillas). Variantes:
 #     regiones          el modelo base: promedio por cada una de las 6 regiones + ausencias (features.npz)
 #     foto_completa     token CLS + promedio de todos los parches de la foto
@@ -23,26 +23,18 @@ import argparse, csv, sys, time
 from pathlib import Path
 import numpy as np
 import torch
-from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bcs_regions as br
+from comun import splits_for, fit_apply, tokens, grid
 from data import load_records
-from segmenter import MEAN, STD, REGIONS
+from segmenter import REGIONS
 
 TRASERO = [REGIONS.index(r) for r in ("hips", "rump", "tailhead", "thigh_L", "thigh_R")]
 
-@torch.no_grad()
-def tokens(bb, img, dev):
-    x = np.asarray(Image.fromarray(img).resize((br.SIZE, br.SIZE), Image.BICUBIC)) / 255.0
-    x = torch.from_numpy(((x - MEAN) / STD).transpose(2, 0, 1)).float()[None].to(dev)
-    with torch.autocast(device_type=dev.type, enabled=dev.type == "cuda"):
-        t = bb.forward_features(x)[0].float()
-    return t[0], t[bb.num_prefix_tokens:]                       # CLS [1024], parches [27*27, 1024]
-
 def compute(work, recs, out):
     dev = br.device(); bb = br.load_backbone(dev); F = {"foto_completa": [], "vaca": [], "recorte_trasero": []}
-    g = br.SIZE // 14
+    g = grid(bb)
     for i, r in enumerate(recs):
         img = br.read_rgb(r["path"]); m = np.load(br.mask_file(work, r))["masks"].astype(np.float32) / 255.0
         cls, pt = tokens(bb, img, dev)
@@ -68,14 +60,14 @@ def main(a):
     V = {"regiones": X}
     for k in ("foto_completa", "vaca", "recorte_trasero"): V[k] = np.load(out / f"feat_{k}.npz")["X"].astype(np.float64)
     V["regiones+completa"] = np.hstack([X, V["foto_completa"]])
-    schemes = br.splits_for(y, cows, a.seeds); rows, ce = [], {}
+    schemes = splits_for(y, cows, a.seeds); rows, ce = [], {}
     for v, Xv in V.items():
         t0 = time.time()
         for sch, reps in schemes.items():
             P = []
             for splits in reps:
                 p = np.zeros(len(y))
-                for tr, te in splits: p[te] = br.apply_model(br.fit_model(Xv[tr], y[tr], cows[tr]), Xv[te])
+                for tr, te in splits: p[te] = fit_apply(Xv[tr], y[tr], cows[tr], Xv[te])
                 P.append(p)
             P = np.mean(P, 0); m = br.metrics(P, y, cows)
             if sch == "loco": ce[v] = cow_err(P, y, cows)
@@ -97,7 +89,7 @@ def main(a):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS")
+    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS_v2")
     ap.add_argument("--work_dir", default="/work")
     ap.add_argument("--seeds", type=int, default=10)
     main(ap.parse_args())

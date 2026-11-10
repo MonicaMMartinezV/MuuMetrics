@@ -4,7 +4,7 @@
 # Descripción:
 #   ¿Mejora el modelo base si se quitan las regiones que le restan?
 #   Usa <work>/features.npz (6 regiones x 1024 + 6 indicadores); solo CPU.
-#   Mismo ridge + recalibración lineal (bcs_regions.fit_model) y validación por vaca.
+#   Mismo ridge del modelo (comun.fit_apply = bcs_regions.fit_predict) y validación por vaca.
 #     1. Quitar una región a la vez (LOCO y 5x10), con la diferencia de MAE por
 #        vaca×BCS contra el modelo completo e IC 95% (bootstrap de vacas).
 #     2. 'sin_las_que_restan': quitar todas las regiones cuya ausencia bajó el MAE
@@ -24,6 +24,7 @@ from sklearn.model_selection import GroupKFold
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bcs_regions as br
+from comun import splits_for, fit_apply, tokens, grid
 from segmenter import REGIONS
 
 ES = {"loin": "lomo", "hips": "cadera", "rump": "grupa", "tailhead": "base_cola", "thigh_L": "muslo_izq", "thigh_R": "muslo_der"}
@@ -35,7 +36,7 @@ def cols(keep):
 
 def run(X, y, cows, splits):
     p = np.zeros(len(y))
-    for tr, te in splits: p[te] = br.apply_model(br.fit_model(X[tr], y[tr], cows[tr]), X[te])
+    for tr, te in splits: p[te] = fit_apply(X[tr], y[tr], cows[tr], X[te])
     return p
 
 def cow_err(p, y, cows):
@@ -44,7 +45,7 @@ def cow_err(p, y, cows):
 def inner_mae(X, y, cows, keep):
     Xs = X[:, cols(keep)]; e = []
     for tr, te in GroupKFold(5).split(Xs, y, cows):
-        e.append(np.abs(br.apply_model(br.fit_model(Xs[tr], y[tr], cows[tr]), Xs[te]) - y[te]))
+        e.append(np.abs(fit_apply(Xs[tr], y[tr], cows[tr], Xs[te]) - y[te]))
     return np.concatenate(e).mean()
 
 def backward(X, y, cows):
@@ -58,7 +59,7 @@ def backward(X, y, cows):
 
 def main(a):
     work = Path(a.work_dir); out = work / "ablaciones"; out.mkdir(exist_ok=True)
-    X, y, cows, _ = br.load_features(work); schemes = br.splits_for(y, cows, a.seeds)
+    X, y, cows, _ = br.load_features(work); schemes = splits_for(y, cows, a.seeds)
     rng = np.random.RandomState(0); rows = []; base_ce = None
 
     def evaluate(nombre, keep, nota=""):
@@ -92,7 +93,7 @@ def main(a):
     p = np.zeros(len(y)); quitadas = Counter(); sel = []
     for i, (tr, te) in enumerate(schemes["loco"][0]):
         keep = backward(X[tr], y[tr], cows[tr]); Xs = X[:, cols(keep)]
-        p[te] = br.apply_model(br.fit_model(Xs[tr], y[tr], cows[tr]), Xs[te])
+        p[te] = fit_apply(Xs[tr], y[tr], cows[tr], Xs[te])
         quitadas.update(set(REGIONS) - set(keep)); sel.append({"vaca_test": cows[te][0], "regiones": "+".join(ES[k] for k in keep)})
         if (i + 1) % 8 == 0: print(f"  fold {i + 1}/{len(schemes['loco'][0])} ({time.time() - t0:.0f}s)", flush=True)
     m = br.metrics(p, y, cows); ce = cow_err(p, y, cows); d = ce - base_ce

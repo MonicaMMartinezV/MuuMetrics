@@ -5,10 +5,10 @@
 #   Las 6 regiones se traslapan; aquí se parten en 7 zonas exclusivas (cada
 #   píxel en una sola, primera regla que se cumple): base de cola, grupa∩muslo,
 #   grupa sola, cadera∩muslo, cadera sola, muslo solo, lomo. Mismos tokens de
-#   DINOv2-L que bcs_regions.describe(), promediados por zona.
+#   DINOv3-L (bloque br.LAYER) que bcs_regions.describe(), promediados por zona.
 #   Con 37 vacas (2026-11-05) quitar "cadera sola" (-0.030*) y "muslo solo"
 #   (-0.016) bajaba el error: son las zonas "rojas". Aquí se prueba quitarlas
-#   con las 64 vacas, mismo ridge + recalibración y validación por vaca.
+#   con las 64 vacas, mismo ridge del modelo y validación por vaca.
 #   Como esas zonas se eligieron antes de tener las vacas 9000-9027, el MAE en
 #   esas 27 vacas nuevas es una prueba no sesgada de la elección.
 #   Salidas: <work>/ablaciones/{feat_zonas.npz, quitar_zonas.csv}
@@ -20,12 +20,11 @@ import argparse, csv, sys, time
 from pathlib import Path
 import numpy as np
 import torch, torch.nn.functional as F
-from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bcs_regions as br
+from comun import splits_for, fit_apply, tokens, grid
 from data import load_records
-from segmenter import MEAN, STD
 
 L, H, R, T, TH = 1, 2, 4, 8, 16 | 32          # bits de loin, hips, rump, tailhead, thigh_L|thigh_R
 RULES = [("base_cola", lambda c: c & T), ("grupa_muslo", lambda c: (c & R) and (c & TH)), ("grupa_sola", lambda c: c & R),
@@ -42,17 +41,14 @@ def assign():
 
 @torch.no_grad()
 def compute(work, recs, dst):
-    dev = br.device(); bb = br.load_backbone(dev); G = br.SIZE // 14
+    dev = br.device(); bb = br.load_backbone(dev); G = grid(bb)
     bits = torch.tensor([1, 2, 4, 8, 16, 32], dtype=torch.long); a = assign(); Wc = torch.zeros(len(ZN), 64)
     for c in range(64):
         if a[c] >= 0: Wc[a[c], c] = 1
     X = np.zeros((len(recs), len(ZN) * D + len(ZN)), np.float32)
     for i, r in enumerate(recs):
         img = br.read_rgb(r["path"])
-        x = np.asarray(Image.fromarray(img).resize((br.SIZE, br.SIZE), Image.BICUBIC)) / 255.0
-        x = torch.from_numpy(((x - MEAN) / STD).transpose(2, 0, 1)).float()[None].to(dev)
-        with torch.autocast(device_type=dev.type, enabled=dev.type == "cuda"):
-            tok = bb.forward_features(x)[0, bb.num_prefix_tokens:].float().cpu()
+        tok = tokens(bb, img, dev)[1].cpu()
         m = np.load(br.mask_file(work, r))["masks"].astype(np.float32) / 255.0
         mb = F.interpolate(torch.from_numpy((m > 0.5).astype(np.float32))[None], size=(br.SIZE, br.SIZE), mode="nearest")[0]
         code = (mb.long() * bits[:, None, None]).sum(0)
@@ -73,7 +69,7 @@ def main(a):
     assert [r["name"] for r in recs] == list(names), "features.npz no coincide con los datos"
     f = out / "feat_zonas.npz"
     if not f.exists(): compute(work, recs, f)
-    XZ = np.load(f)["X"].astype(np.float64); schemes = br.splits_for(y, cows, a.seeds)
+    XZ = np.load(f)["X"].astype(np.float64); schemes = splits_for(y, cows, a.seeds)
     keys = sorted(set(zip(cows, y))); nuevas = np.array([c.startswith("90") for c, _ in keys])
     V = {"6_regiones (modelo base)": X6, "7_zonas": XZ}
     for z in ZN: V[f"7_zonas_sin_{z}"] = XZ[:, cols([k for k in ZN if k != z])]
@@ -85,7 +81,7 @@ def main(a):
             P = []
             for splits in reps:
                 p = np.zeros(len(y))
-                for tr, te in splits: p[te] = br.apply_model(br.fit_model(Xv[tr], y[tr], cows[tr]), Xv[te])
+                for tr, te in splits: p[te] = fit_apply(Xv[tr], y[tr], cows[tr], Xv[te])
                 P.append(p)
             P = np.mean(P, 0); m = br.metrics(P, y, cows)
             r.update({f"mae_{sch}": round(float(m["mae"]), 4), f"r2_fotos_{sch}": round(float(m["r2_fotos"]), 4), f"r2_vacas_{sch}": round(float(m["r2_vacas"]), 4)})
@@ -108,7 +104,7 @@ def main(a):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS")
+    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS_v2")
     ap.add_argument("--work_dir", default="/work")
     ap.add_argument("--seeds", type=int, default=10)
     main(ap.parse_args())

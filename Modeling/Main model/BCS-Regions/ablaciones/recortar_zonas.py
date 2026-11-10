@@ -6,7 +6,7 @@
 #   píxeles de las zonas exclusivas que "restan" en el mapa de importancia
 #   (zonas/figures/zonas_mapa.png, 37 vacas): "cadera sola" (-0.030*) y
 #   "muslo solo" (-0.016). Cada región se promedia solo sobre sus píxeles
-#   restantes; nada más cambia (DINOv2-L congelado, ridge + recalibración,
+#   restantes; nada más cambia (DINOv3-L congelado, bloque br.LAYER, ridge,
 #   validación por vaca).
 #   Las zonas rojas se eligieron antes de tener las vacas 9000-9027: la
 #   diferencia en esas 27 vacas es la prueba no sesgada. El recorte del
@@ -20,12 +20,11 @@ import argparse, csv, sys, time
 from pathlib import Path
 import numpy as np
 import torch, torch.nn.functional as F
-from PIL import Image
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bcs_regions as br
+from comun import splits_for, fit_apply, tokens, grid
 from data import load_records
-from segmenter import MEAN, STD
 from quitar_zonas import RULES, ZN, assign
 
 D = 1024
@@ -43,14 +42,11 @@ def region_weights(fuera):
 
 @torch.no_grad()
 def compute(work, recs, out):
-    dev = br.device(); bb = br.load_backbone(dev); G = br.SIZE // 14; bits = torch.tensor([1, 2, 4, 8, 16, 32], dtype=torch.long)
+    dev = br.device(); bb = br.load_backbone(dev); G = grid(bb); bits = torch.tensor([1, 2, 4, 8, 16, 32], dtype=torch.long)
     W = {v: region_weights(f) for v, f in VARIANTES.items()}; X = {v: np.zeros((len(recs), 6 * D + 6), np.float32) for v in VARIANTES}
     for i, r in enumerate(recs):
         img = br.read_rgb(r["path"])
-        x = np.asarray(Image.fromarray(img).resize((br.SIZE, br.SIZE), Image.BICUBIC)) / 255.0
-        x = torch.from_numpy(((x - MEAN) / STD).transpose(2, 0, 1)).float()[None].to(dev)
-        with torch.autocast(device_type=dev.type, enabled=dev.type == "cuda"):
-            tok = bb.forward_features(x)[0, bb.num_prefix_tokens:].float().cpu()
+        tok = tokens(bb, img, dev)[1].cpu()
         m = np.load(br.mask_file(work, r))["masks"].astype(np.float32) / 255.0
         mb = F.interpolate(torch.from_numpy((m > 0.5).astype(np.float32))[None], size=(br.SIZE, br.SIZE), mode="nearest")[0]
         fr = F.adaptive_avg_pool2d(F.one_hot((mb.long() * bits[:, None, None]).sum(0), 64).permute(2, 0, 1).float()[None], (G, G))[0].reshape(64, -1)
@@ -67,7 +63,7 @@ def main(a):
     if not all((out / f"feat_recorte_{v}.npz").exists() for v in VARIANTES): compute(work, recs, out)
     V = {v: np.load(out / f"feat_recorte_{v}.npz")["X"].astype(np.float64) for v in VARIANTES}
     print(f"comprobación 6_regiones vs features.npz: máx |dif| = {np.abs(V['6_regiones'] - X6).max():.4f}")
-    schemes = br.splits_for(y, cows, a.seeds); keys = sorted(set(zip(cows, y)))
+    schemes = splits_for(y, cows, a.seeds); keys = sorted(set(zip(cows, y)))
     nuevas = np.array([c.startswith("90") for c, _ in keys]); rows, ce = [], {}; rng = np.random.RandomState(0); t0 = time.time()
     for v, Xv in V.items():
         r = {"variante": v, "recorte": "+".join(VARIANTES[v]) or "ninguno"}
@@ -75,7 +71,7 @@ def main(a):
             P = []
             for splits in reps:
                 p = np.zeros(len(y))
-                for tr, te in splits: p[te] = br.apply_model(br.fit_model(Xv[tr], y[tr], cows[tr]), Xv[te])
+                for tr, te in splits: p[te] = fit_apply(Xv[tr], y[tr], cows[tr], Xv[te])
                 P.append(p)
             P = np.mean(P, 0); m = br.metrics(P, y, cows)
             r.update({f"mae_{sch}": round(float(m["mae"]), 4), f"r2_fotos_{sch}": round(float(m["r2_fotos"]), 4), f"r2_vacas_{sch}": round(float(m["r2_vacas"]), 4)})
@@ -95,7 +91,7 @@ def main(a):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS")
+    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS_v2")
     ap.add_argument("--work_dir", default="/work")
     ap.add_argument("--seeds", type=int, default=10)
     main(ap.parse_args())
