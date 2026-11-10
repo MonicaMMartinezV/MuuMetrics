@@ -409,3 +409,46 @@ Salidas en `work/aug/nested_A0A1/`:
 - `leakage_check.json`;
 - `folds.json`: selección, MAE interno y predicciones por fold;
 - `comparison.csv`, `per_cow.csv`, `preds_nested_loco.csv`, `report.md` y `summary.json`.
+
+## Resultados de la etapa C (corrida del 2026-11-09; `work/aug/nested_A0A1/`)
+
+**Controles:**
+- las predicciones finales de A0 y A1 reproducen exactamente `results/A0` y `results/A1`
+  (diferencia máxima 0.0);
+- el α final coincide con `splits.json` en los 37 folds;
+- el caché canónico no cambió.
+
+**Selección:**
+- con δ = 0 (primario), A1 en **37/37** folds;
+- con δ = 0.01 (sensibilidad), A1 en 6/37.
+
+La ventaja interna de A1 (MAE por vaca) estuvo entre −0.0112 y −0.0008 en todos los folds.
+
+| Procedimiento | MAE fotos | MAE vaca | RMSE | R² fotos | R² vacas | ΔMAE fotos vs A0 [IC 95 %] | ΔMAE vaca vs A0 [IC 95 %] |
+|---|---|---|---|---|---|---|---|
+| A0 canónico | 0.583 | 0.545 | 0.682 | 0.549 | 0.519 | — | — |
+| Anidado δ = 0 (= A1 siempre) | 0.576 | 0.539 | 0.678 | 0.555 | 0.517 | −0.007 [−0.021, +0.007] | −0.007 [−0.025, +0.011] |
+| Anidado δ = 0.01 | 0.589 | 0.553 | 0.689 | 0.540 | 0.503 | +0.006 [+0.001, +0.013] | +0.008 [+0.001, +0.016] |
+
+**Lectura:**
+
+- **δ = 0.** Con la regla primaria el procedimiento siempre elige A1, así que su
+  resultado es idéntico al de "A1 siempre": −0.007 BCS, con un IC que incluye 0. La
+  selección interna es consistente con lo visto antes, pero no agrega evidencia de que
+  la mejora generalice.
+- **δ = 0.01 empeora por un artefacto del LOCO.**
+  - Las 6 vacas en que eligió A1 son vacas donde A1 empeora (0/6 mejoran).
+  - La causa es estructural: la ventaja interna de A1 tiene una correlación de **−0.58**
+    con su efecto en la vaca excluida. Sacar del conjunto interno una vaca que A1
+    perjudica aumenta la ventaja media de A1 en las 36 restantes.
+  - Las reglas con umbral elegirán justo en esos folds. Es una propiedad del LOCO con
+    efectos pequeños, no una evidencia en contra del flip.
+- **Lo que esta etapa evalúa.** Evalúa el procedimiento de selección; no confirma de
+  forma independiente una mejora. Además, como A1 se eligió como candidato después de
+  ver las etapas A y B, la validación anidada no elimina ese sesgo.
+
+**Recomendación.** Mantener **A0** como modelo principal. Ninguna etapa (A, B, C)
+muestra una mejora consistente y relevante: el efecto del flip (≈ −0.007 BCS) es
+estable en dirección, pero un orden de magnitud menor que la incertidumbre por animal
+y menor que el umbral de ruido de ±0.02. A1 puede reportarse como hallazgo
+exploratorio y volver a evaluarse con vacas nuevas.
