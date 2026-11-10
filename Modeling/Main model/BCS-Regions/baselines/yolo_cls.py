@@ -17,7 +17,7 @@
 # Uso: docker compose -f baselines/docker-compose.yml run --rm baselines \
 #        baselines/yolo_cls.py --division vaca [--tam s] [--rapido]
 # =============================================================
-import argparse, shutil, time
+import argparse, os, shutil, time
 from pathlib import Path
 import numpy as np
 from PIL import Image
@@ -48,6 +48,8 @@ def armar(carpeta: Path, rutas, y, ia, iv):
 def main(a):
     from ultralytics import YOLO
     work = Path(a.work_dir); recs, y, cows, names = cargar(a.data_dir)
+    (work / "baselines").mkdir(parents=True, exist_ok=True)
+    os.chdir(work / "baselines")                     # Ultralytics descarga sus pesos al directorio actual: que no caigan en el código
     nombre = f"yolov8{a.tam}_cls_{a.division}{'_rapido' if a.rapido else ''}"
     out = work / "baselines" / nombre; out.mkdir(parents=True, exist_ok=True)
     rutas = preparar_imagenes(recs, work / "baselines" / "img384"); epocas = 2 if a.rapido else a.epocas; t0 = time.time()
