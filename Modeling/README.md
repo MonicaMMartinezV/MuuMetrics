@@ -107,9 +107,6 @@ curl -L -o weights/final_all40.pt \
   https://github.com/MonicaMMartinezV/MuuMetrics/releases/download/bcs-regions-v2/final_all40.pt
 ```
 
-> El Release `bcs-regions-v1` tiene el segmentador anterior (sin pseudo-etiquetas).
-> Funciona, pero las métricas de arriba son con el de `bcs-regions-v2`.
-
 El ridge final (`work/ridge_model.npz`, 48 KB) no se sube: se regenera con
 `docker compose run --rm bcs all`.
 
