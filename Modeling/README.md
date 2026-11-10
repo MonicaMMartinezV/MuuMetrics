@@ -194,6 +194,7 @@ docker run --rm --gpus all --user $(id -u):$(id -g) \
 | `exp_*.py`, `prep_*.py` | Scripts de los experimentos (ver EXPERIMENTOS.txt) |
 | `train_segmenter.py`, `Dockerfile.seg`, `run_seg.sh` | Entrenamiento del segmentador |
 | `figures/arquitectura_final.*` | Diagrama del modelo actual (PlantUML y PNG) |
+| `figures/model_bcs_v2.*` | Arquitectura del modelo actual en estilo transformer, para el artículo (TikZ: `pdflatex model_bcs_v2.tex`; PDF y PNG) |
 | `figures/model_bcs.*`, `proceso_completo.*`, `modelo_entrenamiento.*` | Diagramas de la versión v1 |
 
 `Main model/BCS-TransferLearning/` contiene el modelo alternativo (BEiT-B ajustado con
