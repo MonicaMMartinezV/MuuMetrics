@@ -146,8 +146,8 @@ def cmd_report(a):
                      for n, c, yy, a0, a1, q0, q1 in zip(names, cows, y, p_a0, p_a1, P["primario"], P["sensibilidad"])])
     per = []
     for f in sorted(folds, key=lambda f: f["vaca"]):
-        te = np.array(f["test_idx"]); yt = y[te][0]; pa0 = np.array(f["pred_A0"]); pn = P["primario"][te]
-        per.append({"vaca": f["vaca"], "fotos": len(te), "bcs_real": yt, "mae_int_A0": f["mae_vaca_interno_A0"], "mae_int_A1": f["mae_vaca_interno_A1"],
+        te = np.array(f["test_idx"]); yt = y[te]; pa0 = np.array(f["pred_A0"]); pn = P["primario"][te]     # BCS por foto (8758 cambia por mes)
+        per.append({"vaca": f["vaca"], "fotos": len(te), "bcs_real": float(yt.mean()), "bcs_rango": f"{yt.min():g}-{yt.max():g}" if yt.min() != yt.max() else f"{yt[0]:g}", "mae_int_A0": f["mae_vaca_interno_A0"], "mae_int_A1": f["mae_vaca_interno_A1"],
                     "dif_int": f["mae_vaca_interno_A1"] - f["mae_vaca_interno_A0"], "sel_d0": f["seleccion"]["primario"], "sel_d001": f["seleccion"]["sensibilidad"],
                     "pred_media_anidado": float(pn.mean()), "mae_anidado": float(np.abs(pn - yt).mean()), "mae_A0": float(np.abs(pa0 - yt).mean()),
                     "dif_vs_A0": float(np.abs(pn - yt).mean() - np.abs(pa0 - yt).mean()), "alpha_final": f["alpha_final"]})
