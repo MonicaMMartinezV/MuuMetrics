@@ -1,0 +1,5 @@
+work/
+weights/
+.env
+__pycache__/
+work*/

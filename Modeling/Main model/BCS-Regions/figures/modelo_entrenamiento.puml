@@ -1,0 +1,81 @@
+@startuml modelo_entrenamiento
+' Arquitectura del modelo de BCS por regiones y cómo se entrenó
+' Render: plantuml figures/modelo_entrenamiento.puml
+!theme plain
+skinparam defaultFontName Helvetica
+skinparam componentStyle rectangle
+skinparam ArrowColor #34495E
+skinparam NoteBackgroundColor #FFF8E1
+skinparam rectangle {
+  BorderColor #34495E
+}
+!pragma layout smetana
+
+title BCS-Regions: modelo y entrenamiento
+
+rectangle "Foto dorsal\n(recorte del robot)" as img #FADADD
+
+package "Segmentador de regiones  (entrenado aparte, aquí congelado)" #F3F0FA {
+  rectangle "Lienzo 16:9\n378 x 672" as canvas
+  rectangle "Encoder DINOv2-B/14\n**ajustado**\nsalidas capas 2, 5, 8, 11" as segenc #DCD3EE
+  rectangle "Decoder FPN\nlaterales 1x1 -> 128 canales\ntop-down + concat\nconv3x3 + BN + ReLU + conv1x1" as fpn #DCD3EE
+  rectangle "sigmoid\n6 máscaras multi-etiqueta\n(+ flip TTA)" as masks #DCD3EE
+  canvas --> segenc
+  segenc --> fpn : 4 mapas
+  fpn --> masks
+}
+note right of segenc
+  Entrenado con **40 imágenes** anotadas
+  en Roboflow (frame completo)
+  mIoU 0.745 en test
+  -> weights/final_all40.pt
+end note
+
+package "Extractor de descriptores  (sin entrenamiento)" #EAF4FB {
+  rectangle "Resize 378 x 378" as rs
+  rectangle "DINOv2-L/14\n**congelado**\n(lvd142m)" as bb #C9E7F5
+  rectangle "729 tokens\nde parche x 1024" as tok #C9E7F5
+  rectangle "Máscaras -> malla 27x27\nw[6, 729] = fracción\ndel parche en la región" as w #C9E7F5
+  rectangle "Promedio por región\nvec = (w · tokens) / Σw\n+ flag ausente (Σw < 0.5)" as pool #C9E7F5
+  rectangle "x ∈ R^6150\n(6 x 1024 + 6)" as x #C9E7F5
+  rs --> bb
+  bb --> tok
+  tok --> pool
+  w --> pool
+  pool --> x
+}
+
+package "Regresor  (lo único que se entrena aquí)" #E8F5EA {
+  rectangle "Estandarizar\n(μ, σ del train)" as std #D5EBD9
+  rectangle "Ridge en forma dual\neig(A·Aᵀ), n=369 << p=6150\nα ∈ {1, 10, 100, 1e3, 1e4, 1e5}" as ridge #D5EBD9
+  rectangle "BCS estimado" as bcs #D5EBD9
+  std --> ridge
+  ridge --> bcs
+}
+
+img --> canvas
+img --> rs
+masks --> w
+x --> std
+
+package "Cómo se entrenó y validó" #F2F2F2 {
+  rectangle "features.npz\n369 fotos · 37 vacas" as data
+  rectangle "Validación externa\n(a) LOCO: 37 folds, 1 vaca fuera\n(b) StratifiedGroupKFold 5 x 10 semillas" as outer
+  rectangle "Validación interna (por fold)\nGroupKFold(4) por vaca\nelige α con menor MAE" as inner
+  rectangle "Métricas\nLOCO MAE 0.583 · R² 0.55\n5x10 MAE 0.629 · R² 0.48\nbaseline MAE 0.954" as met
+  rectangle "Modelo final\nα con GroupKFold(4) en todo\nridge con las 369 fotos\ncoef/σ, intercept = ȳ - coef·μ\n-> ridge_model.npz (α = 1000)" as final
+  data --> outer
+  outer --> inner : train del fold
+  inner --> outer : α
+  outer --> met : predicciones del test
+  data --> final
+}
+note right of outer
+  Toda división es **por vaca**:
+  ninguna vaca aparece en train y test
+  a la vez (evita fuga entre fotos
+  de la misma vaca).
+end note
+
+ridge .. data : se ajusta con
+@enduml

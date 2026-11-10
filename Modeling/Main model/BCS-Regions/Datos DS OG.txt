@@ -1,0 +1,60 @@
+DATOS DEL DATASET ORIGINAL (DS OG) - Dataset/Dataset_Fr_BCS
+==========================================================
+Fecha de revisión: 2026-11-02
+Origen: fotos del robot (recortes dorsales), carpetas <vacaId>_<BCS>/.
+La vaca y el BCS salen del nombre de la carpeta (data.py).
+
+
+RESUMEN
+-------
+- 380 fotos en 38 carpetas.
+- El modelo usa 369 fotos de 37 vacas.
+- Se ignoran 11 fotos: carpeta 1552_Vaca1es2.5_Vaca2es4.75 (dos vacas
+  mezcladas, no se sabe cuál es cuál). Se podría recuperar si alguien
+  separa sus 11 fotos entre la vaca de 2.5 y la de 4.75.
+- La vaca 8758 (carpeta 8758_MAYO4.25_JUNIO4_JULIO3.5) tiene BCS por mes;
+  se asigna según la fecha de cada foto: 2 fotos en 4.25, 11 en 4.0 y
+  1 en 3.5. Por eso aparece en varias clases.
+
+
+FOTOS Y VACAS POR CLASE DE BCS (lo que usa el modelo)
+-----------------------------------------------------
+BCS    vacas  fotos   carpetas
+2.0      1     33     6003_2
+2.25     2     43     6248_2.25 (31), 8709_2.25 (12)
+2.5      2     23     6194_2.5 (22), 1221_2.5 (1)
+2.75     3     23     8773_2.75 (11), 1613_2.75 (7), 1572_2.75 (5)
+3.0      0      0     -- NINGUNA --
+3.25     1      7     8779_3.25
+3.5      4     22     1624_3.5 (14), 8777_3.5 (5), 8782_3.5 (2), 8758 (1, julio)
+3.75     1     14     8755_3.75
+4.0      4     66     6191_4 (48), 6238_4 (4), 1634_4 (3), 8758 (11, junio)
+4.25     5     24     6229_4.25 (13), 6178_4.25 (4), 2142_4.25 (3), 8794_4.25 (2), 8758 (2, mayo)
+4.5     10     48     2078_4.5 (11), 6036_4.5 (11), 1204_4.5 (5), 8707_4.5 (5),
+                      2072_4.5 (4), 6112_4.5 (4), 2076_4.5 (3), 1570_4.5 (2),
+                      8792_4.5 (2), 8712_4.5 (1)
+4.75     4     26     1545_4.75 (12), 2082_4.75 (7), 2090_4.75 (4), 8732_4.75 (3)
+5.0      2     40     6211_5 (31), 1233_5 (9)
+
+
+CLASES CON MENOS DATOS
+----------------------
+- BCS 3.0:  0 vacas, 0 fotos (no existe).
+- BCS 3.25: 1 vaca, 7 fotos (la clase con menos fotos).
+- BCS 3.75: 1 vaca, 14 fotos.
+- BCS 2.0:  1 vaca (aunque con 33 fotos).
+- En total, entre 3.0 y 3.25 solo hay 1 vaca y 7 fotos: es el hueco más
+  grande del dataset. Con una sola vaca por clase el modelo aprende al
+  animal, no el BCS.
+
+
+OTRAS OBSERVACIONES
+-------------------
+- Fotos por vaca muy desiguales (1 a 48). Vacas con 1-2 fotos:
+  1221_2.5, 8712_4.5, 8782_3.5, 1570_4.5, 8792_4.5, 8794_4.25. Aportan
+  poco y su error en la evaluación es muy ruidoso.
+- Distribución bimodal: vacas flacas (2-2.75) 8, gordas (4-5) 24 (contando
+  a 8758), y casi nada en medio (3-3.75) 5 (más 1 foto de 8758 en julio).
+- Cámaras: cam0 240 fotos, cam4 129 fotos (el error del modelo es
+  parecido en ambas: 0.590 vs 0.569).
+- Ver EXPERIMENTOS.txt para el efecto de esto en el modelo.
