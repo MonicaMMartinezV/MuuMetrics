@@ -111,6 +111,9 @@ docker compose run --rm --entrypoint python bcs ablation.py report
 ```
 
 Salidas (no se suben al repo; `work/` está en `.gitignore`). El caché canónico solo se lee.
+Las tablas y figuras agregadas de las etapas A, B y C están publicadas en
+[`results_dataaug/`](results_dataaug/README.md); las predicciones por foto, los ejemplos `qc/`
+y los descriptores quedan solo en local.
 
 ```
 work/aug/
@@ -313,7 +316,7 @@ posterize, que no son lineales, necesitan el mapa de tokens completo.
   Por eso el margen esperado es pequeño, y no se debe asumir que se trasladan sus
   ganancias.
 
-## B6. Resultados (corrida del 2026-11-09; tablas completas en `work/aug/report_stageB/`)
+## B6. Resultados (corrida del 2026-11-09; tablas completas en [`results_dataaug/report_stageB/`](results_dataaug/report_stageB/), local `work/aug/report_stageB/`)
 
 ΔMAE = política − A0. Valores negativos = mejor que A0. Los IC 95 % son pareados con
 bootstrap por vaca.
@@ -410,7 +413,7 @@ Salidas en `work/aug/nested_A0A1/`:
 - `folds.json`: selección, MAE interno y predicciones por fold;
 - `comparison.csv`, `per_cow.csv`, `preds_nested_loco.csv`, `report.md` y `summary.json`.
 
-## Resultados de la etapa C (corrida del 2026-11-09; `work/aug/nested_A0A1/`)
+## Resultados de la etapa C (corrida del 2026-11-09; agregados en [`results_dataaug/nested_A0A1/`](results_dataaug/nested_A0A1/), local `work/aug/nested_A0A1/`)
 
 **Controles:**
 - las predicciones finales de A0 y A1 reproducen exactamente `results/A0` y `results/A1`

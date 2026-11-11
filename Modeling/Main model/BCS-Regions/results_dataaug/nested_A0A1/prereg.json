@@ -1,0 +1,35 @@
+{
+  "fecha": "2026-11-10 05:37:57",
+  "diseno": {
+    "externo": "LOCO, GroupKFold(37) por vaca (== cmd_evaluate)",
+    "interno": "LOCO sobre las 36 vacas de train externo",
+    "candidatos": [
+      "A0",
+      "A1 (flip p=0.5, K=3, semilla 0, peso 1/(K+1))"
+    ],
+    "alpha_interno": "select_alpha canónico con filas originales del train interno (35 vacas)",
+    "alpha_final": "select_alpha canónico con filas originales del train externo (36 vacas)",
+    "criterio": "MAE promedio por vaca en las 36 vacas de validación interna",
+    "regla": "A1 si MAE_vaca(A1) < MAE_vaca(A0) - delta; empate o menor mejora -> A0",
+    "deltas": {
+      "primario": 0.0,
+      "sensibilidad": 0.01
+    },
+    "reporte_principal": "delta primario; delta=0.01 es análisis de sensibilidad",
+    "comparacion": "A0 canónico (work/aug/results/A0, idéntico a work/preds_loco.csv)",
+    "bootstrap": {
+      "unidad": "vaca",
+      "n": 5000,
+      "semilla": 0
+    },
+    "nota": "A1 se eligió como candidato después de ver las etapas A y B en las mismas 37 vacas: evaluación exploratoria, no confirmatoria."
+  },
+  "codigo_sha256": {
+    "nested.py": "57cc2f20bd3c3ca72bce4c8f5f8bb2a1d31a022aec0d8b9dd9b7b60ca8816696",
+    "ablation.py": "871641567684efb6b19f1adda99c3cda56c480e0335116f87e00b45cd509a380",
+    "augment.py": "51a7d6c9e55a725e89c7c85effb827f2a147b4018647d2618c87833a95e0b40f",
+    "bcs_regions.py": "483747672216f619f92c2c41dee7db5a719d1239c9a3d379d3731f097b8417cf"
+  },
+  "features_sha256": "3653f06d7ca5d3082ca912ceffae2186aa16cc30370952ea88846427be22090e",
+  "a1_features_sha256": "a6ef969622404cabddb2d3bf0bc6480e37104e92d7c96f39cc1df97d643436c6"
+}

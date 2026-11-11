@@ -4,7 +4,8 @@
 partir de fotos dorsales del robot de ordeño.
 **Rama:** `model/dataaug`. **Estado:** estudio cerrado (etapas A, B y C).
 **Alcance:** este informe usa solo resultados obtenidos y guardados en
-`work/aug/` (no versionado). El código y la metodología detallada están en
+`work/aug/` (local, no versionado). Las tablas y figuras agregadas están publicadas en
+[`results_dataaug/`](results_dataaug/README.md). El código y la metodología detallada están en
 `augment.py`, `ablation.py`, `nested.py`, `paper_figure.py` y `ABLATION.md`.
 
 ---
@@ -172,7 +173,7 @@ efectiva.
 
 ## 5. Resultados de las etapas A y B
 
-Tabla completa (`work/aug/final/table_full.md`). Δ = política − A0; los valores
+Tabla completa ([`results_dataaug/final/table_full.md`](results_dataaug/final/table_full.md); local: `work/aug/final/table_full.md`). Δ = política − A0; los valores
 negativos indican menor error.
 
 | Esquema | Política | MAE (foto) [IC 95 %] | MAE (vaca) [IC 95 %] | RMSE | R² foto | R² vaca | Bias | ≤ ±0.5 | ΔMAE foto [IC 95 %] | ΔMAE vaca [IC 95 %] | Vacas mejor/peor |
@@ -265,14 +266,17 @@ entrenamiento supera a usar siempre A0?
   **r = −0.58**. Excluir del conjunto interno una vaca perjudicada por A1 aumenta la
   ventaja media de A1 en las restantes.
 - **Detalle por vaca.** La tabla con política elegida, predicción y error por vaca
-  está en `work/aug/nested_A0A1/per_cow.csv` y `report.md`.
+  está en `work/aug/nested_A0A1/per_cow.csv` y `report.md` (solo local, contiene
+  identificadores de vacas). La parte agregada está en
+  [`results_dataaug/nested_A0A1/`](results_dataaug/nested_A0A1/).
 - **Qué evalúa esta etapa.** El **procedimiento de selección**, no confirma de forma
   independiente una mejora. A1 se eligió como candidato después de ver las etapas A y B
   en las mismas vacas, y la validación anidada no elimina ese sesgo.
 
 ## 8. Diferencias pareadas e intervalos por vaca
 
-**Tabla compacta para publicación:** `work/aug/final/table_compact.{md,csv,tex}`.
+**Tabla compacta para publicación:** [`results_dataaug/final/table_compact.{md,csv,tex}`](results_dataaug/final/table_compact.md)
+(local: `work/aug/final/`).
 
 | Policy | Description | LOCO MAE | LOCO ΔMAE vs A0 [95 % CI] | 5-fold×10 MAE | 5-fold×10 ΔMAE vs A0 [95 % CI] | Assessment |
 |---|---|---|---|---|---|---|
@@ -293,7 +297,8 @@ n.s.: el IC 95 % incluye 0 en los cuatro análisis (MAE por foto y por vaca × L
 5×10). †: el IC excluye 0 en al menos uno de los cuatro análisis, sin ajuste por
 multiplicidad.
 
-**Figura** (`work/aug/final/figure_ablation.{pdf,png}`, 300 dpi). Muestra el ΔMAE por
+**Figura** ([`results_dataaug/final/figure_ablation.{pdf,png}`](results_dataaug/final/figure_ablation.png), 300 dpi;
+local: `work/aug/final/`). Muestra el ΔMAE por
 foto con su IC 95 % por política y esquema, las estimaciones de A1 con las otras 10
 semillas y la selección anidada.
 

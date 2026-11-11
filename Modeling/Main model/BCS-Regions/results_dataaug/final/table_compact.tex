@@ -1,0 +1,20 @@
+\begin{tabular}{llrlrll}
+\hline
+Policy & Description & \multicolumn{2}{c}{LOCO} & \multicolumn{2}{c}{5-fold $\times$ 10} & Assessment \\
+ & & MAE & $\Delta$MAE [95\% CI] & MAE & $\Delta$MAE [95\% CI] & \\
+\hline
+A0 & No augmentation (baseline) & 0.583 & -- & 0.629 & -- & Reference \\
+A1 & Horizontal flip & 0.576 & -0.007 [-0.021, +0.007] & 0.623 & -0.005 [-0.018, +0.007] & Lower MAE, n.s. \\
+A3 & Rotation $\pm$5$^\circ$ & 0.609 & +0.026 [+0.008, +0.047] & 0.649 & +0.020 [-0.004, +0.047] & Higher MAE$^\dagger$ \\
+A4 & Translation $\pm$3 \%, scale $\pm$3 \% & 0.598 & +0.016 [-0.009, +0.044] & 0.644 & +0.016 [-0.010, +0.043] & Higher MAE, n.s. \\
+B-BR05 & Brightness $\pm$5 \% & 0.588 & +0.006 [-0.001, +0.012] & 0.638 & +0.009 [+0.000, +0.018] & Higher MAE$^\dagger$ \\
+B-BR10 & Brightness $\pm$10 \% & 0.589 & +0.007 [-0.001, +0.015] & 0.639 & +0.010 [-0.001, +0.020] & Higher MAE, n.s. \\
+B-CT05 & Contrast $\pm$5 \% & 0.589 & +0.006 [+0.001, +0.012] & 0.639 & +0.011 [+0.002, +0.020] & Higher MAE$^\dagger$ \\
+B-CT10 & Contrast $\pm$10 \% & 0.588 & +0.005 [-0.001, +0.012] & 0.638 & +0.010 [-0.000, +0.019] & Higher MAE, n.s. \\
+A2 & Brightness + contrast $\pm$10 \% & 0.590 & +0.007 [-0.001, +0.016] & 0.640 & +0.011 [+0.000, +0.023] & Higher MAE$^\dagger$ \\
+A5 & A1 + A2 + A3 + A4 & 0.599 & +0.016 [-0.003, +0.033] & 0.645 & +0.017 [-0.001, +0.035] & Higher MAE, n.s. \\
+A6 & A5 + Gaussian noise & 0.601 & +0.018 [-0.003, +0.038] & 0.649 & +0.020 [+0.002, +0.039] & Higher MAE$^\dagger$ \\
+Nested & A0/A1 chosen on training cows ($\delta$ = 0; A1 in 37/37 folds) & 0.576 & -0.007 [-0.021, +0.007] & — & -- & Lower MAE, n.s. \\
+\hline
+\end{tabular}
+% n.s.: 95\% CI includes 0 in all four analyses; \dag: CI excludes 0 in >= 1 analysis, not adjusted for multiplicity.

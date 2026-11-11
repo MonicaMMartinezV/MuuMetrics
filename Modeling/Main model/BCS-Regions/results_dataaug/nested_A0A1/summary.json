@@ -1,0 +1,14 @@
+{
+  "conteo_seleccion": {
+    "primario": {
+      "A0": 0,
+      "A1": 37
+    },
+    "sensibilidad": {
+      "A0": 31,
+      "A1": 6
+    }
+  },
+  "control_pred_A0_max_abs": 0.0,
+  "control_pred_A1_max_abs": 0.0
+}
