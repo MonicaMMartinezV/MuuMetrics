@@ -23,14 +23,14 @@ import torch, torch.nn.functional as F
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bcs_regions as br
-from comun import splits_for, fit_apply, tokens, grid
+from comun import splits_for, fit_apply, tokens, grid, modelo, cache_ok, guardar_cache
 from data import load_records
 
 L, H, R, T, TH = 1, 2, 4, 8, 16 | 32          # bits de loin, hips, rump, tailhead, thigh_L|thigh_R
 RULES = [("base_cola", lambda c: c & T), ("grupa_muslo", lambda c: (c & R) and (c & TH)), ("grupa_sola", lambda c: c & R),
          ("cadera_muslo", lambda c: (c & H) and (c & TH)), ("cadera_sola", lambda c: c & H), ("muslo_solo", lambda c: c & TH),
          ("lomo", lambda c: c & L)]
-ZN = [n for n, _ in RULES]; ROJAS = ["cadera_sola", "muslo_solo"]; D = 1024
+ZN = [n for n, _ in RULES]; ROJAS = ["cadera_sola", "muslo_solo"]; D = None   # dimensión del backbone: de features.npz
 
 def assign():
     a = np.full(64, -1)
@@ -40,7 +40,7 @@ def assign():
     return a
 
 @torch.no_grad()
-def compute(work, recs, dst):
+def compute(work, recs, dst, firma):
     dev = br.device(); bb = br.load_backbone(dev); G = grid(bb)
     bits = torch.tensor([1, 2, 4, 8, 16, 32], dtype=torch.long); a = assign(); Wc = torch.zeros(len(ZN), 64)
     for c in range(64):
@@ -57,7 +57,7 @@ def compute(work, recs, dst):
         miss = tot[:, 0] < 0.5; v[miss] = 0
         X[i, :len(ZN) * D] = v.reshape(-1).numpy(); X[i, len(ZN) * D:] = miss.float().numpy()
         if (i + 1) % 100 == 0: print(f"  {i + 1}/{len(recs)}", flush=True)
-    np.savez_compressed(dst, X=X, name=np.array([r["name"] for r in recs]))
+    guardar_cache(dst, firma, X=X, name=np.array([r["name"] for r in recs]))
 
 def cols(keep):
     idx = [ZN.index(z) for z in keep]
@@ -65,13 +65,14 @@ def cols(keep):
 
 def main(a):
     work = Path(a.work_dir); out = work / "ablaciones"; out.mkdir(exist_ok=True)
-    X6, y, cows, names = br.load_features(work); recs = load_records(a.data_dir)
+    global D
+    X6, y, cows, names, firma, _, D = modelo(work); recs = load_records(a.data_dir)
     assert [r["name"] for r in recs] == list(names), "features.npz no coincide con los datos"
     f = out / "feat_zonas.npz"
-    if not f.exists(): compute(work, recs, f)
+    if not cache_ok(f, firma): compute(work, recs, f, firma)
     XZ = np.load(f)["X"].astype(np.float64); schemes = splits_for(y, cows, a.seeds)
     keys = sorted(set(zip(cows, y))); nuevas = np.array([c.startswith("90") for c, _ in keys])
-    V = {"6_regiones (modelo base)": X6, "7_zonas": XZ}
+    V = {"modelo (features.npz)": X6, "7_zonas": XZ}
     for z in ZN: V[f"7_zonas_sin_{z}"] = XZ[:, cols([k for k in ZN if k != z])]
     V["7_zonas_sin_rojas (cadera_sola+muslo_solo)"] = XZ[:, cols([k for k in ZN if k not in ROJAS])]
     rows, ce = [], {}; rng = np.random.RandomState(0); t0 = time.time()
@@ -87,7 +88,7 @@ def main(a):
             r.update({f"mae_{sch}": round(float(m["mae"]), 4), f"r2_fotos_{sch}": round(float(m["r2_fotos"]), 4), f"r2_vacas_{sch}": round(float(m["r2_vacas"]), 4)})
             if sch == "rep5x10": ce[v] = np.array([abs(P[(cows == c) & (y == b)].mean() - b) for c, b in keys])
         rows.append(r)
-    base = ce["6_regiones (modelo base)"]
+    base = ce["modelo (features.npz)"]
     for r in rows:
         e = ce[r["variante"]]; d = e - base
         for tag, sel in (("todas", np.ones(len(d), bool)), ("nuevas", nuevas)):

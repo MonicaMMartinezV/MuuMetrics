@@ -869,6 +869,75 @@ Decisión: el modelo final NO cambia (384 px, sin espejo, bloque 21). Espejo
 
 
 -------------------------------------------------------------------
+[27] 2026-11-10 · Ablaciones con el modelo actual (rama model/ablations)
+-------------------------------------------------------------------
+Archivos: ablaciones/comun.py (validación, ridge y tokens del modelo: DINOv3
+  bloque 21 + LayerNorm final; comprobado idéntico a features.npz),
+  ablaciones/{regiones_vs_global,quitar_zonas,recortar_zonas,quitar_regiones}.py
+  -> work/ablaciones/ (resumen.csv, quitar_zonas.csv, recortar_zonas.csv,
+  quitar_regiones.csv, seleccion_anidada.csv, preds_*.csv),
+  logs work/ablaciones_<script>.log
+Qué: las ablaciones hechas antes con DINOv2 (37 y 64 vacas, sin registrar
+  aquí; commits 15351c1..be42591) rehechas con el modelo actual: mismo
+  ridge (sin calibración), Dataset_Fr_BCS_v2, LOCO y rep5x10. Diferencias
+  pareadas de MAE por vaca x BCS con IC95 (bootstrap de vacas). "Vacas
+  nuevas" = 9000-9027 (27 vacas, 28 vaca x BCS), que no existían cuando se
+  eligieron las zonas "rojas" (cadera sola, muslo solo) con 37 vacas.
+
+A. ¿Hacen falta las regiones? (regiones_vs_global.py, LOCO)
+                        MAE    R2 vacas  MAE vaca  dif vs regiones [IC95]
+  regiones (modelo)     0.452  0.63      0.452
+  silueta (vaca)        0.448  0.61      0.471     +0.020 [-0.015, +0.057]
+  foto completa         0.518  0.52      0.524     +0.067 [+0.021, +0.112]
+  recorte trasero       0.506  0.54      0.533     +0.068 [+0.021, +0.117]
+  regiones + completa   0.466  0.60      0.472     +0.020 [+0.004, +0.038]
+  (DINOv2 antes: completa +0.036 n.s., silueta +0.018 n.s., trasero +0.088*)
+  -> Segmentar la vaca es lo que más aporta; las regiones superan a la foto
+     completa y al recorte trasero (métodos de un solo recorte), pero frente
+     a la silueta la ventaja (+0.020) no es significativa con 64 vacas.
+
+B. Zonas exclusivas (quitar_zonas.py; 7 zonas, cada píxel en una sola)
+  6 regiones 0.464 (5x10) | 7 zonas 0.483 (+0.021 [+0.003, +0.039]).
+  Desde 7 zonas, quitar traslapes empeora (cadera∩muslo 0.494, base cola
+  0.490, grupa∩muslo 0.491) y quitar exclusivas mejora (lomo 0.470, cadera
+  sola 0.471, rojas 0.466). Ninguna variante de zonas supera a las 6
+  regiones; en vacas nuevas nada es significativo.
+
+C. Recortar zonas dentro de las 6 regiones (recortar_zonas.py, 5x10)
+                          MAE    R2 vacas  dif todas [IC95]        dif nuevas [IC95]
+  6 regiones              0.464  0.63
+  sin cadera sola         0.460  0.63      -0.006 [-0.014,+0.002]  +0.002
+  sin muslo solo          0.456  0.63      -0.006 [-0.015,+0.002]  -0.003
+  sin rojas               0.453  0.64      -0.012 [-0.023,-0.002]  -0.001 [-0.016,+0.013]
+  sin lomo solo           0.456  0.64      -0.010 [-0.021,+0.001]  -0.015 [-0.033,+0.003]
+  sin rojas y lomo solo   0.445  0.65      -0.018 [-0.032,-0.005]  -0.015 [-0.040,+0.008]
+
+D. Quitar regiones completas (quitar_regiones.py)
+  quitar una (LOCO / 5x10 / dif LOCO por vaca):
+    sin lomo 0.441 / 0.449 / -0.014 [-0.025,-0.002]  <- única significativa
+    sin base cola -0.002, sin muslo izq +0.001, sin muslo der +0.005,
+    sin grupa +0.006, sin cadera +0.008 (todas n.s.)
+  selección anidada (eliminación hacia atrás dentro de cada fold LOCO):
+    MAE 0.451, +0.007 [-0.015,+0.028]; quita el LOMO en 64/64 folds (cadera
+    25, muslo izq 31, muslo der 28, grupa 17, base cola 10).
+
+Conclusión: con DINOv3 se repite lo de DINOv2: la señal está en los
+  traslapes (base de cola, grupa∩muslo, cadera∩muslo, sobre referencias
+  óseas) y las zonas exclusivas, sobre todo el lomo, meten ruido. Quitar el
+  lomo mejora ~0.014 por vaca y es la única decisión que sobrevive a la
+  selección anidada (64/64). En las 27 vacas nuevas todo va en la misma
+  dirección (-0.015) pero sin significancia. La selección anidada completa
+  no mejora porque además quita otras regiones al azar.
+  Para el artículo: la contribución defendible es "segmentar la vaca y
+  agregar tokens de un modelo fundacional congelado"; las regiones
+  anatómicas aportan sobre todo interpretabilidad.
+Decisión: el modelo final NO cambia todavía. "5 regiones (sin lomo)" queda
+  como CANDIDATO FUERTE: entra en la validación cruzada anidada y se
+  confirma con el siguiente lote de vacas. "sin rojas y lomo solo" (0.445)
+  no se adopta: más complejo y las rojas se eligieron mirando 37 vacas.
+
+
+-------------------------------------------------------------------
 PENDIENTES / IDEAS
 -------------------------------------------------------------------
 - Revisar etiquetas de las vacas que más fallan (6248, 8709, 6178, 1572):

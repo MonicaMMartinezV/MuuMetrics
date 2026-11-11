@@ -26,13 +26,13 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import bcs_regions as br
-from comun import splits_for, fit_apply, tokens, grid
+from comun import splits_for, fit_apply, tokens, grid, modelo, cache_ok, guardar_cache
 from data import load_records
 from segmenter import REGIONS
 
 TRASERO = [REGIONS.index(r) for r in ("hips", "rump", "tailhead", "thigh_L", "thigh_R")]
 
-def compute(work, recs, out):
+def compute(work, recs, out, firma):
     dev = br.device(); bb = br.load_backbone(dev); F = {"foto_completa": [], "vaca": [], "recorte_trasero": []}
     g = grid(bb)
     for i, r in enumerate(recs):
@@ -46,7 +46,7 @@ def compute(work, recs, out):
         crop = img[int(ys.min() * sy):int((ys.max() + 1) * sy), int(xs.min() * sx):int((xs.max() + 1) * sx)] if len(ys) else img
         c2, p2 = tokens(bb, crop, dev); F["recorte_trasero"].append(torch.cat([c2, p2.mean(0)]).cpu().numpy())
         if (i + 1) % 100 == 0: print(f"  {i + 1}/{len(recs)}", flush=True)
-    for k, v in F.items(): np.savez_compressed(out / f"feat_{k}.npz", X=np.stack(v).astype(np.float32), name=np.array([r["name"] for r in recs]))
+    for k, v in F.items(): guardar_cache(out / f"feat_{k}.npz", firma, X=np.stack(v).astype(np.float32), name=np.array([r["name"] for r in recs]))
 
 def cow_err(p, y, cows):
     keys = sorted(set(zip(cows, y)))
@@ -54,9 +54,9 @@ def cow_err(p, y, cows):
 
 def main(a):
     work = Path(a.work_dir); out = work / "ablaciones"; out.mkdir(exist_ok=True)
-    X, y, cows, names = br.load_features(work); recs = load_records(a.data_dir)
+    X, y, cows, names, firma, _, _ = modelo(work); recs = load_records(a.data_dir)
     assert [r["name"] for r in recs] == list(names), "features.npz no coincide con los datos: corre bcs_regions.py features"
-    if not all((out / f"feat_{k}.npz").exists() for k in ("foto_completa", "vaca", "recorte_trasero")): compute(work, recs, out)
+    if not all(cache_ok(out / f"feat_{k}.npz", firma) for k in ("foto_completa", "vaca", "recorte_trasero")): compute(work, recs, out, firma)
     V = {"regiones": X}
     for k in ("foto_completa", "vaca", "recorte_trasero"): V[k] = np.load(out / f"feat_{k}.npz")["X"].astype(np.float64)
     V["regiones+completa"] = np.hstack([X, V["foto_completa"]])
