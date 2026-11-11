@@ -9,7 +9,8 @@
 #                         foto aplastada a 384 px, promedio global -> 2048
 #     bcs_regions         el modelo actual (features.npz: DINOv3 bloque 21,
 #                         promedio por región) con las mismas particiones;
-#                         en la división "foto" es el modelo con fuga
+#                         en la división "foto" es el modelo con fuga;
+#                         comprueba la firma de features.npz (comun.modelo)
 #   Salidas: <work>/baselines/<variante>_<division>/preds_seed<s>.csv
 #
 # Uso: docker compose -f baselines/docker-compose.yml run --rm baselines baselines/congelados.py
@@ -21,6 +22,7 @@ import torch, timm
 from PIL import Image
 
 from comun_b import br, cargar, particiones, guardar_preds, fit_apply, DIVISIONES
+from comun import modelo
 
 @torch.no_grad()
 def resnet50(recs, dev):
@@ -35,7 +37,8 @@ def resnet50(recs, dev):
 
 def main(a):
     work = Path(a.work_dir); recs, y, cows, names = cargar(a.data_dir); out = work / "baselines"; out.mkdir(parents=True, exist_ok=True)
-    Xr, _, _, nr = br.load_features(work)
+    Xr, _, _, nr, firma, _, _ = modelo(work)       # se detiene si features.npz no es del modelo actual
+    print(f"[modelo] {firma}", flush=True)
     assert list(nr) == list(names), "features.npz no coincide con los datos: corre bcs_regions.py features"
     f = out / "feat_resnet50_congelado.npz"
     if not f.exists(): np.savez_compressed(f, X=resnet50(recs, br.device()).astype(np.float32), name=names)

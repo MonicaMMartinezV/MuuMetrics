@@ -937,6 +937,66 @@ Decisión: el modelo final NO cambia todavía. "5 regiones (sin lomo)" queda
   no se adopta: más complejo y las rojas se eligieron mirando 37 vacas.
 
 
+[28] 2026-11-11 · Baselines y experimento de fuga (rama model/baselines)
+-------------------------------------------------------------------
+Archivos: baselines/{comun_b,ajuste,yolo_cls,congelados,comparar}.py,
+  baselines/Dockerfile + docker-compose.yml (imagen muumetrics-bcs-baselines,
+  ultralytics 8.3.150), cola work/cola_baselines.sh (log work/cola_baselines.log)
+  -> work/baselines/<variante>_<division>/preds_seed<s>.csv, comparacion.csv
+Qué: baselines 2D solo imagen con las MISMAS particiones que el modelo
+  (5 folds por vaca, semillas 0-2 de rep5x10 = 15 folds) y la misma entrada
+  (recorte aplastado a 384 px, normalización ImageNet):
+    resnet50          ajuste completo, lr {1e-4,3e-4,1e-3}, 30 épocas
+    efficientnet_b0   ajuste completo, lr {3e-4,1e-3}, 30 épocas
+    dinov3_lora       el DINOv3-L/16 del modelo + LoRA r8 (qkv y proj, 24
+                      bloques) + cabeza lineal, lr {3e-4,1e-3}, 15 épocas
+    yolov8s_cls       clases = valores de BCS, predicción = valor esperado
+    resnet50_congelado  promedio global (2048) + el ridge del modelo
+  Regresores: BCS estandarizado, SmoothL1, AdamW wd 0.05, calentamiento +
+  coseno, fp16, volteo/afín/color. lr y época elegidos en un 20 % interno
+  POR VACA del train (de 30 particiones al azar, la que mejor reproduce
+  media y sd del BCS del train).
+  Fuga: modelo, ambos ResNet y YOLO con 5 folds POR FOTO (StratifiedKFold).
+  comparar.py promedia las predicciones de las 3 semillas por foto antes de
+  las métricas; dif = MAE por vaca vs modelo, bootstrap pareado por vaca.
+Resultado, división por vaca:
+                       MAE   R2fot  ±.5  MAEvaca  dif vs modelo [IC95]
+  bcs_regions          0.487 0.65   69%  0.470    —
+  dinov3_lora          0.505 0.59   68%  0.455    -0.015 [-0.069,+0.033] n.s.
+  resnet50_congelado   0.676 0.29   52%  0.656    +0.186 [+0.108,+0.265]
+  resnet50             0.726 0.22   47%  0.650    +0.180 [+0.104,+0.257]
+  efficientnet_b0      0.766 0.17   44%  0.687    +0.217 [+0.141,+0.292]
+  yolov8s_cls          0.801 0.10   44%  0.701    +0.231 [+0.141,+0.319]
+  LoRA por semilla (MAE foto / vaca, modelo entre paréntesis):
+    s0 0.579/0.511 (0.516/0.497), s1 0.535/0.489 (0.495/0.476),
+    s2 0.498/0.459 (0.466/0.456): el modelo gana las 3 semillas; promedio
+    de dif por semilla +0.010 [-0.042,+0.056] a favor del modelo (n.s.).
+    El promedio de 3 semillas es un ensamble de 3 redes para LoRA (le
+    ayuda) y casi nada para el ridge.
+  Costo: LoRA 4.8 h (3 semillas) vs segundos del ridge sobre descriptores.
+  Sesgo flacas/gordas en todos (modelo +0.64/-0.39; CNN +1.1-1.2/-0.7).
+Resultado, división por foto (con fuga):
+                       MAE   R2fot  ±.5  MAEvaca  dif vs modelo
+  bcs_regions          0.237 0.88   92%  0.308    —
+  yolov8s_cls          0.244 0.81   88%  0.366    +0.058 [-0.004,+0.124]
+  resnet50             0.253 0.84   89%  0.339    +0.031 [-0.018,+0.080]
+  resnet50_congelado   0.442 0.66   76%  0.503    +0.195 [+0.137,+0.254]
+Conclusión: sin fuga el modelo supera con claridad a las CNN ajustadas, a
+  YOLO y al ResNet congelado (+0.18 a +0.23 por vaca, todas significativas)
+  y empata con ajustar el mismo DINOv3 con LoRA a una fracción del costo.
+  Dividir por foto infla todo 2-3.3x (YOLO 0.80 -> 0.24) y vuelve
+  indistinguibles a los métodos: la fuga de identidad esconde las
+  diferencias reales. El aporte está en el modelo fundacional (congelado
+  ResNet 0.656 vs DINOv3 0.470), no en ajustar.
+Notas: congelados.py comprueba la firma de features.npz (comun.modelo) y
+  la caché por fold de ajuste.py guarda su configuración (backbone,
+  tamaño, lrs, épocas) y se recalcula si cambia. Tras fusionar
+  model/ablations (con b9e47b0 de main) se regeneraron masks y features
+  con firma (seg cb2c6bf8): idénticos (dif máx 0.0) y comparacion.csv
+  idéntico.
+Decisión: tabla de baselines y experimento de fuga listos para el artículo.
+
+
 -------------------------------------------------------------------
 PENDIENTES / IDEAS
 -------------------------------------------------------------------

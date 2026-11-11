@@ -21,14 +21,15 @@
 #   la división); el lr con menor MAE de validación predice el test.
 #
 #   Salidas: <work>/baselines/<modelo>_<division>/
-#            fold_s<semilla>_k<fold>.npz (caché, permite reanudar),
+#            fold_s<semilla>_k<fold>.npz (caché, permite reanudar; guarda la
+#              configuración y se recalcula si cambia, p. ej. el backbone de main),
 #            preds_seed<s>.csv, log.csv (lr, época y MAE de validación por fold)
 #
 # Uso: docker compose -f baselines/docker-compose.yml run --rm baselines \
 #        baselines/ajuste.py --modelo resnet50 --division vaca
 #      --rapido: 1 fold, 2 épocas, 1 lr (prueba de humo)
 # =============================================================
-import argparse, csv, math, time
+import argparse, csv, json, math, time
 from pathlib import Path
 import numpy as np
 import torch, torch.nn as nn, torch.nn.functional as F
@@ -114,11 +115,14 @@ def main(a):
     lrs, epocas = (cfg["lrs"][:1], 2) if a.rapido else (cfg["lrs"], cfg["epocas"])
     print(f"[{a.modelo} / división {a.division}] {len(y)} fotos, {len(np.unique(cows))} vacas | lrs {lrs} | {epocas} épocas | {dev}", flush=True)
     X = cargar_imagenes(recs); t0 = time.time(); log = []
+    firma_cfg = json.dumps({**cfg, "size": br.SIZE, "lrs": list(lrs), "epocas": epocas}, sort_keys=True)   # si cambia (p. ej. el backbone de main), la caché se recalcula
     for s, splits in enumerate(particiones(y, cows, a.division, a.semillas)):
         p = np.full(len(y), np.nan)
         for k, (tr, te) in enumerate(splits):
             if a.rapido and k > 0: break
             f = out / f"fold_s{s}_k{k}.npz"
+            if f.exists() and "cfg" in np.load(f).files and str(np.load(f)["cfg"]) != firma_cfg:
+                print(f"  [caché] {f.name} es de otra configuración: se recalcula", flush=True); f.unlink()
             if f.exists():
                 z = np.load(f); p[te] = z["pred"]; log.append(dict(semilla=s, fold=k, lr=float(z["lr"]), epoca=int(z["epoca"]), mae_val=float(z["mae_val"]))); continue
             ia, iv = interna(tr, y, cows, a.division, s); best = None
@@ -127,7 +131,7 @@ def main(a):
                 print(f"  s{s} k{k} lr {lr:g}: MAE val {mae:.3f} (época {ep}) [{time.time() - t0:.0f}s]", flush=True)
                 if best is None or mae < best[0]: best = (mae, lr, ep, predecir(m, X, te, dev) * sd + mu)
                 del m; torch.cuda.empty_cache()
-            np.savez(f, pred=best[3], lr=best[1], epoca=best[2], mae_val=best[0]); p[te] = best[3]
+            np.savez(f, pred=best[3], lr=best[1], epoca=best[2], mae_val=best[0], cfg=firma_cfg); p[te] = best[3]
             log.append(dict(semilla=s, fold=k, lr=best[1], epoca=best[2], mae_val=round(best[0], 4)))
         ok = ~np.isnan(p)
         print(f"[semilla {s}] MAE test {np.abs(p[ok] - y[ok]).mean():.3f} ({ok.sum()} fotos) [{time.time() - t0:.0f}s]", flush=True)
