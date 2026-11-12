@@ -1,0 +1,203 @@
+{
+  "features_sha256_actual": "ef1d7be295534b75cea40dc072ccd474ef8bd963ce856a903de35dfabba5272e",
+  "splits_json_features_sha256_coincide": true,
+  "folds": 114,
+  "folds_particion_distinta": 0,
+  "folds_alpha_distinto": 0,
+  "alpha_por_esquema": {
+    "loco": [
+      1000.0,
+      10000.0
+    ],
+    "rep5x10": [
+      1.0,
+      100.0,
+      1000.0,
+      10000.0
+    ]
+  },
+  "politicas": {
+    "A0": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A0-DUP": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s1": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s10": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 1.502669438213644e-05,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s2": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s3": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s4": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s5": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 3.4393121550735373e-07,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s6": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s7": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s8": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A1@s9": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A2": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A3": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A4": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A5": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "A6": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "B-BR05": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "B-BR10": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "B-CT05": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    },
+    "B-CT10": {
+      "features_canonico_ok": true,
+      "aug_features_ok": true,
+      "max_abs_pred_recalculada": 0.0,
+      "codigo_ablation_sha": "22699f0336c2",
+      "codigo_augment_sha": "51a7d6c9e55a"
+    }
+  },
+  "ponderacion": {
+    "loco": {
+      "filas": 1976,
+      "fotos": 494,
+      "peso_por_foto_min": 1.0,
+      "peso_por_foto_max": 1.0,
+      "peso_total": 494.0,
+      "max_abs_media_ponderada_estandarizada": 4.134906542219827e-15,
+      "max_abs_var_ponderada_menos_1": 3.1086244689504383e-15,
+      "columnas_constantes": 5
+    },
+    "rep5x10": {
+      "filas": 1708,
+      "fotos": 427,
+      "peso_por_foto_min": 1.0,
+      "peso_por_foto_max": 1.0,
+      "peso_total": 427.0,
+      "max_abs_media_ponderada_estandarizada": 2.850439114511848e-15,
+      "max_abs_var_ponderada_menos_1": 5.10702591327572e-15,
+      "columnas_constantes": 5
+    }
+  },
+  "bootstrap": {
+    "unidad": "vaca",
+    "n": 5000,
+    "semilla": 0,
+    "rep5x10": "predicción promedio de las 10 repeticiones por foto; las repeticiones nunca se remuestrean como observaciones"
+  }
+}

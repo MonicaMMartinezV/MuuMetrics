@@ -14,7 +14,7 @@
 #
 # Uso: docker compose run --rm --entrypoint python bcs paper_figure.py
 # =============================================================
-import argparse, csv, os
+import argparse, csv, json, os
 from pathlib import Path
 import numpy as np
 
@@ -65,8 +65,12 @@ def tables(rows, nested, fd: Path):
         l, r = rows[("loco", p)], rows[("rep5x10", p)]
         comp.append({"policy": p, "description": desc, "loco_mae": l["mae"], "loco_dmae": ci(l, "d_mae"), "rep_mae": r["mae"], "rep_dmae": ci(r, "d_mae"), "assessment": verdict(l, r)})
     n0 = nested["Anidado δ=0 (primario)"]
-    comp.append({"policy": "Nested", "description": "A0/A1 chosen on training cows (δ = 0; A1 in 37/37 folds)", "loco_mae": n0["mae"],
-                 "loco_dmae": ci(n0, "d_mae"), "rep_mae": "", "rep_dmae": "", "assessment": "Lower MAE, n.s." if n0["d_mae_hi"] >= 0 else "Lower MAE†"})
+    cnt = json.load(open(fd.parent / "nested_A0A1" / "summary.json"))["conteo_seleccion"]["primario"]   # elecciones reales, no texto fijo
+    nf = cnt["A0"] + cnt["A1"]
+    if cnt["A1"] == 0: nv = "Identical to A0 (A0 chosen in every fold)"
+    else: nv = ("Lower MAE" if n0["d_mae"] < 0 else "Higher MAE") + (", n.s." if n0["d_mae_lo"] <= 0 <= n0["d_mae_hi"] else "†")
+    comp.append({"policy": "Nested", "description": f"A0/A1 chosen on training cows (δ = 0; A1 in {cnt['A1']}/{nf} folds)", "loco_mae": n0["mae"],
+                 "loco_dmae": ci(n0, "d_mae"), "rep_mae": "", "rep_dmae": "", "assessment": nv})
     with open(fd / "table_compact.csv", "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(comp[0])); w.writeheader()
         w.writerows([{k: (round(v, 4) if isinstance(v, float) else v) for k, v in c.items()} for c in comp])

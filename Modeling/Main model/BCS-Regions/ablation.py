@@ -5,6 +5,9 @@
 #   Estudio de ablación de data augmentation sobre el modelo canónico
 #   (bcs_regions.py, que NO se modifica). Solo lee el caché canónico
 #   (<work>/masks, <work>/features.npz) y escribe todo en <work>/aug.
+#   Sigue al modelo de model/main: comprueba la firma de features.npz y
+#   los descriptores aumentados en caché guardan esa firma (si cambia el
+#   backbone, el bloque, las regiones o el segmentador, se recalculan).
 #
 #   Diseño:
 #   - Test: siempre las filas originales del caché canónico (sin TTA nuevo).
@@ -35,7 +38,7 @@ from sklearn.model_selection import GroupKFold, StratifiedGroupKFold
 import augment as AG
 from data import load_records
 from bcs_regions import (device, load_backbone, describe, read_rgb, mask_file, load_features, select_alpha,
-                         fit_predict, metrics, BACKBONE, SIZE, ALPHAS)
+                         fit_predict, metrics, BACKBONE, SIZE, ALPHAS, check_features, load_firma)
 from segmenter import REGIONS
 
 ORDER = ["A0", "A0-DUP", "A1", "A2", "A3", "A4", "A5", "A6"]                 # etapa A (reporte work/aug/report)
@@ -59,7 +62,8 @@ def jdump(obj, path: Path):
 
 # ---------- Datos canónicos ----------
 def load_canon(a):
-    work = Path(a.work_dir); X, y, cows, names = load_features(work)
+    work = Path(a.work_dir); check_features(work)       # se detiene si features.npz no es del modelo actual
+    X, y, cows, names = load_features(work)
     recs = {r["name"]: r for r in load_records(a.data_dir, verbose=False)}
     if set(recs) != set(names): raise SystemExit("features.npz no coincide con el dataset: corre el pipeline canónico.")
     return X, y, cows, names, [recs[n] for n in names]
@@ -75,7 +79,11 @@ def feat_file(a, pol): return Path(a.out_dir) / "features" / f"{pol}.npz"
 
 def cmd_extract(a, pol):
     out = feat_file(a, pol)
-    if AG.spec(pol) is None or (out.exists() and not a.overwrite): return
+    if AG.spec(pol) is None: return
+    if out.exists() and not a.overwrite:
+        z = np.load(out); f = json.loads(str(z["firma"])) if "firma" in z.files else None
+        if f == load_firma(Path(a.work_dir)): return
+        print(f"[extract {pol}] {out.name} es de otro modelo (o sin firma): se recalcula", flush=True)
     X, y, cows, names, recs = load_canon(a); dev = device(); bb = load_backbone(dev)
     work, K, spec = Path(a.work_dir), AG.K_VARIANTS, AG.spec(pol); seed = AG.parse_policy(pol)[1]
     Xa = np.zeros((len(recs), K, X.shape[1]), np.float32); rows = []; t0 = time.time()
@@ -94,7 +102,8 @@ def cmd_extract(a, pol):
             if i < 4 and k == 0: save_qc(qc / f"{i}_{Path(r['name']).stem}.jpg", img, m, im2, m2)
         if (i + 1) % 50 == 0: print(f"  [{pol}] {i + 1}/{len(recs)} ({time.time() - t0:.0f}s)", flush=True)
     out.parent.mkdir(parents=True, exist_ok=True)
-    np.savez_compressed(out, Xaug=Xa, name=names, policy=json.dumps(spec), k=K, base_seed=seed)
+    np.savez_compressed(out, Xaug=Xa, name=names, policy=json.dumps(spec), k=K, base_seed=seed,
+                        firma=json.dumps(load_firma(work)))
     with open(out.with_suffix(".params.csv"), "w", newline="") as fh:
         w = csv.DictWriter(fh, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
     bad = sum(not r["thighL_left_of_thighR"] for r in rows)
@@ -382,7 +391,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Ablación de data augmentation sobre el modelo canónico de BCS por regiones")
     ap.add_argument("step", choices=["run", "extract", "evaluate", "controls", "report", "checkflip", "audit"])
     ap.add_argument("--policy", nargs="+", default=["all"], help=f"políticas ({' '.join(list(AG.POLICIES))}, con @sN para otra semilla) o grupos: {' '.join(GROUPS)}")
-    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS")
+    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS_v2")
     ap.add_argument("--work_dir", default="/work", help="caché canónico (solo lectura)")
     ap.add_argument("--out_dir", default="/work/aug", help="salidas de la ablación")
     ap.add_argument("--seg_weights", default="/weights/final_all40.pt")

@@ -8,6 +8,14 @@ partir de fotos dorsales del robot de ordeño.
 [`results_dataaug/`](results_dataaug/README.md). El código y la metodología detallada están en
 `augment.py`, `ablation.py`, `nested.py`, `paper_figure.py` y `ABLATION.md`.
 
+> **Réplica con el modelo actual (2026-11-12, EXPERIMENTOS [29]).** Este informe describe la
+> corrida original con DINOv2 y 37 vacas. El mismo estudio se repitió con DINOv3-L/16 384 px,
+> bloque 21 y 64 vacas (542 fotos): ninguna política reduce el MAE por vaca; el flip baja un
+> poco el MAE por foto (−0.006 LOCO) y lo sube por vaca (+0.008, 11/11 semillas); la fotometría
+> no tiene efecto (|Δ| ≤ 0.002); y la selección anidada elige A0 en 64/64 folds. Resultados en
+> [`results_dataaug/v2_dinov3_64vacas/`](results_dataaug/v2_dinov3_64vacas/). La conclusión
+> (mantener A0) no cambia.
+
 ---
 
 ## Resumen
@@ -173,7 +181,7 @@ efectiva.
 
 ## 5. Resultados de las etapas A y B
 
-Tabla completa ([`results_dataaug/final/table_full.md`](results_dataaug/final/table_full.md); local: `work/aug/final/table_full.md`). Δ = política − A0; los valores
+Tabla completa ([`results_dataaug/v1_dinov2_37vacas/final/table_full.md`](results_dataaug/v1_dinov2_37vacas/final/table_full.md); local: `work/aug/final/table_full.md`). Δ = política − A0; los valores
 negativos indican menor error.
 
 | Esquema | Política | MAE (foto) [IC 95 %] | MAE (vaca) [IC 95 %] | RMSE | R² foto | R² vaca | Bias | ≤ ±0.5 | ΔMAE foto [IC 95 %] | ΔMAE vaca [IC 95 %] | Vacas mejor/peor |
@@ -268,14 +276,14 @@ entrenamiento supera a usar siempre A0?
 - **Detalle por vaca.** La tabla con política elegida, predicción y error por vaca
   está en `work/aug/nested_A0A1/per_cow.csv` y `report.md` (solo local, contiene
   identificadores de vacas). La parte agregada está en
-  [`results_dataaug/nested_A0A1/`](results_dataaug/nested_A0A1/).
+  [`results_dataaug/v1_dinov2_37vacas/nested_A0A1/`](results_dataaug/v1_dinov2_37vacas/nested_A0A1/).
 - **Qué evalúa esta etapa.** El **procedimiento de selección**, no confirma de forma
   independiente una mejora. A1 se eligió como candidato después de ver las etapas A y B
   en las mismas vacas, y la validación anidada no elimina ese sesgo.
 
 ## 8. Diferencias pareadas e intervalos por vaca
 
-**Tabla compacta para publicación:** [`results_dataaug/final/table_compact.{md,csv,tex}`](results_dataaug/final/table_compact.md)
+**Tabla compacta para publicación:** [`results_dataaug/v1_dinov2_37vacas/final/table_compact.{md,csv,tex}`](results_dataaug/v1_dinov2_37vacas/final/table_compact.md)
 (local: `work/aug/final/`).
 
 | Policy | Description | LOCO MAE | LOCO ΔMAE vs A0 [95 % CI] | 5-fold×10 MAE | 5-fold×10 ΔMAE vs A0 [95 % CI] | Assessment |
@@ -297,7 +305,7 @@ n.s.: el IC 95 % incluye 0 en los cuatro análisis (MAE por foto y por vaca × L
 5×10). †: el IC excluye 0 en al menos uno de los cuatro análisis, sin ajuste por
 multiplicidad.
 
-**Figura** ([`results_dataaug/final/figure_ablation.{pdf,png}`](results_dataaug/final/figure_ablation.png), 300 dpi;
+**Figura** ([`results_dataaug/v1_dinov2_37vacas/final/figure_ablation.{pdf,png}`](results_dataaug/v1_dinov2_37vacas/final/figure_ablation.png), 300 dpi;
 local: `work/aug/final/`). Muestra el ΔMAE por
 foto con su IC 95 % por política y esquema, las estimaciones de A1 con las otras 10
 semillas y la selección anidada.

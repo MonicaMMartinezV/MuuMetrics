@@ -6,15 +6,15 @@
 #   PROCEDIMIENTO que elige entre A0 (sin augmentation) y A1 (flip, p=0.5,
 #   K=3, semilla 0) usando solo vacas de entrenamiento.
 #
-#   Externo : LOCO, los mismos 37 folds que cmd_evaluate (GroupKFold(37)).
-#   Interno : LOCO sobre las 36 vacas de train externo (36 folds).
+#   Externo : LOCO, los mismos N folds que cmd_evaluate (GroupKFold(N), N vacas).
+#   Interno : LOCO sobre las N-1 vacas de train externo (N-1 folds).
 #             En cada fold interno: alpha = select_alpha() canónico sobre las
 #             filas originales del train interno; A0 = fit_predict() canónico;
 #             A1 = fit_weighted() (peso 1/(K+1) por fila) con ese mismo alpha.
-#   Criterio: MAE promedio por vaca en las 36 vacas internas.
+#   Criterio: MAE promedio por vaca en las N-1 vacas internas.
 #   Regla   : A1 si MAE_vaca(A1) < MAE_vaca(A0) - delta; si no, A0.
 #             delta primario = 0; sensibilidad pre-registrada delta = 0.01.
-#   Final   : política elegida reentrenada con las 36 vacas (alpha canónico
+#   Final   : política elegida reentrenada con las N-1 vacas (alpha canónico
 #             de ese train) -> una predicción por foto de la vaca excluida.
 #
 #   No modifica nada del modelo canónico ni de work/aug/{features,results,report*}.
@@ -76,15 +76,15 @@ def out_dir(a): return Path(a.out_dir) / "nested_A0A1"
 
 def prereg(a):
     f = out_dir(a) / "prereg.json"
-    design = {"externo": "LOCO, GroupKFold(37) por vaca (== cmd_evaluate)", "interno": "LOCO sobre las 36 vacas de train externo",
+    design = {"externo": "LOCO, GroupKFold(N) por vaca (== cmd_evaluate)", "interno": "LOCO sobre las N-1 vacas de train externo",
               "candidatos": ["A0", "A1 (flip p=0.5, K=3, semilla 0, peso 1/(K+1))"],
-              "alpha_interno": "select_alpha canónico con filas originales del train interno (35 vacas)",
-              "alpha_final": "select_alpha canónico con filas originales del train externo (36 vacas)",
-              "criterio": "MAE promedio por vaca en las 36 vacas de validación interna",
+              "alpha_interno": "select_alpha canónico con filas originales del train interno (N-2 vacas)",
+              "alpha_final": "select_alpha canónico con filas originales del train externo (N-1 vacas)",
+              "criterio": "MAE promedio por vaca en las N-1 vacas de validación interna",
               "regla": "A1 si MAE_vaca(A1) < MAE_vaca(A0) - delta; empate o menor mejora -> A0", "deltas": DELTAS,
               "reporte_principal": "delta primario; delta=0.01 es análisis de sensibilidad",
               "comparacion": "A0 canónico (work/aug/results/A0, idéntico a work/preds_loco.csv)", "bootstrap": {"unidad": "vaca", "n": N_BOOT, "semilla": 0},
-              "nota": "A1 se eligió como candidato después de ver las etapas A y B en las mismas 37 vacas: evaluación exploratoria, no confirmatoria."}
+              "nota": "A1 se eligió como candidato después de ver las etapas A y B en las mismas N vacas: evaluación exploratoria, no confirmatoria."}
     if f.exists():
         old = json.load(open(f))
         if old["diseno"] != design: raise SystemExit("El diseño difiere del pre-registrado en prereg.json: no se sobrescribe.")
@@ -115,7 +115,7 @@ def cmd_run(a):
         folds.append({"fold": o, "vaca": str(cows[te][0]), "test_idx": te.tolist(), "alpha_final": al,
                       "alphas_internos": sorted(set(map(float, alphas))), "mae_vaca_interno_A0": m["A0"], "mae_vaca_interno_A1": m["A1"],
                       "seleccion": sel, "pred_A0": p_a0.tolist(), "pred_A1": p_a1.tolist()})
-        print(f"  [{o + 1:2d}/37] vaca {cows[te][0]}: interno A0={m['A0']:.4f} A1={m['A1']:.4f} -> {sel['primario']} "
+        print(f"  [{o + 1:2d}/{len(np.unique(cows))}] vaca {cows[te][0]}: interno A0={m['A0']:.4f} A1={m['A1']:.4f} -> {sel['primario']} "
               f"(δ=0.01: {sel['sensibilidad']}) ({time.time() - t0:.0f}s)", flush=True)
     jdump(folds, od / "folds.json"); cmd_report(a)
 
@@ -156,7 +156,7 @@ def cmd_report(a):
         w.writerows([{k: (round(float(v), 4) if isinstance(v, (float, np.floating)) else v) for k, v in r.items()} for r in per])
     ci = lambda r, k: f"{r[k]:+.4f} [{r[k + '_lo']:+.4f}, {r[k + '_hi']:+.4f}]"
     md = [f"# Etapa C: selección anidada A0/A1 (LOCO externo, LOCO interno por vaca)", "",
-          f"Selección δ=0 (primario): A0 en {cnt['primario']['A0']} folds, A1 en {cnt['primario']['A1']} folds de 37.  ",
+          f"Selección δ=0 (primario): A0 en {cnt['primario']['A0']} folds, A1 en {cnt['primario']['A1']} folds de {len(folds)}.  ",
           f"Selección δ=0.01 (sensibilidad): A0 en {cnt['sensibilidad']['A0']}, A1 en {cnt['sensibilidad']['A1']}.  ",
           f"Control: predicciones finales A0 vs results/A0 máx |Δ| = {chk_a0:.2e}; A1 vs results/A1 máx |Δ| = {chk_a1:.2e}.", "",
           "| Procedimiento | MAE fotos [IC 95 %] | MAE vaca [IC 95 %] | RMSE | R² fotos | R² vacas | Bias | ≤0.5 | ΔMAE fotos vs A0 [IC 95 %] | ΔMAE vaca vs A0 [IC 95 %] | Vacas mejor/peor |",
@@ -176,7 +176,7 @@ def cmd_report(a):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description="Etapa C: selección anidada por vaca entre A0 y A1")
     ap.add_argument("step", choices=["check", "run", "report"])
-    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS")
+    ap.add_argument("--data_dir", default="/data/Dataset_Fr_BCS_v2")
     ap.add_argument("--work_dir", default="/work")
     ap.add_argument("--out_dir", default="/work/aug")
     ap.add_argument("--overwrite", action="store_true")

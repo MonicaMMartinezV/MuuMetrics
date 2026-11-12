@@ -937,6 +937,48 @@ Decisión: el modelo final NO cambia todavía. "5 regiones (sin lomo)" queda
   no se adopta: más complejo y las rojas se eligieron mirando 37 vacas.
 
 
+[29] 2026-11-12 · Réplica del estudio de data augmentation (model/dataaug) con el modelo actual
+-------------------------------------------------------------------
+Archivos: augment.py, ablation.py, nested.py, paper_figure.py (de origin/model/dataaug,
+  fusionada en model/ablations), INFORME_DATA_AUGMENTATION.md, ABLATION.md,
+  work/cola_dataaug.sh + cola_dataaug_c.sh -> work/aug/; publicado en
+  results_dataaug/v2_dinov3_64vacas/ (el estudio original pasó a results_dataaug/v1_dinov2_37vacas/)
+Qué: el mismo diseño que el estudio original (DINOv2, 37 vacas): solo
+  entrenamiento, 3 variantes por foto con peso 1/4 (la foto pesa lo mismo
+  que en A0), imagen y máscaras transformadas juntas (flip intercambia
+  muslos), descriptor con describe() del modelo, alpha = el canónico de cada
+  fold con las filas originales, test con las fotos originales. Sorteos
+  anidados entre políticas (comparación pareada).
+  A0-A6 (etapa A), A1 con 10 semillas más y brillo/contraste aislados
+  (etapa B), selección anidada A0/A1 con LOCO externo y LOCO interno (etapa C).
+  Adaptaciones: Dataset_Fr_BCS_v2 por defecto, firma de features.npz y de la
+  caché de descriptores aumentados, conteos de vacas sin fijar en nested.py,
+  fila "Nested" de paper_figure.py leída de summary.json (decía 37/37 fijo).
+Controles: A0 = canónico (dif. máx. 5e-5), A0-DUP = A0 (1e-14), auditoría de
+  114 folds sin diferencias en particiones ni alpha.
+Resultado (LOCO, dif vs A0; MAE foto / MAE vaca [IC95]):
+  A1 flip           -0.006 [-0.017,+0.008] / +0.008 [-0.005,+0.022]  29/35 vacas
+  A2 brillo+contr.  +0.002 / +0.001
+  A3 rotación ±5°   +0.003 / +0.003
+  A4 trasl.+escala  -0.004 / -0.007 [-0.017,+0.002]  38/26
+  A5 combinadas     -0.008 / +0.002
+  A6 + ruido        -0.011 [-0.021,+0.002] / +0.001
+  Etapa B: flip en 11 semillas: foto -0.005 (10/11 < 0), vaca +0.008 (0/11 < 0;
+    en 5x10 la semilla 7 empeora por vaca con IC sin 0). Brillo o contraste
+    aislados 5-10 %: |dif| <= 0.002.
+  Etapa C: A0 elegido en 64/64 folds (también con delta 0.01) -> igual a A0.
+  (La etapa C se cortó el 2026-11-11 16:42 por un reinicio, fold 23/64, y se
+  repitió completa el 2026-11-12.)
+Comparación con el original (DINOv2, 37 vacas): misma conclusión. Allá el
+  flip era lo más prometedor y la anidada lo elegía 37/37; la rotación
+  empeoraba con IC sin 0. Con DINOv3 el augmentation es más inocuo (la
+  rotación ya no daña) pero tampoco ayuda, y el flip repite el patrón del
+  espejo de [26]: mejora por foto y empeora por vaca.
+Conclusión: el augmentation clásico no aporta a un descriptor congelado +
+  ridge, con dos modelos y dos tamaños de muestra. El límite son los datos.
+Decisión: se mantiene A0 (sin augmentation).
+
+
 -------------------------------------------------------------------
 PENDIENTES / IDEAS
 -------------------------------------------------------------------
