@@ -937,6 +937,43 @@ Decisión: el modelo final NO cambia todavía. "5 regiones (sin lomo)" queda
   no se adopta: más complejo y las rojas se eligieron mirando 37 vacas.
 
 
+[30] 2026-11-12 · Selección anidada de mejoras: sin lomo x 320 px (rama model/mejoras)
+-------------------------------------------------------------------
+Archivos: mejoras/seleccion_anidada.py, work/cola_mejoras.sh
+  -> work/mejoras/seleccion_anidada/ (prereg.json, resultados.json, preds_*.npy,
+  feat_320.npz con firma), log work/mejoras_seleccion_anidada.log
+Qué: 4 configuraciones = {6 regiones, 5 sin lomo ([27])} x {384, 320 px ([26])};
+  el resto igual (DINOv3-L/16 bloque 21, br.fit_predict). Externo: LOCO y
+  5x10 de 'evaluate'. Interno: StratifiedGroupKFold(5) por vaca dentro del
+  train externo; se elige la de menor MAE por vaca y la base solo se
+  reemplaza si otra es estrictamente mejor. Pre-registrado en prereg.json.
+  Control: 320 fijo da LOCO 0.442, igual que [26].
+Resultado (MAE foto / MAE vaca / R2 / r Pearson; dif vaca vs base [IC95], vacas mejor/peor):
+  LOCO   elecciones: sin_lomo 7, 320_sin_lomo 57, base 0, 320 0
+    base          0.452 / 0.452 / 0.680 / 0.830
+    sin_lomo      0.441 / 0.440 / 0.693 / 0.837  -0.012 [-0.023,-0.001] 42/22
+    320           0.442 / 0.439 / 0.694 / 0.840  -0.013 [-0.029,+0.001] 36/28
+    320_sin_lomo  0.431 / 0.427 / 0.705 / 0.846  -0.026 [-0.043,-0.008] 40/24
+    ANIDADO       0.434 / 0.432 / 0.702 / 0.844  -0.021 [-0.039,-0.003] 39/25
+  rep5x10  elecciones: 320_sin_lomo 32, sin_lomo 14, 320 3, base 1
+    base          0.464 / 0.457 / 0.674 / 0.830
+    sin_lomo      0.449 / 0.442 / 0.690 / 0.840  -0.015 [-0.025,-0.004] 44/20
+    320           0.458 / 0.449 / 0.685 / 0.839  -0.008 [-0.022,+0.006] 34/30
+    320_sin_lomo  0.442 / 0.434 / 0.699 / 0.848  -0.023 [-0.039,-0.006] 41/23
+    ANIDADO       0.445 / 0.438 / 0.698 / 0.846  -0.019 [-0.032,-0.005] 38/26
+Conclusión: los dos cambios suman (sin lomo -0.012/-0.015, 320 px
+  -0.013/-0.008, juntos -0.026/-0.023 por vaca). La selección anidada, que
+  no ve las vacas de test, elige 320_sin_lomo en 57/64 folds LOCO y 32/50
+  en 5x10, y mejora de forma significativa en ambos esquemas (-0.021 y
+  -0.019 por vaca, IC sin 0). Primera mejora del modelo que sobrevive a la
+  selección anidada. Límite: las 4 candidatas salieron de [26]/[27] en
+  estas mismas 64 vacas; el anidado corrige la elección entre ellas, no
+  haberlas propuesto. Hay que confirmarlo con vacas nuevas.
+Decisión: CANDIDATO A MODELO CANÓNICO (320 px, 5 regiones sin lomo),
+  pendiente de aprobación; si se adopta, cambiar en model/main SIZE=320 y
+  FEAT_REGIONS sin "loin" (la firma recalcula todas las cachés).
+
+
 -------------------------------------------------------------------
 PENDIENTES / IDEAS
 -------------------------------------------------------------------
