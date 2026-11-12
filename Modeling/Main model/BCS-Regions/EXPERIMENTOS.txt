@@ -1013,6 +1013,15 @@ Conclusión: los dos cambios suman (sin lomo -0.012/-0.015, 320 px
 Decisión: CANDIDATO A MODELO CANÓNICO (320 px, 5 regiones sin lomo),
   pendiente de aprobación; si se adopta, cambiar en model/main SIZE=320 y
   FEAT_REGIONS sin "loin" (la firma recalcula todas las cachés).
+ADOPTADO 2026-11-12 SOLO EN model/ablations (a pedido; model/main sigue en
+  384 px con 6 regiones): bcs_regions.py SIZE=320 y FEAT_REGIONS sin "loin".
+  Regenerado en work/ (features 542 x 5125, firma size 320, 5 regiones):
+    LOCO    MAE 0.431  RMSE 0.542  R2 fotos 0.71  R2 vacas 0.68  ±0.5 75%  MAE vaca 0.427 [0.367, 0.492]
+    rep5x10 MAE 0.442  RMSE 0.547  R2 fotos 0.70  R2 vacas 0.66  ±0.5 73%  MAE vaca 0.434 [0.374, 0.498]
+  (idéntico a 320_sin_lomo fijo de arriba); ridge final alpha=1000.
+  Respaldo del modelo anterior en work/base_384_6reg/. Las ablaciones de
+  [27] y [29] son del modelo de 384 px; las que se corran desde ahora en
+  esta rama usan el nuevo (lo sigue solo, por la firma).
 
 
 -------------------------------------------------------------------
