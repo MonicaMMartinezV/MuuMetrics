@@ -21,7 +21,7 @@ import numpy as np
 import torch, timm
 from PIL import Image
 
-from comun_b import br, cargar, particiones, guardar_preds, fit_apply, DIVISIONES
+from comun_b import br, cargar, particiones, guardar_preds, fit_apply, DIVISIONES, ENTRADA
 from comun import modelo
 
 @torch.no_grad()
@@ -29,7 +29,7 @@ def resnet50(recs, dev):
     m = timm.create_model("resnet50.a1_in1k", pretrained=True, num_classes=0).to(dev).eval(); X = []
     cfg = timm.data.resolve_data_config({}, model=m); mean, std = np.array(cfg["mean"]), np.array(cfg["std"])
     for r in recs:
-        x = np.asarray(Image.open(r["path"]).convert("RGB").resize((br.SIZE, br.SIZE), Image.BICUBIC)) / 255.0
+        x = np.asarray(Image.open(r["path"]).convert("RGB").resize((ENTRADA, ENTRADA), Image.BICUBIC)) / 255.0
         x = torch.from_numpy(((x - mean) / std).transpose(2, 0, 1)).float()[None].to(dev)
         with torch.autocast(device_type=dev.type, enabled=dev.type == "cuda"):
             X.append(m(x)[0].float().cpu().numpy())

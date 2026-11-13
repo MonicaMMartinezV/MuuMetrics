@@ -6,11 +6,13 @@
 #   entrenados y evaluados con el mismo protocolo que el modelo:
 #     resnet50         ResNet-50 (timm resnet50.a1_in1k), regresión
 #     efficientnet_b0  EfficientNet-B0 (timm efficientnet_b0.ra_in1k), regresión
+#     efficientnetv2_s EfficientNetV2-S (timm tf_efficientnetv2_s.in1k), regresión
+#     vit_b16          ViT-B/16 supervisado (DeiT-B 384, ImageNet-1k), regresión
 #     dinov3_lora      el mismo DINOv3-L/16 del modelo, ajustado con LoRA
 #                      (rango 8 en qkv y proyección de los 24 bloques) +
 #                      cabeza lineal; responde "¿y si se ajusta el modelo
 #                      fundacional en vez de congelarlo?"
-#   Entrada igual que el modelo: foto aplastada a 384 x 384, normalización
+#   Entrada: foto aplastada a 384 x 384 (ENTRADA, fija aunque el modelo use otra), normalización
 #   ImageNet. Aumentos: volteo horizontal, afín leve (±10°, ±5 %, escala
 #   0.9-1.1) y color (brillo/contraste 0.2, saturación 0.1).
 #   Objetivo: BCS estandarizado con media/desv. del train, pérdida
@@ -37,12 +39,14 @@ import timm
 from PIL import Image
 from torchvision.transforms import v2
 
-from comun_b import br, cargar, particiones, interna, guardar_preds, DIVISIONES
+from comun_b import br, cargar, particiones, interna, guardar_preds, DIVISIONES, ENTRADA
 
 MODELOS = {
     "resnet50":        dict(timm="resnet50.a1_in1k",        lrs=(1e-4, 3e-4, 1e-3), epocas=30, batch=16),
     "efficientnet_b0": dict(timm="efficientnet_b0.ra_in1k", lrs=(3e-4, 1e-3),       epocas=30, batch=16),   # 2 lr por costo (~4.5 h -> ~3 h)
     "dinov3_lora":     dict(timm=br.BACKBONE,               lrs=(3e-4, 1e-3),       epocas=15, batch=8, lora=8),
+    "efficientnetv2_s": dict(timm="tf_efficientnetv2_s.in1k",  lrs=(3e-4, 1e-3),       epocas=30, batch=16),   # Siachos et al. 2023 usan EfficientNetV2
+    "vit_b16":         dict(timm="deit_base_patch16_384.fb_in1k", lrs=(3e-5, 1e-4),    epocas=15, batch=8, ckpt=True),   # ViT supervisado (ImageNet-1k, 384 nativo)
 }
 MEAN = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1); STD = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
 AUG = v2.Compose([v2.RandomHorizontalFlip(), v2.RandomAffine(degrees=10, translate=(0.05, 0.05), scale=(0.9, 1.1)),
@@ -58,17 +62,19 @@ class LoRA(nn.Module):
 
 def crear(cfg):
     if "lora" in cfg:
-        m = timm.create_model(cfg["timm"], pretrained=True, num_classes=1, img_size=br.SIZE)
+        m = timm.create_model(cfg["timm"], pretrained=True, num_classes=1, img_size=ENTRADA)
         for p in m.parameters(): p.requires_grad = False
         for b in m.blocks: b.attn.qkv, b.attn.proj = LoRA(b.attn.qkv, cfg["lora"]), LoRA(b.attn.proj, cfg["lora"])
         for p in m.head.parameters(): p.requires_grad = True
         m.set_grad_checkpointing(True)
         return m
-    return timm.create_model(cfg["timm"], pretrained=True, num_classes=1)
+    m = timm.create_model(cfg["timm"], pretrained=True, num_classes=1)
+    if cfg.get("ckpt"): m.set_grad_checkpointing(True)
+    return m
 
 def cargar_imagenes(recs):
     """Todas las fotos aplastadas a SIZE x SIZE (como el modelo), uint8 [N,3,S,S]."""
-    return torch.from_numpy(np.stack([np.asarray(Image.open(r["path"]).convert("RGB").resize((br.SIZE, br.SIZE), Image.BICUBIC))
+    return torch.from_numpy(np.stack([np.asarray(Image.open(r["path"]).convert("RGB").resize((ENTRADA, ENTRADA), Image.BICUBIC))
                                       for r in recs]).transpose(0, 3, 1, 2).copy())
 
 def lote(X, idx, dev, aug):
@@ -115,7 +121,7 @@ def main(a):
     lrs, epocas = (cfg["lrs"][:1], 2) if a.rapido else (cfg["lrs"], cfg["epocas"])
     print(f"[{a.modelo} / división {a.division}] {len(y)} fotos, {len(np.unique(cows))} vacas | lrs {lrs} | {epocas} épocas | {dev}", flush=True)
     X = cargar_imagenes(recs); t0 = time.time(); log = []
-    firma_cfg = json.dumps({**cfg, "size": br.SIZE, "lrs": list(lrs), "epocas": epocas}, sort_keys=True)   # si cambia (p. ej. el backbone de main), la caché se recalcula
+    firma_cfg = json.dumps({**cfg, "size": ENTRADA, "lrs": list(lrs), "epocas": epocas}, sort_keys=True)   # si cambia (p. ej. el backbone de main), la caché se recalcula
     for s, splits in enumerate(particiones(y, cows, a.division, a.semillas)):
         p = np.full(len(y), np.nan)
         for k, (tr, te) in enumerate(splits):

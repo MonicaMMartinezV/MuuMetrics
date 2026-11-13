@@ -25,6 +25,7 @@ from data import load_records                 # noqa: E402
 from comun import splits_for, fit_apply       # noqa: E402
 
 DIVISIONES = ("vaca", "foto")
+ENTRADA = 384      # resolución de entrada de TODOS los baselines (fija: no sigue a br.SIZE, que es la del modelo)
 
 def cargar(data_dir):
     recs = load_records(data_dir)

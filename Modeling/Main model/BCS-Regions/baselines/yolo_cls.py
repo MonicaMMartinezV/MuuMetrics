@@ -22,13 +22,13 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from comun_b import br, cargar, particiones, interna, guardar_preds, DIVISIONES
+from comun_b import br, cargar, particiones, interna, guardar_preds, DIVISIONES, ENTRADA
 
 def preparar_imagenes(recs, dst: Path):
     dst.mkdir(parents=True, exist_ok=True); rutas = []
     for i, r in enumerate(recs):
         f = dst / f"{i:04d}.jpg"
-        if not f.exists(): Image.open(r["path"]).convert("RGB").resize((br.SIZE, br.SIZE), Image.BICUBIC).save(f, quality=95)
+        if not f.exists(): Image.open(r["path"]).convert("RGB").resize((ENTRADA, ENTRADA), Image.BICUBIC).save(f, quality=95)
         rutas.append(f)
     return rutas
 
@@ -50,7 +50,8 @@ def main(a):
     work = Path(a.work_dir); recs, y, cows, names = cargar(a.data_dir)
     (work / "baselines").mkdir(parents=True, exist_ok=True)
     os.chdir(work / "baselines")                     # Ultralytics descarga sus pesos al directorio actual: que no caigan en el código
-    nombre = f"yolov8{a.tam}_cls_{a.division}{'_rapido' if a.rapido else ''}"
+    pref = f"yolov8{a.tam}" if a.version == "8" else f"yolo11{a.tam}"
+    nombre = f"{pref}_cls_{a.division}{'_rapido' if a.rapido else ''}"
     out = work / "baselines" / nombre; out.mkdir(parents=True, exist_ok=True)
     rutas = preparar_imagenes(recs, work / "baselines" / "img384"); epocas = 2 if a.rapido else a.epocas; t0 = time.time()
     print(f"[{nombre}] {len(y)} fotos, {len(np.unique(cows))} vacas | {epocas} épocas", flush=True)
@@ -62,13 +63,13 @@ def main(a):
             if not f.exists():
                 ia, iv = interna(tr, y, cows, a.division, s); ds = work / "baselines" / "yolo_tmp" / nombre
                 armar(ds, rutas, y, ia, iv)
-                m = YOLO(f"yolov8{a.tam}-cls.pt")
-                m.train(data=str(ds), epochs=epocas, imgsz=br.SIZE, batch=16, seed=s, deterministic=False, workers=2,
+                m = YOLO(f"{pref}-cls.pt")
+                m.train(data=str(ds), epochs=epocas, imgsz=ENTRADA, batch=16, seed=s, deterministic=False, workers=2,
                         project=str(out / "runs"), name=f"s{s}_k{k}", exist_ok=True, plots=False, verbose=False, val=True)
                 best = YOLO(str(out / "runs" / f"s{s}_k{k}" / "weights" / "best.pt"))
                 vals = np.array([float(best.names[j]) for j in range(len(best.names))]); E, C = [], []
                 for i in range(0, len(te), 32):
-                    for r in best.predict([str(rutas[j]) for j in te[i:i + 32]], imgsz=br.SIZE, verbose=False):
+                    for r in best.predict([str(rutas[j]) for j in te[i:i + 32]], imgsz=ENTRADA, verbose=False):
                         pr = r.probs.data.float().cpu().numpy(); E.append(float(pr @ vals)); C.append(float(vals[pr.argmax()]))
                 np.savez(f, pred=np.array(E), clase=np.array(C)); shutil.rmtree(out / "runs" / f"s{s}_k{k}", ignore_errors=True)
             z = np.load(f); p[te], pc[te] = z["pred"], z["clase"]
@@ -81,7 +82,8 @@ def main(a):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--division", default="vaca", choices=DIVISIONES)
-    ap.add_argument("--tam", default="s", choices=["n", "s", "m"], help="tamaño de YOLOv8-cls")
+    ap.add_argument("--tam", default="s", choices=["n", "s", "m"], help="tamaño de YOLO-cls")
+    ap.add_argument("--version", default="8", choices=["8", "11"], help="YOLOv8-cls o YOLO11-cls")
     ap.add_argument("--epocas", type=int, default=30)
     ap.add_argument("--semillas", type=int, default=3)
     ap.add_argument("--rapido", action="store_true", help="prueba de humo: 1 fold, 2 épocas")
