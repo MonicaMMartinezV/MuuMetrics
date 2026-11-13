@@ -995,6 +995,15 @@ Notas: congelados.py comprueba la firma de features.npz (comun.modelo) y
   con firma (seg cb2c6bf8): idénticos (dif máx 0.0) y comparacion.csv
   idéntico.
 Decisión: tabla de baselines y experimento de fuga listos para el artículo.
+ACTUALIZADO 2026-11-12 con el modelo adoptado (320 px sin lomo, [30]); solo cambian
+  las filas del modelo (los baselines ajustados no se reentrenan; usan su
+  propia entrada de 384 px). Respaldo en work/baselines/modelo_384_6reg/.
+  Por vaca:  modelo 0.458 / R2 0.68 / ±.5 73% / MAE vaca 0.443 (antes 0.470)
+    dinov3_lora +0.012 [-0.037,+0.057] (ahora el modelo gana también por vaca, n.s.)
+    resnet50_congelado +0.213, resnet50 +0.207, efficientnet_b0 +0.243,
+    yolov8s_cls +0.258 (todas con IC sin 0)
+  Por foto (fuga): modelo 0.249 / R2 0.88 / ±.5 92%; yolo +0.057 n.s.,
+    resnet50 +0.029 n.s., resnet50_congelado +0.194.
 
 [29] 2026-11-12 · Réplica del estudio de data augmentation (model/dataaug) con el modelo actual
 -------------------------------------------------------------------
