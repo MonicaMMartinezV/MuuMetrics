@@ -1,0 +1,5 @@
+esquema,metrica,semillas,media,sd,min,max,n_negativas,n_ic_excluye_0_mejor,n_ic_excluye_0_peor
+loco,d_mae,11,-0.00491,0.00243,-0.00824,0.00119,10,0,0
+loco,d_mae_vaca,11,0.00801,0.00211,0.00532,0.01257,0,0,0
+rep5x10,d_mae,11,-0.00044,0.00198,-0.00437,0.00377,7,0,0
+rep5x10,d_mae_vaca,11,0.00828,0.00169,0.00607,0.01173,0,0,1

@@ -996,6 +996,103 @@ Notas: congelados.py comprueba la firma de features.npz (comun.modelo) y
   idéntico.
 Decisión: tabla de baselines y experimento de fuga listos para el artículo.
 
+[29] 2026-11-12 · Réplica del estudio de data augmentation (model/dataaug) con el modelo actual
+-------------------------------------------------------------------
+Archivos: augment.py, ablation.py, nested.py, paper_figure.py (de origin/model/dataaug,
+  fusionada en model/ablations), INFORME_DATA_AUGMENTATION.md, ABLATION.md,
+  work/cola_dataaug.sh + cola_dataaug_c.sh -> work/aug/; publicado en
+  results_dataaug/v2_dinov3_64vacas/ (el estudio original pasó a results_dataaug/v1_dinov2_37vacas/)
+Qué: el mismo diseño que el estudio original (DINOv2, 37 vacas): solo
+  entrenamiento, 3 variantes por foto con peso 1/4 (la foto pesa lo mismo
+  que en A0), imagen y máscaras transformadas juntas (flip intercambia
+  muslos), descriptor con describe() del modelo, alpha = el canónico de cada
+  fold con las filas originales, test con las fotos originales. Sorteos
+  anidados entre políticas (comparación pareada).
+  A0-A6 (etapa A), A1 con 10 semillas más y brillo/contraste aislados
+  (etapa B), selección anidada A0/A1 con LOCO externo y LOCO interno (etapa C).
+  Adaptaciones: Dataset_Fr_BCS_v2 por defecto, firma de features.npz y de la
+  caché de descriptores aumentados, conteos de vacas sin fijar en nested.py,
+  fila "Nested" de paper_figure.py leída de summary.json (decía 37/37 fijo).
+Controles: A0 = canónico (dif. máx. 5e-5), A0-DUP = A0 (1e-14), auditoría de
+  114 folds sin diferencias en particiones ni alpha.
+Resultado (LOCO, dif vs A0; MAE foto / MAE vaca [IC95]):
+  A1 flip           -0.006 [-0.017,+0.008] / +0.008 [-0.005,+0.022]  29/35 vacas
+  A2 brillo+contr.  +0.002 / +0.001
+  A3 rotación ±5°   +0.003 / +0.003
+  A4 trasl.+escala  -0.004 / -0.007 [-0.017,+0.002]  38/26
+  A5 combinadas     -0.008 / +0.002
+  A6 + ruido        -0.011 [-0.021,+0.002] / +0.001
+  Etapa B: flip en 11 semillas: foto -0.005 (10/11 < 0), vaca +0.008 (0/11 < 0;
+    en 5x10 la semilla 7 empeora por vaca con IC sin 0). Brillo o contraste
+    aislados 5-10 %: |dif| <= 0.002.
+  Etapa C: A0 elegido en 64/64 folds (también con delta 0.01) -> igual a A0.
+  (La etapa C se cortó el 2026-11-11 16:42 por un reinicio, fold 23/64, y se
+  repitió completa el 2026-11-12.)
+Comparación con el original (DINOv2, 37 vacas): misma conclusión. Allá el
+  flip era lo más prometedor y la anidada lo elegía 37/37; la rotación
+  empeoraba con IC sin 0. Con DINOv3 el augmentation es más inocuo (la
+  rotación ya no daña) pero tampoco ayuda, y el flip repite el patrón del
+  espejo de [26]: mejora por foto y empeora por vaca.
+Conclusión: el augmentation clásico no aporta a un descriptor congelado +
+  ridge, con dos modelos y dos tamaños de muestra. El límite son los datos.
+Decisión: se mantiene A0 (sin augmentation).
+
+[30] 2026-11-12 · Selección anidada de mejoras: sin lomo x 320 px (rama model/mejoras)
+-------------------------------------------------------------------
+Archivos: mejoras/seleccion_anidada.py, work/cola_mejoras.sh
+  -> work/mejoras/seleccion_anidada/ (prereg.json, resultados.json, preds_*.npy,
+  feat_320.npz con firma), log work/mejoras_seleccion_anidada.log
+Qué: 4 configuraciones = {6 regiones, 5 sin lomo ([27])} x {384, 320 px ([26])};
+  el resto igual (DINOv3-L/16 bloque 21, br.fit_predict). Externo: LOCO y
+  5x10 de 'evaluate'. Interno: StratifiedGroupKFold(5) por vaca dentro del
+  train externo; se elige la de menor MAE por vaca y la base solo se
+  reemplaza si otra es estrictamente mejor. Pre-registrado en prereg.json.
+  Control: 320 fijo da LOCO 0.442, igual que [26].
+Resultado (MAE foto / MAE vaca / R2 / r Pearson; dif vaca vs base [IC95], vacas mejor/peor):
+  LOCO   elecciones: sin_lomo 7, 320_sin_lomo 57, base 0, 320 0
+    base          0.452 / 0.452 / 0.680 / 0.830
+    sin_lomo      0.441 / 0.440 / 0.693 / 0.837  -0.012 [-0.023,-0.001] 42/22
+    320           0.442 / 0.439 / 0.694 / 0.840  -0.013 [-0.029,+0.001] 36/28
+    320_sin_lomo  0.431 / 0.427 / 0.705 / 0.846  -0.026 [-0.043,-0.008] 40/24
+    ANIDADO       0.434 / 0.432 / 0.702 / 0.844  -0.021 [-0.039,-0.003] 39/25
+  rep5x10  elecciones: 320_sin_lomo 32, sin_lomo 14, 320 3, base 1
+    base          0.464 / 0.457 / 0.674 / 0.830
+    sin_lomo      0.449 / 0.442 / 0.690 / 0.840  -0.015 [-0.025,-0.004] 44/20
+    320           0.458 / 0.449 / 0.685 / 0.839  -0.008 [-0.022,+0.006] 34/30
+    320_sin_lomo  0.442 / 0.434 / 0.699 / 0.848  -0.023 [-0.039,-0.006] 41/23
+    ANIDADO       0.445 / 0.438 / 0.698 / 0.846  -0.019 [-0.032,-0.005] 38/26
+Conclusión: los dos cambios suman (sin lomo -0.012/-0.015, 320 px
+  -0.013/-0.008, juntos -0.026/-0.023 por vaca). La selección anidada, que
+  no ve las vacas de test, elige 320_sin_lomo en 57/64 folds LOCO y 32/50
+  en 5x10, y mejora de forma significativa en ambos esquemas (-0.021 y
+  -0.019 por vaca, IC sin 0). Primera mejora del modelo que sobrevive a la
+  selección anidada. Límite: las 4 candidatas salieron de [26]/[27] en
+  estas mismas 64 vacas; el anidado corrige la elección entre ellas, no
+  haberlas propuesto. Hay que confirmarlo con vacas nuevas.
+Decisión: CANDIDATO A MODELO CANÓNICO (320 px, 5 regiones sin lomo),
+  pendiente de aprobación; si se adopta, cambiar en model/main SIZE=320 y
+  FEAT_REGIONS sin "loin" (la firma recalcula todas las cachés).
+ADOPTADO 2026-11-12 SOLO EN model/ablations (a pedido; model/main sigue en
+  384 px con 6 regiones): bcs_regions.py SIZE=320 y FEAT_REGIONS sin "loin".
+  Regenerado en work/ (features 542 x 5125, firma size 320, 5 regiones):
+    LOCO    MAE 0.431  RMSE 0.542  R2 fotos 0.71  R2 vacas 0.68  ±0.5 75%  MAE vaca 0.427 [0.367, 0.492]
+    rep5x10 MAE 0.442  RMSE 0.547  R2 fotos 0.70  R2 vacas 0.66  ±0.5 73%  MAE vaca 0.434 [0.374, 0.498]
+  (idéntico a 320_sin_lomo fijo de arriba); ridge final alpha=1000.
+  Respaldo del modelo anterior en work/base_384_6reg/. Las ablaciones de
+  [27] y [29] son del modelo de 384 px; las que se corran desde ahora en
+  esta rama usan el nuevo (lo sigue solo, por la firma).
+Regiones vs global con el modelo adoptado (regiones_vs_global.py, 2026-11-12,
+  log work/ablaciones_regiones_vs_global_320.log; resumen anterior en
+  work/ablaciones_384_6reg/). MAE vaca LOCO; dif vs regiones [IC95]:
+    regiones (5, sin lomo)  0.427
+    silueta (unión de 6)    0.469  +0.039 [+0.011, +0.070]   (con 384/6: +0.020 n.s.)
+    foto completa           0.519  +0.080 [+0.041, +0.120]
+    recorte trasero         0.545  +0.109 [+0.066, +0.153]
+    regiones + completa     0.438  +0.011 [+0.001, +0.022]
+  -> Con 320 px sin lomo las regiones ya superan a la silueta con IC sin 0.
+     Ojo: la configuración de regiones salió de la selección de [30] en
+     estas vacas y la silueta no tuvo selección; confirmar con vacas nuevas.
+
 
 -------------------------------------------------------------------
 PENDIENTES / IDEAS

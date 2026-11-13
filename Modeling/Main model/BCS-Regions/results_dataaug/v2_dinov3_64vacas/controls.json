@@ -1,0 +1,18 @@
+{
+  "loco": {
+    "max_abs_A0_vs_canonico": 4.9967720917809544e-05,
+    "max_abs_A0DUP_vs_A0": 1.3766765505351941e-14
+  },
+  "rep5x10": {
+    "max_abs_A0_vs_canonico": 4.986109628468682e-05,
+    "max_abs_A0DUP_vs_A0": 2.886579864025407e-14
+  },
+  "max_abs_features_A0DUP_vs_canonico": 0.0,
+  "ok_canonico": true,
+  "ok_dup": true,
+  "tolerancias": {
+    "canonico": 6e-05,
+    "dup": 1e-06
+  },
+  "ok": true
+}
