@@ -9,13 +9,14 @@
 \subsection{Images and reference scores}
 \label{sec:data}
 
-All images come from the routine operation of a milking robot, with no extra hardware.
-Between 25 May and 15 July 2025, lactating Holstein cows at CAETEC (pen 6) were milked by a DeLaval VMS~3 voluntary milking system, whose built-in cameras record RGB frames of each cow from above and behind (an oblique rear-dorsal view) while she stands in the milking box.
-Every frame carries a timestamp, the index of the camera that took it and the ID that the robot reads from the cow; two camera views appear in the data (cam0, 336 images; cam4, 206 images).
+All images were taken during routine milking, without handling the cows or changing the farm routine.
+Between 25 May and 15 July 2025, lactating Holstein cows at CAETEC (pen 6) were milked by a DeLaval VMS~3 voluntary milking system.
+We installed an RGB camera at the exit of the milking robot, which photographed each cow from above and behind (an oblique rear-dorsal view) as she walked out along the exit lane.
+Every frame carries a timestamp. All images come from the same camera.
 From each frame we kept a dorsal crop around the cow.
-Because cows differ in size and stand in different places in the box, these crops range from roughly 540 to 1100\,px per side, and the method must cope with that variation.
+Because cows differ in size and walk at different positions along the lane, these crops range from roughly 540 to 1100\,px per side, and the method must cope with that variation.
 
-\pendiente{Camera model, resolution and mounting height of the VMS cameras; how the dorsal crops were produced (manual or detector).}
+\pendiente{Camera model, resolution, mounting height and angle at the robot exit; how capture was triggered and how each frame was linked to a cow (robot exit records?); how the dorsal crops were produced (manual or detector).}
 
 The resulting dataset holds 542 images of 64 cows, scored from 2.0 to 5.0 in 0.25 steps (mean 3.64, SD 1.00; Table~\ref{tab:dataset}).
 We assigned identity and score per folder and confirmed both by hand, without relying on the ID prefix that the robot writes into the file names.
@@ -100,7 +101,7 @@ At inference we also segment the mirrored image, swap its left and right thigh m
 \subsubsection{Describing each region with a frozen foundation model}
 
 With the regions located, the next question is what to measure inside them.
-Hand-crafted cues such as depth or contour curvature require calibrated cameras and are fragile under the robot's lighting; instead, we let a large self-supervised vision model describe the appearance of each region and keep that model frozen, so that no part of it is fitted to our few labels.
+Hand-crafted cues such as depth or contour curvature require calibrated cameras and are fragile under the lighting of the exit lane; instead, we let a large self-supervised vision model describe the appearance of each region and keep that model frozen, so that no part of it is fitted to our few labels.
 
 We use DINOv3 ViT-L/16 \citep{simeoni2025dinov3} (timm \texttt{vit\_large\_patch16\_dinov3.lvd1689m}, pretrained without labels on LVD-1689M), with rotary position embeddings \citep{su2024roformer}, one class token plus four register tokens \citep{darcet2024registers} and LayerScale \citep{touvron2021cait}.
 Each crop is resized to $320\times320$\,px and normalised with ImageNet statistics, so the network produces a $20\times20$ grid of patch tokens, each a 1024-dimensional vector describing a $16\times16$-pixel patch of the cow.
@@ -167,11 +168,10 @@ A second round, starting from the selected configuration, tried ten further vari
 \subsection{Additional analyses}
 \label{sec:analyses}
 
-Beyond the overall error, four analyses describe how the model behaves; all use the leave-one-cow-out predictions.
+Beyond the overall error, three analyses describe how the model behaves; all use the leave-one-cow-out predictions.
 First, we report error and bias for each BCS value and a Bland--Altman analysis \citep{bland1986} of the mean prediction for each cow and score.
-Second, to test whether the model depends on a particular camera, we trained on the images of one camera and tested on the other, and compared with training and testing on the same camera, on identical test images.
-Third, for cows photographed on several days without a change of score, we measured how much the daily mean prediction varies, and we followed the two cows whose score changed during the study.
-Fourth, a learning curve trained the model on random subsets of 8 to 56 cows, with eight cows always held out for testing (10 repetitions), to estimate how much more data would help.
+Second, for cows photographed on several days without a change of score, we measured how much the daily mean prediction varies, and we followed the two cows whose score changed during the study.
+Third, a learning curve trained the model on random subsets of 8 to 56 cows, with eight cows always held out for testing (10 repetitions), to estimate how much more data would help.
 Finally, to test whether the anatomical regions matter, we replaced the region descriptor by simpler ones built from the same tokens: the class token and mean of all patches of the whole image, the mean of the patches inside the cow's silhouette (the union of all six masks), and a single rectangular crop of the rear, which mimics single-crop methods \citep{nagy2023}.
 
 

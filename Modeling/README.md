@@ -43,8 +43,8 @@ Limitaciones conocidas:
   ~+0.55 y subestima a las gordas (≥ 4.5) en ~−0.33 (pendiente predicho~real 0.60).
 - **Pelaje**: a igual BCS, las vacas negras salen ~0.25 más bajas (EXPERIMENTOS [21]).
 - **Lo que más lo mejora es tener más vacas**: pasar de 37 a 64 vacas bajó el MAE
-  de 0.58 a 0.51; con el modelo v3 la curva de aprendizaje estima ~0.39 por vaca con
-  100 vacas (EXPERIMENTOS [16], [22], [31]).
+  de 0.58 a 0.51; con el modelo v3 la curva de aprendizaje estima ~0.40 de MAE por vaca
+  con 100 vacas (EXPERIMENTOS [16], [22], [31]).
 
 ### Historial del modelo
 

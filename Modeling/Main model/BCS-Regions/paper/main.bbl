@@ -1,0 +1,134 @@
+\begin{thebibliography}{20}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Bland and Altman(1986)]{bland1986}
+J.~Martin Bland and Douglas~G. Altman.
+\newblock Statistical methods for assessing agreement between two methods of
+  clinical measurement.
+\newblock \emph{The Lancet}, 327\penalty0 (8476):\penalty0 307--310, 1986.
+
+\bibitem[Darcet et~al.(2024)Darcet, Oquab, Mairal, and
+  Bojanowski]{darcet2024registers}
+Timoth{\'e}e Darcet, Maxime Oquab, Julien Mairal, and Piotr Bojanowski.
+\newblock Vision transformers need registers.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2024.
+
+\bibitem[Edmonson et~al.(1989)Edmonson, Lean, Weaver, Farver, and
+  Webster]{edmonson1989}
+A.~J. Edmonson, I.~J. Lean, L.~D. Weaver, T.~Farver, and G.~Webster.
+\newblock A body condition scoring chart for {Holstein} dairy cows.
+\newblock \emph{Journal of Dairy Science}, 72\penalty0 (1):\penalty0 68--78,
+  1989.
+
+\bibitem[He et~al.(2016)He, Zhang, Ren, and Sun]{he2016resnet}
+Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+\newblock Deep residual learning for image recognition.
+\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 770--778, 2016.
+
+\bibitem[Hu et~al.(2022)Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang, and
+  Chen]{hu2022lora}
+Edward~J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean
+  Wang, Lu~Wang, and Weizhu Chen.
+\newblock {LoRA}: Low-rank adaptation of large language models.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2022.
+
+\bibitem[Jocher and Qiu(2024)]{jocher2024yolo11}
+Glenn Jocher and Jing Qiu.
+\newblock Ultralytics {YOLO11}.
+\newblock \url{https://github.com/ultralytics/ultralytics}, 2024.
+
+\bibitem[Jocher et~al.(2023)Jocher, Chaurasia, and Qiu]{jocher2023yolov8}
+Glenn Jocher, Ayush Chaurasia, and Jing Qiu.
+\newblock Ultralytics {YOLOv8}.
+\newblock \url{https://github.com/ultralytics/ultralytics}, 2023.
+
+\bibitem[Lin et~al.(2017)Lin, Doll{\'a}r, Girshick, He, Hariharan, and
+  Belongie]{lin2017fpn}
+Tsung-Yi Lin, Piotr Doll{\'a}r, Ross Girshick, Kaiming He, Bharath Hariharan,
+  and Serge Belongie.
+\newblock Feature pyramid networks for object detection.
+\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 2117--2125, 2017.
+
+\bibitem[Loshchilov and Hutter(2019)]{loshchilov2019adamw}
+Ilya Loshchilov and Frank Hutter.
+\newblock Decoupled weight decay regularization.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2019.
+
+\bibitem[Oquab et~al.(2024)Oquab, Darcet, Moutakanni, et~al.]{oquab2024dinov2}
+Maxime Oquab, Timoth{\'e}e Darcet, Th{\'e}o Moutakanni, et~al.
+\newblock {DINOv2}: Learning robust visual features without supervision.
+\newblock \emph{Transactions on Machine Learning Research}, 2024.
+
+\bibitem[Siachos et~al.(2023)]{siachos2023}
+N.~Siachos et~al.
+\newblock {TODO}: automated 2d body condition scoring with efficientnetv2
+  (verify reference), 2023.
+
+\bibitem[Sim{\'e}oni et~al.(2025)Sim{\'e}oni, Vo, Seitzer,
+  et~al.]{simeoni2025dinov3}
+Oriane Sim{\'e}oni, Huy~V. Vo, Maximilian Seitzer, et~al.
+\newblock {DINOv3}.
+\newblock \emph{arXiv preprint arXiv:2508.10104}, 2025.
+
+\bibitem[Su et~al.(2024)Su, Ahmed, Lu, Pan, Bo, and Liu]{su2024roformer}
+Jianlin Su, Murtadha Ahmed, Yu~Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu.
+\newblock {RoFormer}: Enhanced transformer with rotary position embedding.
+\newblock \emph{Neurocomputing}, 568:\penalty0 127063, 2024.
+
+\bibitem[Tan and Le(2019)]{tan2019efficientnet}
+Mingxing Tan and Quoc~V. Le.
+\newblock {EfficientNet}: Rethinking model scaling for convolutional neural
+  networks.
+\newblock In \emph{Proceedings of the 36th International Conference on Machine
+  Learning (ICML)}, pages 6105--6114, 2019.
+
+\bibitem[Tan and Le(2021)]{tan2021efficientnetv2}
+Mingxing Tan and Quoc~V. Le.
+\newblock {EfficientNetV2}: Smaller models and faster training.
+\newblock In \emph{Proceedings of the 38th International Conference on Machine
+  Learning (ICML)}, pages 10096--10106, 2021.
+
+\bibitem[{TODO}(2021)]{vitbcs2021}
+{TODO}.
+\newblock Body condition score for dairy cows method based on vision
+  transformer.
+\newblock IEEE Xplore, document 9628437, 2021.
+
+\bibitem[{TODO}(2022)]{nagy2023}
+{TODO}.
+\newblock Impact evaluation of score classes and annotation regions in deep
+  learning-based dairy cow body condition prediction.
+\newblock bioRxiv, doi:10.1101/2022.10.26.513838, 2022.
+
+\bibitem[Touvron et~al.(2021{\natexlab{a}})Touvron, Cord, Douze, Massa,
+  Sablayrolles, and J{\'e}gou]{touvron2021deit}
+Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre
+  Sablayrolles, and Herv{\'e} J{\'e}gou.
+\newblock Training data-efficient image transformers \& distillation through
+  attention.
+\newblock In \emph{Proceedings of the 38th International Conference on Machine
+  Learning (ICML)}, pages 10347--10357, 2021{\natexlab{a}}.
+
+\bibitem[Touvron et~al.(2021{\natexlab{b}})Touvron, Cord, Sablayrolles,
+  Synnaeve, and J{\'e}gou]{touvron2021cait}
+Hugo Touvron, Matthieu Cord, Alexandre Sablayrolles, Gabriel Synnaeve, and
+  Herv{\'e} J{\'e}gou.
+\newblock Going deeper with image transformers.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision (ICCV)}, pages 32--42, 2021{\natexlab{b}}.
+
+\bibitem[Wightman(2019)]{wightman2019timm}
+Ross Wightman.
+\newblock {PyTorch} image models.
+\newblock \url{https://github.com/huggingface/pytorch-image-models}, 2019.
+
+\end{thebibliography}

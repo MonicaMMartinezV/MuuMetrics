@@ -141,10 +141,7 @@ For the mean prediction of each cow and score, the 95\% limits of agreement were
   \label{fig:ba}
 \end{figure*}
 
-\subsection{Cameras, stability over time and sample size}
-
-The model did not depend on the camera.
-Trained only on images of one camera and tested on the other, it was as accurate as when trained and tested on the same camera (difference in MAE per cow $-$0.040, 95\% CI $-$0.100 to +0.016, for testing on cam0; +0.004, $-$0.063 to +0.073, for cam4), and training on both cameras was best.
+\subsection{Stability over time and sample size}
 
 Predictions for a given cow were stable from day to day.
 For the 55 cow--score pairs photographed on at least two days, the daily mean prediction varied with a median SD of 0.23 points, less than the typical bias of each cow (0.42), and 86\% of the variance of the predictions lay between cows (intraclass correlation 0.86).
@@ -161,4 +158,11 @@ Cow 8758, scored 4.25, 4.0 and 3.5 in three months, was predicted at 3.92, 4.01 
 \end{figure}
 
 Finally, the error kept falling as more cows were used for training: the MAE per cow went from 0.69 with 8 cows to 0.57 with 16, 0.48 with 32 and 0.44 with 56, while the bias for thin cows fell from +0.99 to +0.55.
-A fit of the form $a + b/\sqrt{n}$ suggests about 0.39 with 100 cows and 0.35 with 200, an extrapolation that assumes new cows resemble the present ones.
+A fit of the form $a + b/\sqrt{n}$ to the MAE per cow suggests about 0.40 with 100 cows and 0.37 with 200 (Fig.~\ref{fig:curve}), an extrapolation that assumes new cows resemble the present ones.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/curva_aprendizaje.pdf}
+  \caption{Learning curve. The model was trained on random subsets of $n$ cows and tested on eight held-out cows (8 folds $\times$ 10 repetitions). (a) MAE per cow; band: 2.5--97.5 percentiles over repetitions; orange: fit $a + b/\sqrt{n}$ and its extrapolation. (b) $R^2$ over images.}
+  \label{fig:curve}
+\end{figure*}
