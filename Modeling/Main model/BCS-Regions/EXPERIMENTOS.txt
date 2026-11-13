@@ -1022,6 +1022,17 @@ ADOPTADO 2026-11-12 SOLO EN model/ablations (a pedido; model/main sigue en
   Respaldo del modelo anterior en work/base_384_6reg/. Las ablaciones de
   [27] y [29] son del modelo de 384 px; las que se corran desde ahora en
   esta rama usan el nuevo (lo sigue solo, por la firma).
+Regiones vs global con el modelo adoptado (regiones_vs_global.py, 2026-11-12,
+  log work/ablaciones_regiones_vs_global_320.log; resumen anterior en
+  work/ablaciones_384_6reg/). MAE vaca LOCO; dif vs regiones [IC95]:
+    regiones (5, sin lomo)  0.427
+    silueta (unión de 6)    0.469  +0.039 [+0.011, +0.070]   (con 384/6: +0.020 n.s.)
+    foto completa           0.519  +0.080 [+0.041, +0.120]
+    recorte trasero         0.545  +0.109 [+0.066, +0.153]
+    regiones + completa     0.438  +0.011 [+0.001, +0.022]
+  -> Con 320 px sin lomo las regiones ya superan a la silueta con IC sin 0.
+     Ojo: la configuración de regiones salió de la selección de [30] en
+     estas vacas y la silueta no tuvo selección; confirmar con vacas nuevas.
 
 
 -------------------------------------------------------------------
