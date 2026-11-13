@@ -1,0 +1,29 @@
+% Draft wrapper for the BCS-Regions paper. Build: latexmk -pdf main.tex
+% Switch \documentclass to the journal template once the venue is chosen.
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage{hyperref}
+
+% Open questions; \renewcommand{\pendiente}[1]{} hides them all
+\newcommand{\pendiente}[1]{\par\noindent\textcolor{red!70!black}{\small\textbf{TODO:} #1}\par}
+
+\title{Data-efficient body condition scoring of dairy cows from milking-robot images with frozen foundation-model region descriptors}
+\author{MuuMetrics team}
+\date{Draft}
+
+\begin{document}
+\maketitle
+
+\input{methods}
+\input{results}
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+\end{document}
