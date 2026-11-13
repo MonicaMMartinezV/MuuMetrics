@@ -81,22 +81,25 @@ Table~\ref{tab:baselines-results} places BCS-Regions against the baselines on th
     DINOv3 + LoRA & 0.505 & 0.639 & 0.59 & 68\% & 0.455 & +0.012 [$-$0.037, +0.057] & +0.70 & $-$0.42 \\
     ResNet-50, frozen + ridge & 0.676 & 0.840 & 0.29 & 52\% & 0.656 & +0.213 [+0.138, +0.289] & +0.86 & $-$0.74 \\
     ResNet-50, fine-tuned & 0.726 & 0.880 & 0.22 & 47\% & 0.650 & +0.207 [+0.132, +0.282] & +1.10 & $-$0.70 \\
+    ViT-B/16, fine-tuned & 0.750 & 0.895 & 0.20 & 43\% & 0.669 & +0.225 [+0.152, +0.301] & +1.04 & $-$0.77 \\
+    EfficientNet-V2-S, fine-tuned & 0.747 & 0.878 & 0.23 & 45\% & 0.674 & +0.231 [+0.161, +0.304] & +1.16 & $-$0.70 \\
     EfficientNet-B0, fine-tuned & 0.766 & 0.907 & 0.17 & 44\% & 0.687 & +0.243 [+0.169, +0.319] & +1.22 & $-$0.72 \\
     YOLOv8s-cls & 0.801 & 0.946 & 0.10 & 44\% & 0.701 & +0.258 [+0.167, +0.347] & +1.19 & $-$0.78 \\
+    YOLO11s-cls & 0.798 & 0.970 & 0.06 & 46\% & 0.707 & +0.264 [+0.169, +0.360] & +1.30 & $-$0.69 \\
     \bottomrule
   \end{tabular}
 \end{table*}
 
-\pendiente{Add the rows of EfficientNet-V2-S, ViT-B/16 and YOLO11s-cls when their runs finish.}
-
 The networks most often used for BCS in the literature fell well behind.
-The fine-tuned convolutional networks and the YOLOv8 classifier made errors 0.21 to 0.26 points per cow larger than BCS-Regions, and all confidence intervals exclude zero.
-Their $R^2$ over images stayed between 0.10 and 0.22, so they explained little of the variation in body condition among new cows.
+Fine-tuned convolutional networks, a supervised vision transformer and both YOLO classifiers made errors 0.21 to 0.26 points per cow larger than BCS-Regions, and all confidence intervals exclude zero.
+Their $R^2$ over images stayed between 0.06 and 0.23, so they explained little of the variation in body condition among new cows, and newer architectures (EfficientNet-V2, YOLO11, ViT) did not improve on older ones.
+This was not a matter of training budget: all of them fitted the training cows almost perfectly, and their validation and test errors levelled off within the first 5--10 epochs (Supplementary Fig.~S1), so the epoch chosen by inner validation was not premature.
 A frozen ResNet-50 with our ridge head did no better than the fine-tuned one (0.656 against 0.650 per cow): with the head fixed, the gap from 0.656 to 0.443 comes from the representation.
 
 Only fine-tuning the same foundation model came close.
 DINOv3 adapted with LoRA had a higher error per image (0.505 against 0.458), a lower $R^2$ (0.59 against 0.68) and a slightly higher error per cow (0.455 against 0.443), a difference that was not significant.
 The averaged predictions in Table~\ref{tab:baselines-results} even favour LoRA, since averaging over seeds turns its three trained networks into an ensemble while it barely changes a ridge fit; seed by seed, BCS-Regions had the lower error in all three seeds, per image (0.469, 0.475, 0.456 against 0.579, 0.535, 0.498) and per cow (0.457, 0.451, 0.450 against 0.511, 0.489, 0.459; mean advantage 0.034, 95\% CI $-$0.013 to 0.078).
+The same ranking held when the predicted score was used to flag thin (BCS $<3$) or fat (BCS $\geq4$) cows (Supplementary Fig.~S2): BCS-Regions reached an area under the ROC curve of 0.94 and 0.89, LoRA 0.90 and 0.85 (lower for fat cows, 95\% CI of the difference $-$0.076 to $-$0.002), and all other baselines 0.57 to 0.83.
 The two approaches are therefore at least equivalent in accuracy, but not in cost: LoRA needed about 4.8\,h of GPU training for the three seeds and its error moved from 0.498 to 0.579 with the seed, whereas BCS-Regions computes each descriptor once and refits a ridge in seconds, with a deterministic result.
 
 \subsection{The cost of splitting by image}

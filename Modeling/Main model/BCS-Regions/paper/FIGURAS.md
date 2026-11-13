@@ -10,11 +10,11 @@ tablas de datos en `datos/`. Cada figura indica de dónde sale para poder regene
 | Arquitectura del modelo | `model_bcs_v3.{pdf,png}` | Métodos | main · `pdflatex model_bcs_v3.tex` | [32] |
 | Anotaciones de regiones (Roboflow) | `segmentation_examples.{pdf,png}` | Métodos | main · `figures/plot_seg_examples.py` | [15] |
 | Acuerdo con la referencia (predicho vs real, Bland–Altman) | `analisis_bland_altman.{pdf,png}` | 3.1 | ablations · `analisis/analisis_paper.py` | [31] |
-| Curvas ROC (vacas flacas / gordas) | `roc.{pdf,png}` | 3.3 o suplementario | baselines · `baselines/roc.py` | [28] |
+| Curvas ROC (vacas flacas / gordas) | `roc.{pdf,png}` | suplementario (Fig. S2) | baselines · `baselines/roc.py` | [28] |
 | Seguimiento de vacas con cambio de BCS | `analisis_cambios_bcs.{pdf,png}` | 3.4 | ablations · `analisis/analisis_paper.py` | [31] |
 | Curvas del modelo: validación en $\alpha$ (train vs prueba) y aprendizaje (train vs prueba) | `curvas_modelo.{pdf,png}` | suplementario | ablations · `analisis/curvas_modelo.py` | [31] |
 | Curva de aprendizaje | `curva_aprendizaje.{pdf,png}` | 3.4 / discusión | ablations · `exp_curva.py` + `analisis/plot_curva.py` | [31] |
-| Curvas de entrenamiento por época de los baselines | `curvas_entrenamiento.{pdf,png}` (llega al terminar la cola) | suplementario | baselines · `ajuste.py --curvas`, `yolo_cls.py --curvas`, `baselines/plot_curvas.py` | [28] |
+| Curvas de entrenamiento por época de los baselines | `curvas_entrenamiento.{pdf,png}` | suplementario (Fig. S1) | baselines · `ajuste.py --curvas`, `yolo_cls.py --curvas`, `baselines/plot_curvas.py` | [28] |
 
 ## Datos (`datos/`)
 
@@ -27,7 +27,7 @@ tablas de datos en `datos/`. Cada figura indica de dónde sale para poder regene
 | `curva_aprendizaje.csv` | Curva de aprendizaje por semilla, fold y número de vacas |
 | `curva_alpha.csv`, `curva_aprendizaje_train_test.csv` | Error de entrenamiento y de prueba según $\alpha$ y según el número de vacas |
 | `resumen.md` | Resumen de los análisis de [31] (la sección de cámaras no es válida) |
-| `curvas/` | Curvas por época de los baselines (llega al terminar la cola) |
+| `curvas/` | Curvas por época de los baselines (semilla 0, 5 folds) |
 
 Los resultados del modelo canónico v3 (LOCO y 5×10) están en `../work/metrics.csv`
 (regenerables con `docker compose run --rm bcs evaluate`).
