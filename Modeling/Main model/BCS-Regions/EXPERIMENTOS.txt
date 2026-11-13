@@ -1035,6 +1035,38 @@ Regiones vs global con el modelo adoptado (regiones_vs_global.py, 2026-11-12,
      estas vacas y la silueta no tuvo selección; confirmar con vacas nuevas.
 
 
+[31] 2026-11-12 · Análisis para el artículo con el modelo adoptado (320 px sin lomo)
+-------------------------------------------------------------------
+Archivos: analisis/analisis_paper.py -> work/analisis/ (resumen.md, error_por_bcs.csv,
+  camaras.csv, estabilidad.csv, cambios_bcs.csv), figures/analisis_bland_altman.{pdf,png},
+  figures/analisis_cambios_bcs.{pdf,png}; exp_curva.py -> work/exp_curva/
+  (LOCO recalculado = preds_loco.csv, dif. máx. < 6e-5)
+1. Error por BCS y Bland-Altman (vaca x BCS, n=67): sesgo -0.04, LoA
+   [-0.98, +0.89]; pendiente pred~real 0.60 (compresión hacia la media):
+   flacas sobrestimadas (+0.45 a +0.73 en 2.0-2.75), gordas subestimadas
+   (-0.19 a -0.39 en 4.0-5.0); mejor en 3.5-4.25 (MAE vaca 0.25-0.34).
+   r 0.85, MAE 0.39; |dif| <= 0.25 en 39 %, <= 0.5 en 66 %.
+2. Cámaras (LOCO, entrenar con una cámara y probar en otra; pareado vs
+   misma cámara): cam4->cam0 -0.040 [-0.100,+0.016], cam0->cam4 +0.004
+   [-0.063,+0.073]. No se pierde nada al cambiar de cámara; entrenar con
+   ambas es lo mejor (cam0 0.450 vs 0.498 solo cam0).
+3. Tiempo: misma vaca y mismo BCS en días distintos (55 vaca x BCS): sd de
+   la predicción diaria mediana 0.23, menor que el sesgo propio de cada
+   vaca (0.42) -> el error es por vaca, no de día a día; ICC(1) 0.86.
+   9008 (enfermó: 4.5 hasta 8-jun, 2.25 el 24-26 jun): predicción 4.15 el
+   26-may que baja a ~3.0-3.4 a inicios de junio y a 2.0 en las fotos de
+   2.25 -> sigue la caída y la anticipa antes de la segunda calificación.
+   8758 (4.25 -> 4.0 -> 3.5): 3.92 / 4.01 / 3.54.
+4. Curva de aprendizaje (8 folds x 10 semillas): n=8 0.69 | 16 0.57 |
+   24 0.53 | 32 0.48 | 40 0.47 | 48 0.46 | 56 0.44 (MAE vaca); R2 0.19 ->
+   0.70; sesgo flacas +0.99 -> +0.55. Ajuste 0.252 + 1.416/sqrt(n):
+   100 vacas ~0.39, 150 ~0.37, 200 ~0.35 (orientativo).
+Conclusión: el error dominante es la compresión hacia la media en los
+  extremos (como la cámara 3D de DeLaval); no depende de la cámara; las
+  predicciones son estables entre días y siguen cambios reales de BCS; la
+  curva sigue bajando, así que más vacas es la palanca principal.
+
+
 -------------------------------------------------------------------
 PENDIENTES / IDEAS
 -------------------------------------------------------------------
