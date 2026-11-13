@@ -10,16 +10,17 @@ experimentos (qué se probó, resultados y decisiones) están en
 
 ## 1. Cómo funciona
 
-![Arquitectura del modelo](Main%20model/BCS-Regions/figures/arquitectura_final.png)
+![Arquitectura del modelo](Main%20model/BCS-Regions/figures/model_bcs_v3.png)
 
 1. **Segmentador de regiones**: DINOv2-B ajustado + decodificador FPN, entrenado con
    40 fotos anotadas + 345 cuadros del robot pseudo-etiquetados. Encuentra 6 regiones
    traslapadas: lomo, cadera, grupa, base de cola, muslo izquierdo y muslo derecho.
-2. **Descriptor**: **DINOv3-L/16 congelado** (sin entrenar), foto a **384 × 384 px**,
-   salida del **bloque 21 de 24**. Los 24 × 24 tokens de parche se promedian dentro
-   de cada región: 6 × 1024 + 6 indicadores de región ausente = 6150 números por foto.
+2. **Descriptor**: **DINOv3-L/16 congelado** (sin entrenar), foto a **320 × 320 px**,
+   salida del **bloque 21 de 24**. Los 20 × 20 tokens de parche se promedian dentro
+   de **5 regiones (todas menos el lomo)**: 5 × 1024 + 5 indicadores de región ausente =
+   5125 números por foto.
 3. **Regresión ridge** (alpha = 1000, elegido por validación por vaca): convierte los
-   6150 números en un BCS continuo.
+   5125 números en un BCS continuo.
 
 Solo el ridge se entrena con nuestros datos de BCS. Por eso el modelo se entrena en
 segundos y funciona con pocas vacas. El ridge corre en GPU (la evaluación completa
@@ -32,18 +33,18 @@ con vacas que no vio en el entrenamiento.
 
 | Validación | MAE | RMSE | R² fotos | R² vacas | Error ≤ 0.5 | MAE por vaca (IC 95 %) |
 |---|---|---|---|---|---|---|
-| Una vaca fuera (LOCO) | **0.452** | 0.565 | 0.68 | 0.63 | 71 % | 0.452 [0.390, 0.520] |
-| 5 folds por vaca × 10 semillas | **0.464** | 0.570 | 0.67 | 0.63 | 70 % | 0.457 [0.394, 0.525] |
+| Una vaca fuera (LOCO) | **0.431** | 0.542 | 0.71 | 0.68 | 75 % | 0.427 [0.367, 0.492] |
+| 5 folds por vaca × 10 semillas | **0.442** | 0.547 | 0.70 | 0.66 | 73 % | 0.434 [0.374, 0.498] |
 | Predecir siempre la media (LOCO) | 0.925 | | | | | |
 
 Limitaciones conocidas:
 
 - **Compresión hacia el promedio**: sobreestima a las vacas flacas (BCS < 3) en
-  ~+0.57 y subestima a las gordas (≥ 4.5) en ~−0.34.
+  ~+0.55 y subestima a las gordas (≥ 4.5) en ~−0.33 (pendiente predicho~real 0.60).
 - **Pelaje**: a igual BCS, las vacas negras salen ~0.25 más bajas (EXPERIMENTOS [21]).
 - **Lo que más lo mejora es tener más vacas**: pasar de 37 a 64 vacas bajó el MAE
-  de 0.58 a 0.51; la curva de aprendizaje estima ~0.43 con 100 vacas (EXPERIMENTOS
-  [16], [22]).
+  de 0.58 a 0.51; con el modelo v3 la curva de aprendizaje estima ~0.39 por vaca con
+  100 vacas (EXPERIMENTOS [16], [22], [31]).
 
 ### Historial del modelo
 
@@ -54,13 +55,14 @@ Limitaciones conocidas:
 | 64 vacas (`Dataset_Fr_BCS_v2`) | [16] | 0.513 | 0.60 |
 | DINOv2-L bloque 18 | [18] | 0.485 | 0.65 |
 | DINOv2-L 224 px, bloque 17 | [19], [20] | 0.464 | 0.66 |
-| **DINOv3-L 384 px, bloque 21 (actual)** | [24], [25] | **0.452** | **0.68** |
+| DINOv3-L 384 px, bloque 21 (v2) | [24], [25] | 0.452 | 0.68 |
+| **v3: 320 px, 5 regiones sin lomo (actual)** | [27], [30], [32] | **0.431** | **0.71** |
 
 Lo que se probó y **no** ayudó (detalles en EXPERIMENTOS): datos externos (UNICT,
 Zenodo, incluso solo Holstein), cabezas no lineales (MLP, kernel ridge), calibración,
 pesos por vaca, profundidad monocular, forma de las máscaras, SigLIP 2, promediar
-varias fotos de una visita, promediar con la foto en espejo, cambiar la resolución
-(320–512 px, [26]) y transfer learning de BEiT (`Main model/BCS-TransferLearning/`).
+varias fotos de una visita, promediar con la foto en espejo, otras resoluciones y bloques alrededor de v3 (288/256 px, bloques 19–23, [30] ronda 2), escala de grises,
+multiescala, data augmentation ([29]) y transfer learning de BEiT (`Main model/BCS-TransferLearning/`).
 
 ## 2. Requisitos
 
@@ -187,11 +189,12 @@ docker run --rm --gpus all --user $(id -u):$(id -g) \
 | `segmenter.py` | Arquitectura del segmentador y cómo se aplica a una foto |
 | `data.py` | Lectura del dataset (vaca y BCS desde el nombre de la carpeta) |
 | `Dockerfile`, `docker-compose.yml`, `requirements.txt` | Entorno con versiones fijas (torch 2.9.1 + CUDA 12.6) |
-| `EXPERIMENTOS.txt` | Registro de los experimentos [0]–[25]; cada uno indica sus archivos |
+| `EXPERIMENTOS.txt` | Registro de los experimentos [0]–[26] y [32]; [27]–[31] están en las ramas `model/ablations`, `model/baselines` y `model/mejoras` |
 | `exp_*.py`, `prep_*.py` | Scripts de los experimentos (ver EXPERIMENTOS.txt) |
 | `train_segmenter.py`, `Dockerfile.seg`, `run_seg.sh` | Entrenamiento del segmentador |
-| `figures/arquitectura_final.*` | Diagrama del modelo actual (PlantUML y PNG) |
-| `figures/model_bcs_v2.*` | Arquitectura del modelo actual en estilo transformer, para el artículo (TikZ: `pdflatex model_bcs_v2.tex`; PDF y PNG) |
+| `figures/arquitectura_final.*` | Diagrama de la v2 (PlantUML y PNG) |
+| `figures/model_bcs_v3.*` | Arquitectura del modelo actual (v3) en estilo transformer, para el artículo (TikZ: `pdflatex model_bcs_v3.tex`; PDF y PNG); `model_bcs_v2.*` es la v2 (384 px, 6 regiones) |
+| `figures/segmentation_examples.*` | Ejemplos de las anotaciones de regiones (Roboflow) para el artículo (`plot_seg_examples.py`) |
 | `figures/model_bcs.*`, `proceso_completo.*`, `modelo_entrenamiento.*` | Diagramas de la versión v1 |
 
 `Main model/BCS-TransferLearning/` contiene el modelo alternativo (BEiT-B ajustado con

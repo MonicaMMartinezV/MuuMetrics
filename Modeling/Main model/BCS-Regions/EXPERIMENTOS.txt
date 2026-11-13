@@ -868,6 +868,35 @@ Decisión: el modelo final NO cambia (384 px, sin espejo, bloque 21). Espejo
   cruzada anidada o se confirma con vacas nuevas.
 
 
+[32] 2026-11-12 · MODELO CANÓNICO v3: 320 px, 5 regiones sin lomo
+-------------------------------------------------------------------
+Archivos: bcs_regions.py (SIZE=320, FEAT_REGIONS sin "loin"), work/ (regenerado;
+  v2 respaldado en work/base_v2_384_6reg/), figures/model_bcs_v3.{tex,pdf,png},
+  figures/segmentation_examples.{pdf,png} + plot_seg_examples.py, paper/
+Origen (registrados en otras ramas):
+  [27] model/ablations: quitar el lomo -0.014 por vaca; la selección anidada
+       lo quita en 64/64 folds.
+  [28] model/baselines: baselines y experimento de fuga.
+  [29] model/ablations: data augmentation (réplica): no ayuda; se queda sin.
+  [30] model/mejoras: selección anidada {6, 5 sin lomo} x {384, 320 px}:
+       elige 320 sin lomo (57/64 LOCO) y mejora -0.021 [-0.039,-0.003] por
+       vaca (5x10: -0.019 [-0.032,-0.005]). Ronda 2 (288/256 px, bloques
+       19-23, grises, multiescala, sin identidad): nada supera a v3 y la
+       selección entre 11 empeora (+0.016) -> óptimo local.
+  [31] model/ablations: error por BCS, Bland-Altman, cámaras, tiempo,
+       curva de aprendizaje, y regiones vs global (regiones > silueta
+       +0.039 [+0.011,+0.070], > foto completa +0.080, > recorte trasero +0.109).
+Resultado (idéntico en las tres ramas):
+  LOCO     MAE 0.431  RMSE 0.542  R2 fotos 0.71  R2 vacas 0.68  ±0.5 75%  MAE vaca 0.427 [0.367, 0.492]
+  rep5x10  MAE 0.442  RMSE 0.547  R2 fotos 0.70  R2 vacas 0.66  ±0.5 73%  MAE vaca 0.434 [0.374, 0.498]
+  r Pearson LOCO 0.846; sesgo flacas (<3) +0.55, gordas (>=4.5) -0.33; ridge final alpha=1000.
+  (v2: LOCO 0.452 / R2 0.68 / MAE vaca 0.452.)
+Límite: las candidatas de [30] salieron de [26]/[27] en estas 64 vacas; la
+  confirmación definitiva requiere vacas nuevas.
+Decisión: CANÓNICO v3 (congelado). El segmentador no cambia (pesos de la
+  Release bcs-regions-v2, md5 cb2c6bf8); cambia solo el descriptor y el ridge.
+
+
 -------------------------------------------------------------------
 PENDIENTES / IDEAS
 -------------------------------------------------------------------
