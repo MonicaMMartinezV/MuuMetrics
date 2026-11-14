@@ -12,7 +12,7 @@ tablas de datos en `datos/`. Cada figura indica de dónde sale para poder regene
 | Acuerdo con la referencia (predicho vs real, Bland–Altman) | `analisis_bland_altman.{pdf,png}` | 3.1 | ablations · `analisis/analisis_paper.py` | [31] |
 | Curvas ROC (vacas flacas / gordas) | `roc.{pdf,png}` | suplementario (Fig. S2) | baselines · `baselines/roc.py` | [28] |
 | Seguimiento de vacas con cambio de BCS | `analisis_cambios_bcs.{pdf,png}` | 3.4 | ablations · `analisis/analisis_paper.py` | [31] |
-| Curvas del modelo: validación en $\alpha$ (train vs prueba) y aprendizaje (train vs prueba) | `curvas_modelo.{pdf,png}` | suplementario | ablations · `analisis/curvas_modelo.py` | [31] |
+| Curvas del modelo: validación en $\alpha$ (train vs prueba) y aprendizaje (train vs prueba) | `curvas_modelo.{pdf,png}` | suplementario (Fig. S4) | ablations · `analisis/curvas_modelo.py` | [31] |
 | Curva de aprendizaje | `curva_aprendizaje.{pdf,png}` | 3.4 / discusión | ablations · `exp_curva.py` + `analisis/plot_curva.py` | [31] |
 | Curvas de entrenamiento por época de los baselines | `curvas_entrenamiento.{pdf,png}` | suplementario (Fig. S1) | baselines · `ajuste.py --curvas`, `yolo_cls.py --curvas`, `baselines/plot_curvas.py` | [28] |
 

@@ -4,14 +4,14 @@
 % en una RTX 2080 (incluye la búsqueda de learning rate y la elección de época).
 \begin{table*}[t]
   \centering
-  \caption{Summary comparison on the same 15 cow-level folds (five folds $\times$ 3 seeds). $\Delta$: MAE per cow minus that of DINOcow, paired bootstrap 95\% CI over cows. AUC: area under the ROC curve for flagging thin (BCS $<3$) and fat (BCS $\geq4$) cows. Trainable parameters: parameters fitted to BCS labels. Time: GPU time per fold, including hyperparameter selection, on one RTX 2080.}
+  \caption{Summary comparison on the same 15 cow-level folds (five folds $\times$ 3 seeds). $\Delta$: MAE per cow minus that of BCS-Regions, paired bootstrap 95\% CI over cows. AUC: area under the ROC curve for flagging thin (BCS $<3$) and fat (BCS $\geq4$) cows. Trainable parameters: parameters fitted to BCS labels. Time: GPU time per fold, including hyperparameter selection, on one RTX 2080.}
   \label{tab:summary}
   \resizebox{\textwidth}{!}{%
   \begin{tabular}{llrrcccccc}
     \toprule
     Method & Pretraining & Trainable params & Time/fold & MAE/cow & $\Delta$ MAE/cow [95\% CI] & $R^2$ & $r$ & AUC thin & AUC fat \\
     \midrule
-    \textbf{DINOcow (ours)} & DINOv3, self-sup. & 5.1\,k & $<$1\,s$^{a}$ & \textbf{0.443} & -- & \textbf{0.68} & \textbf{0.84} & \textbf{0.94} & \textbf{0.89} \\
+    \textbf{BCS-Regions (ours)} & DINOv3, self-sup. & 5.1\,k & $<$1\,s$^{a}$ & \textbf{0.443} & -- & \textbf{0.68} & \textbf{0.84} & \textbf{0.94} & \textbf{0.89} \\
     DINOv3 + LoRA & DINOv3, self-sup. & 1.18\,M & 19\,min & 0.455 & +0.012 [$-$0.037, +0.057] & 0.59 & 0.78 & 0.90 & 0.85 \\
     ResNet-50, frozen + ridge & ImageNet-1k & 2.0\,k & $<$1\,s$^{a}$ & 0.656 & +0.213 [+0.138, +0.289] & 0.29 & 0.55 & 0.83 & 0.75 \\
     Texture (LBP, GLCM, Gabor) + ridge & none & 316 & $<$1\,s$^{a}$ & 0.691 & +0.248 [+0.179, +0.320] & 0.20 & 0.46 & -- & -- \\

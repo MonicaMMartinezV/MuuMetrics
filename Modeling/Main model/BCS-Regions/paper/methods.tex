@@ -57,10 +57,12 @@ Second, 64 animals are few for training a deep network from scratch, which led u
 \subsection{The BCS-Regions model}
 \label{sec:model}
 
-A human scorer does not judge a cow as a whole: BCS charts ask the scorer to look at specific bony landmarks and at how much tissue covers them \citep{edmonson1989}.
+\subsubsection{Model overview}
+
+A human scorer does not judge a cow as a whole: BCS charts ask the scorer to look at specific bony landmarks and at how much tissue covers them \citep{edmonson1989,ferguson1994}.
 BCS-Regions follows the same logic in three steps (Fig.~\ref{fig:model}).
 It first finds the anatomical regions that scorers inspect, then describes the appearance of each region with a general-purpose vision model that has never seen a cow's score, and finally learns a single linear map from those descriptions to BCS.
-Only this last step uses BCS labels, which keeps the number of parameters fitted to 64 cows small.
+Only this last step uses BCS labels, which keeps the number of parameters fitted to 64 cows small (5126).
 
 \begin{figure}[t]
   \centering
@@ -69,9 +71,10 @@ Only this last step uses BCS labels, which keeps the number of parameters fitted
   \label{fig:model}
 \end{figure}
 
-\subsubsection{Finding the regions a scorer looks at}
+\subsubsection{Instance segmentation and annotation}
+\label{sec:segmentation}
 
-The first step locates six regions in the image: loin, hips, rump, tailhead, left thigh and right thigh.
+The first step locates six regions on the cow in each crop: loin, hips, rump, tailhead, left thigh and right thigh.
 These regions are not a partition of the cow's back.
 The rump meets the thighs and the hips meet the thighs, and those meeting points are exactly the landmarks a scorer checks, so we let the regions overlap and treat segmentation as six independent binary problems rather than one multi-class one.
 
@@ -86,6 +89,7 @@ Annotating regions is slow, so we started from only 40 full robot frames annotat
   \caption{Manual region annotations on robot frames. (a) Four examples. (b) One frame, region by region.}
   \label{fig:annotation}
 \end{figure*}
+
 A first network (the teacher), trained on the 40 frames, labelled 493 unannotated frames, after excluding any frame taken within 10\,min of an annotated one so that near-copies could not leak into the training set.
 We trusted the teacher only where it was consistent: we kept the 70\% of frames on which its prediction best agreed with its prediction on the mirrored image (345 frames, agreement mIoU 0.94), and ignored pixels with uncertain probability ($0.3 < p < 0.7$).
 A second network (the student) was then trained with each batch split evenly between annotated and pseudo-labelled frames.
@@ -94,32 +98,37 @@ In five-fold cross-validation on the annotated frames, the student reached mIoU 
 
 Since the segmenter was trained on full 16:9 frames while the BCS images are crops, we centre each crop on a 16:9 canvas filled with the ImageNet mean colour before segmenting it.
 The cow then appears at the scale seen in training, and the resulting masks agree with those computed on the original frames (IoU 0.92).
-At inference we also segment the mirrored image, swap its left and right thigh maps back, average both predictions and threshold at $p > 0.5$.
+At inference we also segment the mirrored image, swap its left and right thigh maps back, average both predictions and binarise each region at $p > 0.5$.
 
 \pendiente{Check that no BCS image comes from the 40 annotated or 345 pseudo-labelled frames, or state it if some do.}
 
-\subsubsection{Describing each region with a frozen foundation model}
+\subsubsection{Feature extraction using DINOv3}
+\label{sec:features}
 
-With the regions located, the next question is what to measure inside them.
-Hand-crafted cues such as depth or contour curvature require calibrated cameras and are fragile under the lighting of the exit lane; instead, we let a large self-supervised vision model describe the appearance of each region and keep that model frozen, so that no part of it is fitted to our few labels.
+Features are extracted with a frozen DINOv3 ViT-L/16 backbone \citep{simeoni2025dinov3} (timm \texttt{vit\_large\_patch16\_dinov3.lvd1689m}, pretrained without labels on LVD-1689M); none of its weights is fitted to BCS.
+Each crop is resized to $320\times320$\,px, without preserving its aspect ratio, normalised with ImageNet statistics and split into non-overlapping $16\times16$ patches, which yields a $20\times20$ grid of $N = 400$ patch tokens of dimension $D = 1024$.
+As in DINOv3, one class token and four register tokens \citep{darcet2024registers} are prepended to the patch tokens, positional information is encoded with rotary position embeddings \citep{su2024roformer}, and every block uses LayerScale \citep{touvron2021cait}.
+We read the tokens after block 21 of 24 and apply the network's final layer normalisation to them.
+Intermediate layers of self-supervised vision transformers retain more local and geometric information than the last ones \citep{amir2021deepvit}, and on our data block 21 gave the lowest error in a sweep over blocks 17--24 (Supplementary Fig.~S3).
 
-We use DINOv3 ViT-L/16 \citep{simeoni2025dinov3} (timm \texttt{vit\_large\_patch16\_dinov3.lvd1689m}, pretrained without labels on LVD-1689M), with rotary position embeddings \citep{su2024roformer}, one class token plus four register tokens \citep{darcet2024registers} and LayerScale \citep{touvron2021cait}.
-Each crop is resized to $320\times320$\,px and normalised with ImageNet statistics, so the network produces a $20\times20$ grid of patch tokens, each a 1024-dimensional vector describing a $16\times16$-pixel patch of the cow.
-We read these tokens after block 21 of 24, passed through the network's final LayerNorm, rather than at the output. The backbone and block were chosen in earlier experiments on this dataset; the resolution and the set of regions were chosen by the nested selection described in Sec.~\ref{sec:selection}.
-
-The masks and the tokens now meet.
-We resize each region mask to $320\times320$ and average it over every patch, which gives $w_{rp}$, the fraction of patch $p$ that lies in region $r$.
-The description of region $r$ is then the average of the patch tokens $\mathbf{t}_p$, weighted by how much of each patch belongs to the region:
+Discarding the class and register tokens leaves a dense feature map of $20\times20\times1024$.
+To obtain anatomically grounded descriptors, we pool this map with the region masks produced by the segmenter.
+Each binary mask is first resized to the $320\times320$ input resolution by nearest-neighbour interpolation and then reduced to the $20\times20$ patch grid by average pooling over each $16\times16$ block, so that every cell corresponds exactly to one DINOv3 patch and holds $w_{rp} \in [0, 1]$, the fraction of patch $p$ that lies in region $r$.
+The descriptor of region $r$ is the average of the patch features $\mathbf{t}_p$ weighted by these fractions:
 \begin{equation}
   \mathbf{v}_r = \frac{\sum_p w_{rp}\, \mathbf{t}_p}{\sum_p w_{rp}} .
   \label{eq:pool}
 \end{equation}
-A region may fall partly or wholly outside a crop.
-When it covers less than half a patch in total ($\sum_p w_{rp} < 0.5$), we set $\mathbf{v}_r$ to zero and raise an absence flag, so that the regressor can tell a missing region from a real one.
-The segmenter still delineates all six regions, but the descriptor keeps five: the loin, which lies outside the overlaps between bony landmarks, added noise rather than signal (Sec.~\ref{sec:selection}). Concatenating the five region vectors and their five flags gives a descriptor of $5\times1024 + 5 = 5125$ values per image.
+Patches fully inside the region contribute their full feature vector, partially covered patches contribute in proportion, and patches outside the region are ignored.
+The result is one 1024-dimensional vector that summarises the appearance of each anatomical region.
+A region may fall partly or wholly outside a crop: when it covers less than half a patch in total ($\sum_p w_{rp} < 0.5$), its vector is set to zero and an absence flag is raised, so that the regressor can tell a missing region from a real one.
+The segmenter delineates six regions, but the descriptor keeps five: the loin, which lies outside the overlaps between bony landmarks, added noise rather than signal (Sec.~\ref{sec:selection}).
+Concatenating the five region vectors and their five absence flags gives a descriptor of $5\times1024 + 5 = 5125$ values per image.
 
+\pendiente{Produce Supplementary Fig.~S3 (MAE per cow against DINOv3 block, from the block sweep of EXPERIMENTOS [26]/[30]).}
 
-\subsubsection{From descriptors to a score}
+\subsubsection{BCS estimation}
+\label{sec:ridge}
 
 The last step is the only one that sees BCS labels, and we keep it as simple as possible: a ridge regression from the 5125-value descriptor to BCS.
 A linear map has few degrees of freedom to overfit 64 cows, and its closed-form solution makes every fit deterministic.
@@ -131,7 +140,7 @@ With about 430 training images and 5125 features, it is far cheaper to solve the
   \label{eq:ridge}
 \end{equation}
 One eigendecomposition of $\mathbf{X}\mathbf{X}^{\top}$ serves every candidate penalty $\alpha \in \{1, 10, 10^2, 10^3, 10^4, 10^5\}$.
-We choose $\alpha$ by an inner four-fold cross-validation grouped by cow, run only on the training cows, keeping the value with the lowest mean absolute error; on all 64 cows this choice is $\alpha = 1000$.
+We choose $\alpha$ by an inner four-fold cross-validation grouped by cow, run only on the training cows, keeping the value with the lowest mean absolute error; this choice was $\alpha = 1000$ in all 64 leave-one-cow-out folds and on all 64 cows (Supplementary Fig.~S4).
 The model outputs a continuous score.
 Where a score on the 0.25 grid is needed, we round it to the nearest 0.25 and clip it to $[2.0, 5.0]$.
 
@@ -168,21 +177,23 @@ A second round, starting from the selected configuration, tried ten further vari
 \subsection{Additional analyses}
 \label{sec:analyses}
 
-Beyond the overall error, three analyses describe how the model behaves; all use the leave-one-cow-out predictions.
-First, we report error and bias for each BCS value and a Bland--Altman analysis \citep{bland1986} of the mean prediction for each cow and score.
-Second, for cows photographed on several days without a change of score, we measured how much the daily mean prediction varies, and we followed the two cows whose score changed during the study.
-Third, a learning curve trained the model on random subsets of 8 to 56 cows, with eight cows always held out for testing (10 repetitions), to estimate how much more data would help.
+Beyond the overall error, several analyses describe how the model behaves; all use the leave-one-cow-out predictions unless stated otherwise.
+We report error and bias for each BCS value, Cohen's quadratically weighted kappa after rounding to the 0.25 grid, and a Bland--Altman analysis \citep{bland1986} of the mean prediction for each cow and score.
+Using the predicted score to flag thin (BCS $<3$) and fat (BCS $\geq4$) cows, we computed ROC curves and their areas, with confidence intervals by bootstrap over cows.
+To look for a bias with coat colour, each cow was labelled by eye as mostly white, pied or mostly black, and the signed error of each cow and score was regressed on the reference score and the coat class.
+For cows photographed on several days without a change of score, we measured how much the daily mean prediction varies, and we followed the two cows whose score changed during the study.
+A learning curve trained the model on random subsets of 8 to 56 cows, with eight cows always held out for testing (10 repetitions), to estimate how much more data would help.
 Finally, to test whether the anatomical regions matter, we replaced the region descriptor by simpler ones built from the same tokens: the class token and mean of all patches of the whole image, the mean of the patches inside the cow's silhouette (the union of all six masks), and a single rectangular crop of the rear, which mimics single-crop methods \citep{nagy2023}.
-
 
 \subsection{Baselines and leakage experiment}
 \label{sec:baselines}
 
-To place BCS-Regions against the usual alternative, end-to-end fine-tuning of an image network, we trained eight 2D, image-only baselines (Table~\ref{tab:baselines}) on exactly the same cow-level splits, using the first 3 seeds of the repeated five-fold scheme (15 folds).
+To place BCS-Regions against the usual alternative, end-to-end fine-tuning of an image network, we trained seven 2D, image-only networks (Table~\ref{tab:baselines}) on exactly the same cow-level splits, using the first 3 seeds of the repeated five-fold scheme (15 folds).
 All of them receive the whole crop resized to $384\times384$\,px with ImageNet normalisation, the native or usual input size of these networks.
-Three are convolutional regressors fine-tuned in full (ResNet-50, EfficientNet-B0 and EfficientNet-V2, the last used for BCS by \citet{siachos2023}), and a fourth is a supervised vision transformer, as in transformer-based BCS work \citep{vitbcs2021}.
-The third asks whether our frozen backbone would do better if adapted: it fine-tunes the same DINOv3 model with low-rank adapters \citep{hu2022lora} and a linear head.
-Two follow published work that classifies BCS with YOLO, in the version used in most papers (YOLOv8) and the current one (YOLO11), and the last, a frozen ResNet-50 with our ridge head, isolates the contribution of the foundation model.
+Three are convolutional regressors fine-tuned in full (ResNet-50, EfficientNet-B0 and EfficientNet-V2-S, the last used for BCS by \citet{siachos2023}), and one is a supervised vision transformer, as in transformer-based BCS work \citep{vitbcs2021}.
+Another asks whether our frozen backbone would do better if adapted: it fine-tunes the same DINOv3 model with low-rank adapters \citep{hu2022lora} and a linear head.
+The last two follow published work that classifies BCS with YOLO, in the version used in most papers (YOLOv8) and the current one (YOLO11).
+Two further baselines keep our ridge head and change only the representation: a frozen ResNet-50 pretrained on ImageNet, which isolates the contribution of the self-supervised foundation model, and hand-crafted texture descriptors without colour, computed inside the same five regions on the greyscale image (rotation-invariant uniform local binary patterns at radii 1 and 2, grey-level co-occurrence statistics at distances 1, 2 and 4, and the mean and standard deviation of Gabor responses at 3 frequencies and 4 orientations; 62 values per region).
 
 \begin{table*}[t]
   \centering
@@ -200,6 +211,7 @@ Two follow published work that classifies BCS with YOLO, in the version used in 
     YOLOv8s-cls & YOLOv8s-cls \citep{jocher2023yolov8} (ImageNet) & all weights & classes = BCS values \\
     YOLO11s-cls & YOLO11s-cls \citep{jocher2024yolo11} (ImageNet) & all weights & classes = BCS values \\
     ResNet-50, frozen & ResNet-50 (as above) & ridge on 2048 pooled features & regression \\
+    Texture, no colour & none & ridge on 315 texture features (5 regions) & regression \\
     \bottomrule
   \end{tabular}
 \end{table*}
@@ -223,10 +235,10 @@ The gap between the two splits measures the identity leakage discussed above.
 \label{sec:implementation}
 
 Because the segmenter and the backbone are fixed, masks and descriptors are computed once per image, and each evaluation fold only refits the ridge, which takes seconds.
-Fine-tuning DINOv3 with LoRA, by contrast, takes about 1.2\,h per seed of five folds on the same GPU.
+Fine-tuning DINOv3 with LoRA, by contrast, takes about 1.6\,h per seed of five folds on the same GPU (an NVIDIA RTX 2080 with 8\,GB).
 The code uses PyTorch 2.9.1 (CUDA 12.6), timm 1.0.22 \citep{wightman2019timm}, NumPy 2.2.6, scikit-learn and, for the YOLO baseline only, Ultralytics 8.3.150, and it runs in Docker containers built from the repository.
 Every cached result (masks, descriptors, fitted ridge) records the backbone, input size, block, region list and MD5 of the segmenter weights that produced it, and the pipeline stops if these do not match the current code.
-The segmenter weights are published as a GitHub release (\texttt{bcs-regions-v2}), and the code is available at \url{https://github.com/MonicaMMartinezV/MuuMetrics}.
+The segmenter weights are published as a GitHub release (\texttt{bcs-regions-v2}), the final model is tagged \texttt{bcs-regions-v3}, and the code is available at \url{https://github.com/MonicaMMartinezV/MuuMetrics}.
 
-\pendiente{GPU model for the timing figures; end-to-end runtime of the proposed model.}
+\pendiente{End-to-end runtime of the proposed model per image (segmentation + descriptor), on GPU and CPU.}
 \pendiente{Data availability statement (images and labels public or on request).}

@@ -1,9 +1,16 @@
-\begin{thebibliography}{20}
+\begin{thebibliography}{22}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Amir et~al.(2022)Amir, Gandelsman, Bagon, and Dekel]{amir2021deepvit}
+Shir Amir, Yossi Gandelsman, Shai Bagon, and Tali Dekel.
+\newblock Deep {ViT} features as dense visual descriptors.
+\newblock In \emph{European Conference on Computer Vision Workshops (ECCVW)},
+  2022.
+\newblock arXiv:2112.05814.
 
 \bibitem[Bland and Altman(1986)]{bland1986}
 J.~Martin Bland and Douglas~G. Altman.
@@ -24,6 +31,13 @@ A.~J. Edmonson, I.~J. Lean, L.~D. Weaver, T.~Farver, and G.~Webster.
 \newblock A body condition scoring chart for {Holstein} dairy cows.
 \newblock \emph{Journal of Dairy Science}, 72\penalty0 (1):\penalty0 68--78,
   1989.
+
+\bibitem[Ferguson et~al.(1994)Ferguson, Galligan, and Thomsen]{ferguson1994}
+James~D. Ferguson, David~T. Galligan, and Neal Thomsen.
+\newblock Principal descriptors of body condition score in {Holstein} cows.
+\newblock \emph{Journal of Dairy Science}, 77\penalty0 (9):\penalty0
+  2695--2703, 1994.
+\newblock \doi{10.3168/jds.S0022-0302(94)77212-X}.
 
 \bibitem[He et~al.(2016)He, Zhang, Ren, and Sun]{he2016resnet}
 Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
