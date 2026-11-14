@@ -105,24 +105,30 @@ At inference we also segment the mirrored image, swap its left and right thigh m
 \subsubsection{Feature extraction using DINOv3}
 \label{sec:features}
 
-Features are extracted with a frozen DINOv3 ViT-L/16 backbone \citep{simeoni2025dinov3} (timm \texttt{vit\_large\_patch16\_dinov3.lvd1689m}, pretrained without labels on LVD-1689M); none of its weights is fitted to BCS.
-Each crop is resized to $320\times320$\,px, without preserving its aspect ratio, normalised with ImageNet statistics and split into non-overlapping $16\times16$ patches, which yields a $20\times20$ grid of $N = 400$ patch tokens of dimension $D = 1024$.
-As in DINOv3, one class token and four register tokens \citep{darcet2024registers} are prepended to the patch tokens, positional information is encoded with rotary position embeddings \citep{su2024roformer}, and every block uses LayerScale \citep{touvron2021cait}.
-We read the tokens after block 21 of 24 and apply the network's final layer normalisation to them.
-Intermediate layers of self-supervised vision transformers retain more local and geometric information than the last ones \citep{amir2021deepvit}, and on our data block 21 gave the lowest error in a sweep over blocks 17--24 (Supplementary Fig.~S3).
+The feature extraction was completed with the DINOv3 ViT-L/16 backbone \citep{simeoni2025dinov3}, kept frozen, so that none of its weights is fitted to BCS.
+Each input image is resized to $320\times320$ pixels and partitioned into non-overlapping $16\times16$ patches, yielding a $20\times20$ grid of $N = 400$ patch tokens of dimension $D = 1024$.
+Following the DINOv3 architecture, 5 tokens (one class token, and four register tokens) are placed before the 400 tokens \citep{darcet2024registers}.
+The positional information is encoded with RoPE \citep{su2024roformer,simeoni2025dinov3}.
+After block 21 the model's final layer of normalization is applied.
+Intermediate layers of self-supervised vision transformers have been observed to retain more local and geometric information than the last layers \citep{amir2021deepvit}; on our data, block 21 gave the lowest error in a sweep over blocks 17--24 (Supplementary Fig.~S3).
 
-Discarding the class and register tokens leaves a dense feature map of $20\times20\times1024$.
-To obtain anatomically grounded descriptors, we pool this map with the region masks produced by the segmenter.
-Each binary mask is first resized to the $320\times320$ input resolution by nearest-neighbour interpolation and then reduced to the $20\times20$ patch grid by average pooling over each $16\times16$ block, so that every cell corresponds exactly to one DINOv3 patch and holds $w_{rp} \in [0, 1]$, the fraction of patch $p$ that lies in region $r$.
-The descriptor of region $r$ is the average of the patch features $\mathbf{t}_p$ weighted by these fractions:
+The finalized dense feature map is sized $20\times20\times1024$ (discarding the class and register tokens).
+To obtain anatomically grounded descriptors, we pool the feature map using the region masks produced by the segmentation model.
+Each mask is first resized to the $320\times320$ input resolution using nearest-neighbor interpolation and then reduced to the $20\times20$ patch grid by average pooling over each $16\times16$ block, so that every cell corresponds exactly to one DINOv3 patch.
+After this step, each cell holds a value between 0 and 1 that indicates what fraction of that patch belongs to the region.
+The descriptor of each region is then computed as a weighted average of the patch features, where each patch is weighted by its mask value:
 \begin{equation}
-  \mathbf{v}_r = \frac{\sum_p w_{rp}\, \mathbf{t}_p}{\sum_p w_{rp}} .
+  \mathbf{v}_r = \frac{\sum_p w_{rp}\, \mathbf{t}_p}{\sum_p w_{rp}} ,
   \label{eq:pool}
 \end{equation}
-Patches fully inside the region contribute their full feature vector, partially covered patches contribute in proportion, and patches outside the region are ignored.
-The result is one 1024-dimensional vector that summarises the appearance of each anatomical region.
+where $\mathbf{t}_p$ is the feature vector of patch $p$ and $w_{rp}$ the fraction of that patch inside region $r$.
+In this way, patches fully inside the region contribute their complete feature vector, partially covered patches contribute proportionally, and patches outside the region are ignored.
+The result is a single 1024-dimensional vector that summarizes the appearance of each anatomical region.
+
+Three details complete the descriptor.
+The image is resized to $320\times320$ without preserving its aspect ratio and normalised with ImageNet statistics, and the region masks are binarised at $p > 0.5$ before they are resized.
 A region may fall partly or wholly outside a crop: when it covers less than half a patch in total ($\sum_p w_{rp} < 0.5$), its vector is set to zero and an absence flag is raised, so that the regressor can tell a missing region from a real one.
-The segmenter delineates six regions, but the descriptor keeps five: the loin, which lies outside the overlaps between bony landmarks, added noise rather than signal (Sec.~\ref{sec:selection}).
+Finally, although the segmenter delineates six regions, the descriptor keeps five: the loin, which lies outside the overlaps between bony landmarks, added noise rather than signal (Sec.~\ref{sec:selection}).
 Concatenating the five region vectors and their five absence flags gives a descriptor of $5\times1024 + 5 = 5125$ values per image.
 
 \pendiente{Produce Supplementary Fig.~S3 (MAE per cow against DINOv3 block, from the block sweep of EXPERIMENTOS [26]/[30]).}

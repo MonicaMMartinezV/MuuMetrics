@@ -1,4 +1,4 @@
-\begin{thebibliography}{22}
+\begin{thebibliography}{21}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -123,22 +123,14 @@ Mingxing Tan and Quoc~V. Le.
   learning-based dairy cow body condition prediction.
 \newblock bioRxiv, doi:10.1101/2022.10.26.513838, 2022.
 
-\bibitem[Touvron et~al.(2021{\natexlab{a}})Touvron, Cord, Douze, Massa,
-  Sablayrolles, and J{\'e}gou]{touvron2021deit}
+\bibitem[Touvron et~al.(2021)Touvron, Cord, Douze, Massa, Sablayrolles, and
+  J{\'e}gou]{touvron2021deit}
 Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre
   Sablayrolles, and Herv{\'e} J{\'e}gou.
 \newblock Training data-efficient image transformers \& distillation through
   attention.
 \newblock In \emph{Proceedings of the 38th International Conference on Machine
-  Learning (ICML)}, pages 10347--10357, 2021{\natexlab{a}}.
-
-\bibitem[Touvron et~al.(2021{\natexlab{b}})Touvron, Cord, Sablayrolles,
-  Synnaeve, and J{\'e}gou]{touvron2021cait}
-Hugo Touvron, Matthieu Cord, Alexandre Sablayrolles, Gabriel Synnaeve, and
-  Herv{\'e} J{\'e}gou.
-\newblock Going deeper with image transformers.
-\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
-  Computer Vision (ICCV)}, pages 32--42, 2021{\natexlab{b}}.
+  Learning (ICML)}, pages 10347--10357, 2021.
 
 \bibitem[Wightman(2019)]{wightman2019timm}
 Ross Wightman.
