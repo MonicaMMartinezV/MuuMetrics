@@ -7,7 +7,7 @@ tablas de datos en `datos/`. Cada figura indica de dónde sale para poder regene
 
 | Figura | Archivo (`../figures/`) | Sección | Cómo se genera (rama · script) | EXPERIMENTOS |
 |---|---|---|---|---|
-| Distribución de BCS por vaca (vacas por BCS e imágenes por vaca) | `bcs_distribution.{pdf,png}` | Métodos (datos) | main · `figures/plot_bcs_distribution.py --data_dir <Dataset_Fr_BCS_v2>` | — |
+| Distribución de BCS por vaca y por foto (% de cada total) | `bcs_distribution.{pdf,png}` | Métodos (datos) | main · `figures/plot_bcs_distribution.py --data_dir <Dataset_Fr_BCS_v2>` | — |
 | Arquitectura del modelo | `model_bcs_v3.{pdf,png}` | Métodos | main · `pdflatex model_bcs_v3.tex` | [32] |
 | Anotaciones de regiones (Roboflow) | `segmentation_examples.{pdf,png}` | Métodos | main · `figures/plot_seg_examples.py` | [15] |
 | Acuerdo con la referencia (predicho vs real, Bland–Altman) | `analisis_bland_altman.{pdf,png}` | 3.1 | ablations · `analisis/analisis_paper.py` | [31] |
