@@ -18,7 +18,7 @@ Because cows differ in size and walk at different positions along the lane, thes
 
 \pendiente{Camera model, resolution, mounting height and angle at the robot exit; how capture was triggered and how each frame was linked to a cow (robot exit records?); how the dorsal crops were produced (manual or detector).}
 
-The resulting dataset holds 542 images of 64 cows, scored from 2.0 to 5.0 in 0.25 steps (mean 3.64, SD 1.00; Table~\ref{tab:dataset}).
+The resulting dataset holds 542 images of 64 cows, scored from 2.0 to 5.0 in 0.25 steps (mean 3.64, SD 1.00; Table~\ref{tab:dataset}, Fig.~\ref{fig:bcs_dist}).
 We assigned identity and score per folder and confirmed both by hand, without relying on the ID prefix that the robot writes into the file names.
 Two cows were scored more than once: one in three months (4.25, 4.0 and 3.5) and another twice, 4.5 between 26 May and 8 June and 2.25 between 24 and 26 June, after she fell ill and lost condition quickly. Each of their images takes the score of the period in which it was taken, and each animal stays a single group in every split.
 Two properties of these data shape everything that follows.
@@ -51,6 +51,13 @@ Second, 64 animals are few for training a deep network from scratch, which led u
     \bottomrule
   \end{tabular}
 \end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{../figures/bcs_distribution.pdf}
+  \caption{BCS distribution in the dataset by cow. (a) Number of cows per BCS value. (b) Number of images of each cow, one bar per cow, grouped by BCS (shaded bands alternate between groups; dashed line, median). The two cows scored more than once count once per score.}
+  \label{fig:bcs_dist}
+\end{figure}
 
 \pendiente{Who scored BCS, on which scale \citep[e.g.][]{edmonson1989} and on which dates; on the animal or from the photos. Inter-rater agreement, if a second scorer is available.}
 
