@@ -1,140 +1,300 @@
-\begin{thebibliography}{21}
-\providecommand{\natexlab}[1]{#1}
-\providecommand{\url}[1]{\texttt{#1}}
-\expandafter\ifx\csname urlstyle\endcsname\relax
-  \providecommand{\doi}[1]{doi: #1}\else
-  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+\begin{thebibliography}{}
 
-\bibitem[Amir et~al.(2022)Amir, Gandelsman, Bagon, and Dekel]{amir2021deepvit}
-Shir Amir, Yossi Gandelsman, Shai Bagon, and Tali Dekel.
-\newblock Deep {ViT} features as dense visual descriptors.
-\newblock In \emph{European Conference on Computer Vision Workshops (ECCVW)},
-  2022.
-\newblock arXiv:2112.05814.
+\bibitem[Ali and Muhammad, 2025]{ali2025}
+Ali, U. and Muhammad, W. (2025).
+\newblock Cow face detection for precision livestock management using {YOLOv8}.
+\newblock {\em International Journal of Innovations in Science and Technology},
+  page 128.
 
-\bibitem[Bland and Altman(1986)]{bland1986}
-J.~Martin Bland and Douglas~G. Altman.
+\bibitem[Azzaro et~al., 2011]{azzaro2011}
+Azzaro, G., Caccamo, M., Ferguson, J.~D., Battiato, S., Farinella, G.~M.,
+  Guarnera, G.~C., Puglisi, G., Petriglieri, R., and Licitra, G. (2011).
+\newblock Objective estimation of body condition score by modeling cow body
+  shape from digital images.
+\newblock {\em Journal of Dairy Science}, 94(4):2126--2137.
+
+\bibitem[Bercovich et~al., 2013]{bercovich2013}
+Bercovich, A., Edan, Y., Alchanatis, V., Moallem, U., Parmet, Y., Honig, H.,
+  Maltz, E., Antler, A., and Halachmi, I. (2013).
+\newblock Development of an automatic cow body condition scoring using body
+  shape signature and {Fourier} descriptors.
+\newblock {\em Journal of Dairy Science}, 96(12):8047--8059.
+
+\bibitem[Bewley et~al., 2008]{bewley2008}
+Bewley, J.~M., Peacock, A.~M., Lewis, O., Boyce, R.~E., Roberts, D.~J., Coffey,
+  M.~P., Kenyon, S.~J., and Schutz, M.~M. (2008).
+\newblock Potential for estimation of body condition scores in dairy cattle
+  from digital images.
+\newblock {\em Journal of Dairy Science}, 91(9):3439--3453.
+
+\bibitem[Bland and Altman, 1986]{bland1986}
+Bland, J.~M. and Altman, D.~G. (1986).
 \newblock Statistical methods for assessing agreement between two methods of
   clinical measurement.
-\newblock \emph{The Lancet}, 327\penalty0 (8476):\penalty0 307--310, 1986.
+\newblock {\em The Lancet}, 327(8476):307--310.
 
-\bibitem[Darcet et~al.(2024)Darcet, Oquab, Mairal, and
-  Bojanowski]{darcet2024registers}
-Timoth{\'e}e Darcet, Maxime Oquab, Julien Mairal, and Piotr Bojanowski.
+\bibitem[{\c{C}}evik and Bo{\u{g}}a, 2019]{cevik2019}
+{\c{C}}evik, K.~K. and Bo{\u{g}}a, M. (2019).
+\newblock {R-CNN} derin {\"o}{\u{g}}renme mimarisi ile v{\"u}cut kondisyon
+  skoru ({VKS}) alan{\i} b{\"o}l{\"u}tlenmesi ve
+  s{\i}n{\i}fland{\i}r{\i}lmas{\i}.
+\newblock {\em European Journal of Science and Technology}, pages 1248--1255.
+
+\bibitem[Dand{\i}l et~al., 2024]{dandil2024}
+Dand{\i}l, E., {\c{C}}evik, K.~K., and Bo{\u{g}}a, M. (2024).
+\newblock Automated classification system based on {YOLO} architecture for body
+  condition score in dairy cows.
+\newblock {\em Veterinary Sciences}, 11(9):399.
+
+\bibitem[Darcet et~al., 2024]{darcet2024registers}
+Darcet, T., Oquab, M., Mairal, J., and Bojanowski, P. (2024).
 \newblock Vision transformers need registers.
-\newblock In \emph{International Conference on Learning Representations
-  (ICLR)}, 2024.
+\newblock In {\em International Conference on Learning Representations (ICLR)}.
 
-\bibitem[Edmonson et~al.(1989)Edmonson, Lean, Weaver, Farver, and
-  Webster]{edmonson1989}
-A.~J. Edmonson, I.~J. Lean, L.~D. Weaver, T.~Farver, and G.~Webster.
+\bibitem[Edmonson et~al., 1989]{edmonson1989}
+Edmonson, A.~J., Lean, I.~J., Weaver, L.~D., Farver, T., and Webster, G.
+  (1989).
 \newblock A body condition scoring chart for {Holstein} dairy cows.
-\newblock \emph{Journal of Dairy Science}, 72\penalty0 (1):\penalty0 68--78,
-  1989.
+\newblock {\em Journal of Dairy Science}, 72(1):68--78.
 
-\bibitem[Ferguson et~al.(1994)Ferguson, Galligan, and Thomsen]{ferguson1994}
-James~D. Ferguson, David~T. Galligan, and Neal Thomsen.
+\bibitem[Ferguson et~al., 1994]{ferguson1994}
+Ferguson, J.~D., Galligan, D.~T., and Thomsen, N. (1994).
 \newblock Principal descriptors of body condition score in {Holstein} cows.
-\newblock \emph{Journal of Dairy Science}, 77\penalty0 (9):\penalty0
-  2695--2703, 1994.
-\newblock \doi{10.3168/jds.S0022-0302(94)77212-X}.
+\newblock {\em Journal of Dairy Science}, 77(9):2695--2703.
 
-\bibitem[He et~al.(2016)He, Zhang, Ren, and Sun]{he2016resnet}
-Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+\bibitem[French et~al., 2020]{french2020}
+French, J., Wright, T., and Mongeon, M. (2020).
+\newblock Body condition scoring of dairy cattle.
+\newblock Technical Report Factsheet 20-011, AGDEX 414/20, Ontario Ministry of
+  Agriculture, Food and Rural Affairs.
+
+\bibitem[Goselink et~al., 2024]{goselink2024}
+Goselink, R. M.~A., van Knegsel, A. T.~M., Bannink, A., Bruckmaier, R.~M.,
+  Dijkstra, J., van Duinkerken, G., Schonewille, J.~T., and Hendriks, W.~H.
+  (2024).
+\newblock Dry period length affects rumen adaptation in dairy cattle precalving
+  and during the first weeks after calving.
+\newblock {\em Journal of Dairy Science}, 107(10):8569--8581.
+
+\bibitem[Gross et~al., 2011]{gross2011}
+Gross, J., van Dorland, H.~A., Bruckmaier, R.~M., and Schwarz, F.~J. (2011).
+\newblock Performance and metabolic profile of dairy cows during a lactational
+  and deliberately induced negative energy balance with subsequent
+  realimentation.
+\newblock {\em Journal of Dairy Science}, 94(4):1820--1830.
+
+\bibitem[Grummer and Rastani, 2003]{grummer2003}
+Grummer, R.~R. and Rastani, R.~R. (2003).
+\newblock When should lactating dairy cows reach positive energy balance?
+\newblock {\em The Professional Animal Scientist}, 19(3):197--203.
+
+\bibitem[Halachmi et~al., 2008]{halachmi2008}
+Halachmi, I., Polak, P., Roberts, D.~J., and Klopcic, M. (2008).
+\newblock Cow body shape and automation of condition scoring.
+\newblock {\em Journal of Dairy Science}, 91(11):4444--4451.
+
+\bibitem[He et~al., 2016]{he2016resnet}
+He, K., Zhang, X., Ren, S., and Sun, J. (2016).
 \newblock Deep residual learning for image recognition.
-\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and
-  Pattern Recognition (CVPR)}, pages 770--778, 2016.
+\newblock In {\em Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 770--778.
 
-\bibitem[Hu et~al.(2022)Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang, and
-  Chen]{hu2022lora}
-Edward~J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean
-  Wang, Lu~Wang, and Weizhu Chen.
+\bibitem[Hu et~al., 2022]{hu2022lora}
+Hu, E.~J., Shen, Y., Wallis, P., Allen-Zhu, Z., Li, Y., Wang, S., Wang, L., and
+  Chen, W. (2022).
 \newblock {LoRA}: Low-rank adaptation of large language models.
-\newblock In \emph{International Conference on Learning Representations
-  (ICLR)}, 2022.
+\newblock In {\em International Conference on Learning Representations (ICLR)}.
 
-\bibitem[Jocher and Qiu(2024)]{jocher2024yolo11}
-Glenn Jocher and Jing Qiu.
-\newblock Ultralytics {YOLO11}.
-\newblock \url{https://github.com/ultralytics/ultralytics}, 2024.
-
-\bibitem[Jocher et~al.(2023)Jocher, Chaurasia, and Qiu]{jocher2023yolov8}
-Glenn Jocher, Ayush Chaurasia, and Jing Qiu.
+\bibitem[Jocher et~al., 2023]{jocher2023yolov8}
+Jocher, G., Chaurasia, A., and Qiu, J. (2023).
 \newblock Ultralytics {YOLOv8}.
-\newblock \url{https://github.com/ultralytics/ultralytics}, 2023.
+\newblock \url{https://github.com/ultralytics/ultralytics}.
 
-\bibitem[Lin et~al.(2017)Lin, Doll{\'a}r, Girshick, He, Hariharan, and
-  Belongie]{lin2017fpn}
-Tsung-Yi Lin, Piotr Doll{\'a}r, Ross Girshick, Kaiming He, Bharath Hariharan,
-  and Serge Belongie.
+\bibitem[Jocher and Qiu, 2024]{jocher2024yolo11}
+Jocher, G. and Qiu, J. (2024).
+\newblock Ultralytics {YOLO11}.
+\newblock \url{https://github.com/ultralytics/ultralytics}.
+
+\bibitem[Jukna et~al., 2024]{jukna2024}
+Jukna, V., Me{\v{s}}kinyt{\.e}, E., Antanaitis, R., and Juozaitien{\.e}, V.
+  (2024).
+\newblock Association of dry period length with automatic milking system,
+  mastitis, and reproductive indicators in cows.
+\newblock {\em Animals}, 14(14):2065.
+
+\bibitem[Lee et~al., 2020]{lee2020}
+Lee, M., Lee, S., Park, J., and Seo, S. (2020).
+\newblock Clustering and characterization of the lactation curves of dairy cows
+  using {K}-medoids clustering algorithm.
+\newblock {\em Animals}, 10(8):1348.
+
+\bibitem[Lewis et~al., 2025]{lewis2025}
+Lewis, R., Kostermans, T., Brovold, J.~W., Laique, T., and Ocepek, M. (2025).
+\newblock Automated body condition scoring in dairy cows using {2D} imaging and
+  deep learning.
+\newblock {\em AgriEngineering}, 7(7):241.
+
+\bibitem[Lin et~al., 2017]{lin2017fpn}
+Lin, T.-Y., Doll{\'a}r, P., Girshick, R., He, K., Hariharan, B., and Belongie,
+  S. (2017).
 \newblock Feature pyramid networks for object detection.
-\newblock In \emph{Proceedings of the IEEE Conference on Computer Vision and
-  Pattern Recognition (CVPR)}, pages 2117--2125, 2017.
+\newblock In {\em Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, pages 2117--2125.
 
-\bibitem[Loshchilov and Hutter(2019)]{loshchilov2019adamw}
-Ilya Loshchilov and Frank Hutter.
+\bibitem[Liu et~al., 2025]{liu2025}
+Liu, F., Zhang, Y., Liu, Y., Li, J., Li, M., and Yao, J. (2025).
+\newblock A novel lightweight dairy cattle body condition scoring model for
+  edge devices based on tail features and attention mechanisms.
+\newblock {\em Veterinary Sciences}, 12(9):906.
+
+\bibitem[Loshchilov and Hutter, 2019]{loshchilov2019adamw}
+Loshchilov, I. and Hutter, F. (2019).
 \newblock Decoupled weight decay regularization.
-\newblock In \emph{International Conference on Learning Representations
-  (ICLR)}, 2019.
+\newblock In {\em International Conference on Learning Representations (ICLR)}.
 
-\bibitem[Oquab et~al.(2024)Oquab, Darcet, Moutakanni, et~al.]{oquab2024dinov2}
-Maxime Oquab, Timoth{\'e}e Darcet, Th{\'e}o Moutakanni, et~al.
-\newblock {DINOv2}: Learning robust visual features without supervision.
-\newblock \emph{Transactions on Machine Learning Research}, 2024.
+\bibitem[Martinet et~al., 1999]{martinet1999}
+Martinet, J., Houdebine, L.-M., and Head, H.~H., editors (1999).
+\newblock {\em Biology of Lactation}.
+\newblock INRA Editions, Paris, France.
 
-\bibitem[Siachos et~al.(2023)]{siachos2023}
-N.~Siachos et~al.
-\newblock {TODO}: automated 2d body condition scoring with efficientnetv2
-  (verify reference), 2023.
+\bibitem[Mellado et~al., 2016]{mellado2016}
+Mellado, M. et~al. (2016).
+\newblock {TODO}: reference cited in the text but missing from the list.
 
-\bibitem[Sim{\'e}oni et~al.(2025)Sim{\'e}oni, Vo, Seitzer,
-  et~al.]{simeoni2025dinov3}
-Oriane Sim{\'e}oni, Huy~V. Vo, Maximilian Seitzer, et~al.
-\newblock {DINOv3}.
-\newblock \emph{arXiv preprint arXiv:2508.10104}, 2025.
+\bibitem[Mullins et~al., 2019]{mullins2019}
+Mullins, I.~L., Truman, C.~M., Campler, M.~R., Bewley, J.~M., and Costa, J.
+  H.~C. (2019).
+\newblock Validation of a commercial automated body condition scoring system on
+  a commercial dairy farm.
+\newblock {\em Animals}, 9(6):287.
 
-\bibitem[Su et~al.(2024)Su, Ahmed, Lu, Pan, Bo, and Liu]{su2024roformer}
-Jianlin Su, Murtadha Ahmed, Yu~Lu, Shengfeng Pan, Wen Bo, and Yunfeng Liu.
-\newblock {RoFormer}: Enhanced transformer with rotary position embedding.
-\newblock \emph{Neurocomputing}, 568:\penalty0 127063, 2024.
-
-\bibitem[Tan and Le(2019)]{tan2019efficientnet}
-Mingxing Tan and Quoc~V. Le.
-\newblock {EfficientNet}: Rethinking model scaling for convolutional neural
-  networks.
-\newblock In \emph{Proceedings of the 36th International Conference on Machine
-  Learning (ICML)}, pages 6105--6114, 2019.
-
-\bibitem[Tan and Le(2021)]{tan2021efficientnetv2}
-Mingxing Tan and Quoc~V. Le.
-\newblock {EfficientNetV2}: Smaller models and faster training.
-\newblock In \emph{Proceedings of the 38th International Conference on Machine
-  Learning (ICML)}, pages 10096--10106, 2021.
-
-\bibitem[{TODO}(2021)]{vitbcs2021}
-{TODO}.
-\newblock Body condition score for dairy cows method based on vision
-  transformer.
-\newblock IEEE Xplore, document 9628437, 2021.
-
-\bibitem[{TODO}(2022)]{nagy2023}
-{TODO}.
+\bibitem[Nagy et~al., 2023]{nagy2023}
+Nagy, S.~{\'A}., Kilim, O., Csabai, I., G{\'a}bor, G., and Solymosi, N. (2023).
 \newblock Impact evaluation of score classes and annotation regions in deep
   learning-based dairy cow body condition prediction.
-\newblock bioRxiv, doi:10.1101/2022.10.26.513838, 2022.
+\newblock {\em Animals}, 13(2):194.
 
-\bibitem[Touvron et~al.(2021)Touvron, Cord, Douze, Massa, Sablayrolles, and
-  J{\'e}gou]{touvron2021deit}
-Hugo Touvron, Matthieu Cord, Matthijs Douze, Francisco Massa, Alexandre
-  Sablayrolles, and Herv{\'e} J{\'e}gou.
+\bibitem[{National Academies of Sciences, Engineering, and Medicine},
+  2021]{nrc2021}
+{National Academies of Sciences, Engineering, and Medicine} (2021).
+\newblock {\em Nutrient Requirements of Dairy Cattle}.
+\newblock National Academies Press, Washington, DC, 8th edition.
+
+\bibitem[Oquab et~al., 2024]{oquab2024dinov2}
+Oquab, M., Darcet, T., Moutakanni, T., et~al. (2024).
+\newblock {DINOv2}: Learning robust visual features without supervision.
+\newblock {\em Transactions on Machine Learning Research}.
+
+\bibitem[Qiao et~al., 2022]{qiao2022}
+Qiao, Y., Xue, T., Kong, H., Clark, C., Lomax, S., Rafique, K., and Sukkarieh,
+  S. (2022).
+\newblock One-shot learning with pseudo-labeling for cattle video segmentation
+  in smart livestock farming.
+\newblock {\em Animals}, 12(5):558.
+
+\bibitem[Roche et~al., 2009]{roche2009}
+Roche, J.~R., Friggens, N.~C., Kay, J.~K., Fisher, M.~W., Stafford, K.~J., and
+  Berry, D.~P. (2009).
+\newblock Invited review: Body condition score and its association with dairy
+  cow productivity, health, and welfare.
+\newblock {\em Journal of Dairy Science}, 92(12):5769--5801.
+
+\bibitem[Rodr{\'i}guez~Alvarez et~al., 2018]{rodriguez2018}
+Rodr{\'i}guez~Alvarez, J., Arroqui, M., Mangudo, P., Toloza, J., Jatip, D.,
+  Rodr{\'i}guez, J.~M., Teyseyre, A., Sanz, C., Zunino, A., Machado, C., and
+  Mateos, C. (2018).
+\newblock Body condition estimation on cows from depth images using
+  convolutional neural networks.
+\newblock {\em Computers and Electronics in Agriculture}, 155:12--22.
+
+\bibitem[Rodr{\'i}guez~Alvarez et~al., 2019]{rodriguez2019}
+Rodr{\'i}guez~Alvarez, J., Arroqui, M., Mangudo, P., Toloza, J., Jatip, D.,
+  Rodriguez, J.~M., Teyseyre, A., Sanz, C., Zunino, A., Machado, C., and
+  Mateos, C. (2019).
+\newblock Estimating body condition score in dairy cows from depth images using
+  convolutional neural networks, transfer learning and model ensembling
+  techniques.
+\newblock {\em Agronomy}, 9(2):90.
+
+\bibitem[Schr{\"o}der and Staufenbiel, 2006]{schroder2006}
+Schr{\"o}der, U.~J. and Staufenbiel, R. (2006).
+\newblock Invited review: Methods to determine body fat reserves in the dairy
+  cow with special regard to ultrasonographic measurement of backfat thickness.
+\newblock {\em Journal of Dairy Science}, 89(1):1--14.
+
+\bibitem[Shorten and Khoshgoftaar, 2019]{shorten2019}
+Shorten, C. and Khoshgoftaar, T.~M. (2019).
+\newblock A survey on image data augmentation for deep learning.
+\newblock {\em Journal of Big Data}, 6(1):60.
+
+\bibitem[Sim{\'e}oni et~al., 2025]{simeoni2025dinov3}
+Sim{\'e}oni, O., Vo, H.~V., Seitzer, M., et~al. (2025).
+\newblock {DINOv3}.
+\newblock {\em arXiv preprint arXiv:2508.10104}.
+
+\bibitem[Souza et~al., 2025]{souza2025}
+Souza, V.~C., Gleason, C.~B., Price, T.~P., dos Reis, B.~R., Sujani, S., Davis,
+  T.~C., Liebe, D.~M., Daniels, K.~M., and White, R.~R. (2025).
+\newblock Production responses of dairy cows to precision feeding based on
+  historical performance during short-term changes in supplementation.
+\newblock {\em Journal of Animal Science}, 103:skaf317.
+
+\bibitem[Tan and Le, 2019]{tan2019efficientnet}
+Tan, M. and Le, Q.~V. (2019).
+\newblock {EfficientNet}: Rethinking model scaling for convolutional neural
+  networks.
+\newblock In {\em Proceedings of the 36th International Conference on Machine
+  Learning (ICML)}, pages 6105--6114.
+
+\bibitem[Tan and Le, 2021]{tan2021efficientnetv2}
+Tan, M. and Le, Q.~V. (2021).
+\newblock {EfficientNetV2}: Smaller models and faster training.
+\newblock In {\em Proceedings of the 38th International Conference on Machine
+  Learning (ICML)}, pages 10096--10106.
+
+\bibitem[Touvron et~al., 2021]{touvron2021deit}
+Touvron, H., Cord, M., Douze, M., Massa, F., Sablayrolles, A., and J{\'e}gou,
+  H. (2021).
 \newblock Training data-efficient image transformers \& distillation through
   attention.
-\newblock In \emph{Proceedings of the 38th International Conference on Machine
-  Learning (ICML)}, pages 10347--10357, 2021.
+\newblock In {\em Proceedings of the 38th International Conference on Machine
+  Learning (ICML)}, pages 10347--10357.
 
-\bibitem[Wightman(2019)]{wightman2019timm}
-Ross Wightman.
-\newblock {PyTorch} image models.
-\newblock \url{https://github.com/huggingface/pytorch-image-models}, 2019.
+\bibitem[Vijayakumar et~al., 2017]{vijayakumar2017}
+Vijayakumar, M., Park, J.~H., Ki, K.~S., Lim, D.~H., Kim, S.~B., Park, S.~M.,
+  Jeong, H.~Y., Park, B.~Y., and Kim, T.~I. (2017).
+\newblock The effect of lactation number, stage, length, and milking frequency
+  on milk yield in {Korean} {Holstein} dairy cows using automatic milking
+  system.
+\newblock {\em Asian-Australasian Journal of Animal Sciences},
+  30(8):1093--1098.
+
+\bibitem[Wildman et~al., 1982]{wildman1982}
+Wildman, E.~E., Jones, G.~M., Wagner, P.~E., Boman, R.~L., Troutt, H.~F., and
+  Lesch, T.~N. (1982).
+\newblock A dairy cow body condition scoring system and its relationship to
+  selected production characteristics.
+\newblock {\em Journal of Dairy Science}, 65(3):495--501.
+
+\bibitem[Xavier et~al., 2022]{xavier2022}
+Xavier, C., Le~Cozler, Y., Depuille, L., Caillot, A., Lebreton, A., Allain, C.,
+  Delouard, J.~M., Delattre, L., Luginbuhl, T., Faverdin, P., and Fischer, A.
+  (2022).
+\newblock The use of 3-dimensional imaging of {Holstein} cows to estimate body
+  weight and monitor the composition of body weight change throughout
+  lactation.
+\newblock {\em Journal of Dairy Science}, 105(5):4508--4519.
+
+\bibitem[Yao et~al., 2026]{yao2026}
+Yao, L., Kong, F., Hong, W., Liu, J., Li, X., Fan, Z., and Lei, L. (2026).
+\newblock Automated dairy cattle body condition score using side-view images
+  and deep learning.
+\newblock {\em Journal of Dairy Science}, 109(9):9446--9458.
+
+\bibitem[Zheng et~al., 2024]{zheng2024}
+Zheng, Z., Wang, Z., and Weng, Z. (2024).
+\newblock Efficient cow body condition scoring using {BCS-YOLO}: A lightweight,
+  knowledge distillation-based method.
+\newblock {\em Animals}, 14(24):3668.
 
 \end{thebibliography}

@@ -1,0 +1,23 @@
+% =============================================================
+% Abstract, key words and abbreviations (from PaperDINOcow.pdf)
+% =============================================================
+\section*{Abstract}
+
+Body condition scoring (BCS) is used to assess body fat reserves in dairy cattle.
+However, manual scoring \mP{is time-consuming and costly,} requires repetitive observations and sometimes varies between evaluators, making continuous monitoring difficult.
+This study presents DINOcow, a computer vision approach for continuous BCS estimation using two-dimensional images captured in a robotic milking system.
+A dataset of 670 rear dorsal images from Holstein dairy cows was used to develop and evaluate the model.
+This model combines two self-supervised vision transformers.
+First, a DINOv2-B/14 model with a feature pyramid decoder segments six anatomical regions associated with body condition assessment.
+Then, a DINOv3-L/16 model extracts visual features from the complete dorsal image.
+The segmentation masks are used to aggregate these features by anatomical region, and five regional descriptors are combined to estimate BCS through ridge regression.
+The performance of the model was evaluated using leave-one-cow-out (LOCO) and repeated five-fold cross-validation, keeping images from the same cow within the same data partition.
+Under LOCO evaluation, the model achieved \mE{an MAE} of 0.415 BCS points across images and an average MAE of 0.405 per cow, with an $R^2$ of 0.72 and a Pearson correlation coefficient of 0.85.
+The use of anatomical regions improved BCS estimation compared with descriptors obtained from the whole image, the cow silhouette, or a single rear crop.
+These results show that combining anatomical segmentation with frozen visual representation can support BCS estimation using conventional two-dimensional images, while reducing the need to train large models with extensive BCS-labeled datasets.
+
+\medskip
+\noindent\textbf{Key words:} body condition score, vision transformers, feature extraction, dairy cattle, anatomical segmentation
+
+\noindent\textbf{Nonstandard abbreviations:}\mJ{AUC = area under the ROC curve; IoU = intersection over union; LOCO = leave-one-cow-out; LoRA = low-rank adaptation; MAE = mean absolute error; mIoU = mean IoU; PIR = passive infrared; QWK = quadratically weighted kappa; RMSE = root mean squared error; ROC = receiver operating characteristic; ViT = vision transformer}
+

@@ -1,7 +1,7 @@
 esquema,descriptor,dim,mae,mae_vaca,r2,r,dif_vs_modelo,ic_lo,ic_hi
-LOCO,modelo (DINOv3),5125,0.4314,0.4266,0.705,0.846,0.0,0.0,0.0
-LOCO,textura (LBP+GLCM+Gabor),315,0.7527,0.6843,0.22,0.486,0.2578,0.1775,0.3372
-LOCO,modelo + textura,5440,0.4339,0.4311,0.705,0.846,0.0045,-0.0001,0.0094
-5x3 (folds de baselines),modelo (DINOv3),5125,0.4583,0.4431,0.68,0.836,0.0,0.0,0.0
-5x3 (folds de baselines),textura (LBP+GLCM+Gabor),315,0.7684,0.6912,0.202,0.463,0.2481,0.179,0.3198
-5x3 (folds de baselines),modelo + textura,5440,0.4606,0.447,0.68,0.835,0.0038,-0.0005,0.008
+LOCO,modelo (DINOv3),5125,0.4152,0.4049,0.716,0.85,0.0,0.0,0.0
+LOCO,textura (LBP+GLCM+Gabor),315,0.7431,0.6887,0.172,0.451,0.2838,0.1984,0.3744
+LOCO,modelo + textura,5440,0.4211,0.4105,0.711,0.847,0.0056,0.0003,0.0108
+5x3 (folds de baselines),modelo (DINOv3),5125,0.4278,0.4139,0.704,0.844,0.0,0.0,0.0
+5x3 (folds de baselines),textura (LBP+GLCM+Gabor),315,0.7567,0.7001,0.162,0.435,0.2862,0.2013,0.3744
+5x3 (folds de baselines),modelo + textura,5440,0.4336,0.4205,0.701,0.843,0.0066,0.0022,0.0113

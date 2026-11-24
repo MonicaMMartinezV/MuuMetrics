@@ -1,31 +1,117 @@
-% Draft wrapper for the BCS-Regions paper. Build: latexmk -pdf main.tex
-% Switch \documentclass to the journal template once the venue is chosen.
-\documentclass[11pt]{article}
+% =============================================================
+% DINOcow paper (Journal of Dairy Science), LaTeX version of PaperDINOcow.pdf
+% Build: latexmk -pdf main.tex
+% Layout follows the JDS manuscript template: double spacing, line numbers,
+% author-year citations. \pendiente{...} marks open points; hide them all with
+% \renewcommand{\pendiente}[1]{}
+% =============================================================
+\documentclass[12pt]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}
 \usepackage[margin=2.5cm]{geometry}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath}
 \usepackage{graphicx}
-\usepackage{booktabs}
+\usepackage{booktabs,tabularx,array,multirow}
 \usepackage{xcolor}
-\usepackage[numbers,sort&compress]{natbib}
+\usepackage[authoryear,round]{natbib}
+\usepackage{setspace}
+\usepackage[mathlines]{lineno}
 \usepackage{hyperref}
+\usepackage[font=small,labelfont=bf]{caption}
+\usepackage{placeins}
+\usepackage{indentfirst}   % JDS/Word style: indent the first paragraph after a heading too
 
-% Open questions; \renewcommand{\pendiente}[1]{} hides them all
+% ---- Float placement: keep figures and tables close to where they are cited
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+
+\doublespacing
+\linenumbers
+\renewcommand{\thesection}{}\renewcommand{\thesubsection}{}\renewcommand{\thesubsubsection}{}
+\makeatletter
+\renewcommand\section{\FloatBarrier\@startsection{section}{1}{\z@}{2ex}{1ex}{\centering\normalfont\bfseries\MakeUppercase}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}{1.5ex}{0.5ex}{\normalfont\bfseries\itshape}}
+\renewcommand\subsubsection{\@startsection{subsubsection}{3}{\parindent}{1ex}{0.5ex}{\normalfont\itshape}}
+\makeatother
+\setlength{\parindent}{1.27cm}
+
+% ---- Review marks. Earlier rounds (thurl rename, changed results) are no longer colored: their
+% macros are kept as plain pass-throughs. Blue = changes of the 20 Nov 2026 round (sync with the
+% shared Word version, JDS checks, resolution x block figure). Turn the marks off with \marcasfalse
+\usepackage{soul}
+% Colors as in PaperDINOcow_errores_v3.pdf: pink = error fixed, orange = figure/table/section reference,
+% green = JDS requirement, blue = new resolution x block figure; purple = text proposed that is not in the Word.
+\definecolor{cE}{HTML}{FFD1D1}\definecolor{cR}{HTML}{FFE6BF}\definecolor{cJ}{HTML}{D1F2D1}
+\definecolor{cG}{HTML}{CCE6FF}\definecolor{cP}{HTML}{E8DBF5}\definecolor{cO}{HTML}{E0E0E0}
+\newif\ifmarcas \marcastrue
+\DeclareRobustCommand{\thurlhl}[1]{#1}
+\newcommand{\figthurl}[1]{#1}
+\DeclareRobustCommand{\nuevohl}[1]{#1}
+\newcommand{\cajanueva}[1]{#1}
+\newenvironment{cambio}{\relax}{\relax}
+\DeclareRobustCommand{\mE}[1]{\ifmarcas{\sethlcolor{cE}\hl{#1}}\else#1\fi}
+\DeclareRobustCommand{\mR}[1]{\ifmarcas{\sethlcolor{cR}\hl{#1}}\else#1\fi}
+\DeclareRobustCommand{\mJ}[1]{\ifmarcas{\sethlcolor{cJ}\hl{#1}}\else#1\fi}
+\DeclareRobustCommand{\mG}[1]{\ifmarcas{\sethlcolor{cG}\hl{#1}}\else#1\fi}
+\DeclareRobustCommand{\mO}[1]{\ifmarcas{\sethlcolor{cO}\hl{#1}}\else#1\fi}
+\DeclareRobustCommand{\mP}[1]{\ifmarcas{\sethlcolor{cP}\hl{#1}}\else#1\fi}
+\newcommand{\bx}[2]{\ifmarcas{\setlength{\fboxsep}{3pt}\colorbox{#1}{#2}}\else#2\fi}
+\usepackage[most]{tcolorbox}
+\newtcolorbox{cajamarca}[1]{breakable,enhanced,colback=#1,colframe=#1,boxrule=0pt,arc=0pt,
+  left=0pt,right=0pt,top=2pt,bottom=2pt,before skip=\medskipamount,after skip=\medskipamount,parbox=false,
+  before upper={\setlength{\parindent}{1.27cm}}}
+\newenvironment{marca}[1]{\ifmarcas\begin{cajamarca}{#1}\hspace*{1.27cm}\ignorespaces\else\relax\fi}{\ifmarcas\end{cajamarca}\fi}
+
 \newcommand{\pendiente}[1]{\par\noindent\textcolor{red!70!black}{\small\textbf{TODO:} #1}\par}
 
-\title{Data-efficient body condition scoring of dairy cows from milking-robot images with frozen foundation-model region descriptors}
-\author{MuuMetrics team}
-\date{Draft}
-
 \begin{document}
-\maketitle
 
+\ifmarcas
+\noindent{\small\textbf{Review marks.} \bx{cE}{error fixed} \bx{cR}{figure, table or section reference} \bx{cJ}{JDS requirement} \bx{cG}{new resolution $\times$ block figure} \bx{cP}{proposed text not in the shared Word} \bx{cO}{optional, can be removed}}\par\medskip
+\fi
+
+\begin{marca}{cO}
+\noindent\hspace*{-1.27cm}\textbf{Interpretive summary:} Body condition score tells farmers how much body fat a cow carries, but scoring cows by eye is slow and varies between people. We placed a camera at the exit of a milking robot and built DINOcow, which locates the hip, rump, tailhead and thurl regions in each photo and estimates the score from them with a general-purpose image model and a linear equation. On 76 cows it had never seen, DINOcow erred by about 0.4 points on the 1 to 5 scale and outperformed the networks of earlier studies. Frequent automatic scoring could help farmers adjust rations through lactation.
+\end{marca}
+\pendiente{Interpretive summary (100 words or fewer, no abbreviations) drafted for the authors to revise. The 2026 JDS template marks it as optional.}
+
+\begin{flushleft}
+\mJ{\textsc{Body condition scoring from 2D rear images}}
+
+\medskip
+{\bfseries DINOcow: Body Condition Scoring of Dairy Cows From 2D Images with Frozen Self-Supervised Vision Transformer Features of Anatomical Regions}
+
+\medskip
+Bárbara P. Alcántara-Vega,$^{1}$ Victoria Figueroa-Bustos,$^{1*}$ Adrián Martínez-Vázquez,$^{2*}$ María José Soto Castro,$^{1}$ and Mónica Martínez-Vásquez$^{1}$
+
+\medskip
+$^{1}$Escuela de Ingeniería y Ciencias, Instituto Tecnológico y de Estudios Superiores de Monterrey, Epigmenio González 500, Fracc.\ San Pablo, Santiago de Querétaro 76130, México\\
+$^{2}$Facultad de Informática, Universidad Autónoma de Querétaro, Av.\ de las Ciencias S/N, Juriquilla, Santiago de Querétaro 76230, México
+
+\medskip
+{\small $^{*}$Corresponding authors: \mJ{Victoria Figueroa-Bustos,} victoria.figueroabustos@tec.mx\mJ{;} \mJ{Adrián Martínez-Vázquez,} hector.adrian.martinez@uaq.mx}
+
+\medskip
+{\small ORCID: \mJ{Victoria Figueroa-Bustos, 0000-0000-0000-0000;} \mJ{Adrián Martínez-Vázquez, 0000-0000-0000-0000;} \mO{Bárbara P. Alcántara-Vega, 0000-0000-0000-0000;} \mO{María José Soto Castro, 0000-0000-0000-0000;} \mO{Mónica Martínez-Vásquez, 0000-0000-0000-0000}}
+\end{flushleft}
+\pendiente{The Instructions for Authors ask for the full name, mailing address, phone number and email of each corresponding author below the affiliations (the 2026 template shows only the email). Add the mailing address and phone of both. ORCID: the submitting corresponding author must have an ORCID linked to the ScholarOne account (coauthors optional); it is entered in ScholarOne, not in the manuscript.}
+
+\input{abstract}
+\input{intro}
 \input{methods}
 \input{results}
+\input{discussion}
+\input{notes}
 
-\bibliographystyle{plainnat}
+\FloatBarrier
+\bibliographystyle{apalike}
 \bibliography{refs}
 
-\input{supplementary}
+\input{appendix}
 \end{document}

@@ -1,0 +1,43 @@
+% =============================================================
+% Introduction (from PaperDINOcow.pdf)
+% =============================================================
+\section{Introduction}
+
+Body condition scoring (BCS) is a subjective method for assessing body fat reserves in live animals.
+The scale differs between countries, but low values always reflect emaciation, and high values equate to obesity \citep{roche2009}.
+In dairy cattle, BCS is commonly assessed on a scale from 1 to 5, with 0.25-point increments, where the regions of interest while scoring include the thurl region, ischial and ileal tuberosities, ilio-sacral and ischio-coccygeal ligaments, transverse processes of the lumbar vertebrae, and spinous processes of the lumbar vertebrae \citep{edmonson1989,wildman1982}.
+The evaluation method uses both visualization and palpation of regions of interest, frequently requiring animals to be under restraint while performing the scoring, although some scoring systems, such as the Australian and New Zealand body scoring techniques, only require visual inspection \citep{edmonson1989}.
+These assessments of seven body regions are sufficient to categorize cows by 0.25-unit increments; however, subjectivity and discrepancies remain among expert observers.
+For instance, \citet{ferguson1994} reported that observers agreed on the exact BCS in 58--67\% of assessments, while differences of $\pm0.25$ points occurred in 21--34\% of cases.
+
+In dairy cattle, days in milk (DIM) are important for BCS monitoring, as body condition and nutritional requirements vary throughout lactation \citep{roche2009}.
+The lactation cycle is usually divided into four main stages, early lactation (0--100 DIM), mid-lactation (100--200 DIM), late lactation (${>}200$ DIM) \citep{vijayakumar2017}, and finally, the dry period.
+A 305-day lactation is commonly used as a standardized reference \citep{nrc2021}, while the dry period is typically set approximately 40--70 days before calving to maximize milk \citep{jukna2024}.
+In early lactation, cows tend to reach positive energy balance by 63 days postpartum, with an average of 45 DIM \citep{grummer2003}.
+Milk yield continues to increase until the peak of lactation around week 4--8 postpartum, while cows are still in calculated negative energy balance, and by mid-lactation, as nutrient availability limits milk synthesis, milk yield begins to decline and the energy balance shifts to positive \citep{gross2011}.
+During late lactation, cows replenish body reserves lost during early lactation while supporting fetal development \citep{nrc2021}.
+And finally, the dry period allows mammary and ruminal tissues to regenerate in preparation for the subsequent lactation \citep{goselink2024}.
+
+These changes in body condition throughout lactation make regular BCS assessment essential in the dairy industry, yet manual scoring takes time and varies among observers.
+To address these limitations, early approaches relied on geometric features extracted from 2D images.
+\citet{bewley2008} used manually identified anatomical landmarks, achieving 92.8\% of predictions within $\pm0.25$ BCS units.
+Other methods described body shape using fitted curves \citep{halachmi2008}, body shape modeling \citep{azzaro2011}, and Fourier descriptors \citep{bercovich2013}.
+Subsequent studies incorporated depth information to capture body surface geometry.
+\citet{rodriguez2018,rodriguez2019} applied convolutional neural networks to depth images, achieving 78--82\% of predictions within $\pm0.25$ BCS units, while \citet{mullins2019} evaluated the commercial DeLaval 3D scoring system, reporting a correlation of $r = 0.78$ with manual scores.
+
+More recently, deep learning has enabled feature extraction directly from conventional 2D images.
+\citet{cevik2019} combined segmentation with \mP{convolutional neural network} classification, while \citet{nagy2023} examined the influence of scoring classes and annotated regions.
+Other studies introduced models based on YOLO and EfficientNet for automated BCS classification \citep{dandil2024,liu2025,zheng2024}.
+\citet{lewis2025} identified the rear view as particularly informative, while \citet{yao2026} addressed continuous BCS estimation from 2D side-view images using convolutional networks.
+
+Despite these advances, the use of self-supervised vision models for extracting and combining anatomical information remains insufficiently explored.
+Further investigation is needed to determine whether features extracted from multiple anatomical regions can improve continuous BCS estimation compared with approaches relying on a single region.
+
+\mP{Therefore, the aim of this study was to improve continuous BCS estimation from 2D images by proposing DINOcow, an approach} that combines anatomical segmentation and self-supervised vision transformers.
+Its main contributions are the following.
+\begin{enumerate}
+  \item A fine-tuned DINOv2-B/14 model with \mP{a feature pyramid network} decoder segments six anatomical regions using manually annotated and pseudo-labeled images.
+  \item A frozen DINOv3-L/16 backbone extracts visual features without updating its pretrained weights, reducing the number of parameters that require training.
+  \item Anatomical masks guide the region-wise feature aggregation, combining regional representations and absence indicators for continuous BCS prediction with ridge regression.
+  \item Cow-level validation on 76 cows evaluates predictive performance against a single rear-region baseline and examines the contribution of individual anatomical regions.
+\end{enumerate}

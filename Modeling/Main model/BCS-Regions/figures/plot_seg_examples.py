@@ -25,13 +25,13 @@ from matplotlib.patches import Patch
 from PIL import Image
 
 REGIONS = ["loin", "hips", "rump", "tailhead", "thigh_L", "thigh_R"]          # mismo orden que segmenter.REGIONS
-NOMBRES = ["Loin", "Hips", "Rump", "Tailhead", "Thigh (image left)", "Thigh (image right)"]
+NOMBRES = ["Loin", "Hips", "Rump", "Tailhead", "Thurl (image left)", "Thurl (image right)"]
 COLORES = ["#E69F00", "#0072B2", "#009E73", "#D55E00", "#CC79A7", "#56B4E9"]   # Okabe-Ito, apto para daltonismo
 
 plt.rcParams.update({"font.family": "STIXGeneral", "mathtext.fontset": "stix", "font.size": 8,
                      "axes.titlesize": 8, "legend.fontsize": 7.5, "pdf.fonttype": 42, "ps.fonttype": 42})
 
-def recorte(img, masks, margen=0.06, salida=520):
+def recorte(img, masks, margen=0.06, salida=1100):
     """Recorte CUADRADO alrededor de la unión de regiones, siempre dentro del cuadro (sin relleno):
     lado = el mayor de alto/ancho de las regiones + margen, limitado al alto del cuadro; se desliza para
     no salirse y se lleva a salida x salida px."""
@@ -94,7 +94,7 @@ def main(a):
     fig.legend(handles=[Patch(facecolor=c, edgecolor=c, alpha=0.75, label=nm) for c, nm in zip(COLORES, NOMBRES)],
                loc="lower center", ncol=6, frameon=False, handlelength=1.2, columnspacing=1.1, bbox_to_anchor=(0.53, -0.005))
     out = Path(a.out); out.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(out.with_suffix(".pdf")); fig.savefig(out.with_suffix(".png"), dpi=300)
+    fig.savefig(out.with_suffix(".pdf"), dpi=600); fig.savefig(out.with_suffix(".png"), dpi=600)   # dpi también fija la resolución de las fotos dentro del PDF
     print(f"-> {out.with_suffix('.pdf')} / .png | ejemplos {[str(z['names'][i]) for i in ids]} | detalle {z['names'][det]}")
 
 if __name__ == "__main__":

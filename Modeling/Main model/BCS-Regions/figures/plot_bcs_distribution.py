@@ -2,10 +2,10 @@
 
 Grouped bars per BCS value: share of cows and share of images (both in %, so they
 share one axis). Cows scored more than once (8758, 9008) count once per score,
-so the cow shares are over cow-score pairs (67 in Dataset_Fr_BCS_v2).
+so the cow shares are over cow-score pairs (79 in Dataset_Fr_BCS, 76 cows; 67 in Dataset_Fr_BCS_v2).
 
 Usage:
-  python figures/plot_bcs_distribution.py --data_dir ../../../Dataset/Dataset_Fr_BCS_v2
+  python figures/plot_bcs_distribution.py --data_dir ../../../Dataset/Dataset_Fr_BCS
 """
 import argparse, re
 from collections import Counter
@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 ap = argparse.ArgumentParser()
-ap.add_argument("--data_dir", default="../../../Dataset/Dataset_Fr_BCS_v2")
+ap.add_argument("--data_dir", default="../../../Dataset/Dataset_Fr_BCS")
 ap.add_argument("--out", default=str(Path(__file__).parent / "bcs_distribution"))
 a = ap.parse_args()
 

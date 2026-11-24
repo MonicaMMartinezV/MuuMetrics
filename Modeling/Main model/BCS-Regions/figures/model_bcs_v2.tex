@@ -71,7 +71,7 @@
 \node (masks)         at (0,13.55) {\textbf{6 region masks}};
 \draw[flecha] (Aadd2) -- (fpn);
 \node[lado, anchor=west] at (0.12,10.92) {features of blocks 3, 6, 9, 12};
-\node[lado, anchor=west] at ($(fpn.east)+(0.1,0)$) {masks averaged with\\the mirrored image\\(TTA, thighs swapped)};
+\node[lado, anchor=west] at ($(fpn.east)+(0.1,0)$) {masks averaged with\\the mirrored image\\(TTA, thurls swapped)};
 \draw[flecha] (fpn) -- (masks);
 \node[font=\sffamily\small\bfseries, align=center, anchor=north] at (0,-0.75)
   {Region segmenter\\[-1pt]\mdseries\footnotesize DINOv2-B/14, fine-tuned\\[-2pt]\mdseries\footnotesize 40 annotated + 345 pseudo-labeled frames};

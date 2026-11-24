@@ -1,29 +1,36 @@
 % Tabla comparativa resumen: precisión, detección y costo de todos los métodos.
-% Fuentes: paper/datos/comparacion.csv y roc.csv (model/baselines, EXPERIMENTOS [28]);
+% Fuentes: work76/baselines/comparacion.csv y roc.csv (model/baselines, 76 vacas); r de Pearson con la predicción promedio de 3 semillas;
 % parámetros entrenables contados con timm/Ultralytics; tiempo = total de 3 semillas / 15 folds
 % en una RTX 2080 (incluye la búsqueda de learning rate y la elección de época).
-\begin{table*}[t]
+\begin{table}[!htbp]
   \centering
-  \caption{Summary comparison on the same 15 cow-level folds (five folds $\times$ 3 seeds). $\Delta$: MAE per cow minus that of BCS-Regions, paired bootstrap 95\% CI over cows. AUC: area under the ROC curve for flagging thin (BCS $<3$) and fat (BCS $\geq4$) cows. Trainable parameters: parameters fitted to BCS labels. Time: GPU time per fold, including hyperparameter selection, on one RTX 2080.}
+  \caption{Comparison with the baselines on unseen cows (five cow-level folds $\times$ 3 seeds).}
   \label{tab:summary}
   \resizebox{\textwidth}{!}{%
-  \begin{tabular}{llrrcccccc}
+  \cajanueva{\begin{tabular}{llrrcccccc}
     \toprule
-    Method & Pretraining & Trainable params & Time/fold & MAE/cow & $\Delta$ MAE/cow [95\% CI] & $R^2$ & $r$ & AUC thin & AUC fat \\
+    Method & Pretraining & Trainable params $\downarrow$ & Time/fold $\downarrow$ & MAE/cow $\downarrow$ & $\Delta$ MAE/cow [95\% CI] $\downarrow$ & $R^2$ $\uparrow$ & $r$ $\uparrow$ & AUC thin $\uparrow$ & AUC fat $\uparrow$ \\
     \midrule
-    \textbf{BCS-Regions (ours)} & DINOv3, self-sup. & 5.1\,k & $<$1\,s$^{a}$ & \textbf{0.443} & -- & \textbf{0.68} & \textbf{0.84} & \textbf{0.94} & \textbf{0.89} \\
-    DINOv3 + LoRA & DINOv3, self-sup. & 1.18\,M & 19\,min & 0.455 & +0.012 [$-$0.037, +0.057] & 0.59 & 0.78 & 0.90 & 0.85 \\
-    ResNet-50, frozen + ridge & ImageNet-1k & 2.0\,k & $<$1\,s$^{a}$ & 0.656 & +0.213 [+0.138, +0.289] & 0.29 & 0.55 & 0.83 & 0.75 \\
-    Texture (LBP, GLCM, Gabor) + ridge & none & 316 & $<$1\,s$^{a}$ & 0.691 & +0.248 [+0.179, +0.320] & 0.20 & 0.46 & -- & -- \\
-    ResNet-50, fine-tuned & ImageNet-1k & 23.5\,M & 7\,min & 0.650 & +0.207 [+0.132, +0.281] & 0.22 & 0.49 & 0.76 & 0.68 \\
-    ViT-B/16, fine-tuned & ImageNet-1k & 86.1\,M & 11\,min$^{b}$ & 0.669 & +0.225 [+0.152, +0.301] & 0.20 & 0.45 & 0.74 & 0.66 \\
-    EfficientNet-V2-S, fine-tuned & ImageNet-1k & 20.2\,M & 5\,min & 0.674 & +0.231 [+0.161, +0.304] & 0.23 & 0.49 & 0.73 & 0.68 \\
-    EfficientNet-B0, fine-tuned & ImageNet-1k & 4.0\,M & 6\,min & 0.687 & +0.243 [+0.169, +0.319] & 0.17 & 0.45 & 0.72 & 0.67 \\
-    YOLOv8s-cls & ImageNet & 5.1\,M & 1\,min & 0.701 & +0.258 [+0.167, +0.347] & 0.10 & 0.36 & 0.67 & 0.57 \\
-    YOLO11s-cls & ImageNet & 5.5\,M & 1\,min & 0.707 & +0.264 [+0.169, +0.360] & 0.06 & 0.36 & 0.67 & 0.60 \\
+    \textbf{DINOcow (our model)} & DINOv3, self-sup. & \textbf{5.1\,k} & \textbf{$<$1\,s}\bx{cJ}{$^{1}$} & \textbf{0.414} & -- & \textbf{0.70} & 0.84 & \textbf{0.94} & 0.90 \\
+    DINOcow, 80\% of training cows\bx{cJ}{$^{3}$} & DINOv3, self-sup. & \textbf{5.1\,k} & \textbf{$<$1\,s}\bx{cJ}{$^{1}$} & 0.424 & +0.010 [$-$0.003, +0.024] & \textbf{0.70} & 0.84 & -- & -- \\
+    DINOv3 + LoRA, regions & DINOv3, self-sup. & 1.18\,M & 32\,min\bx{cJ}{$^{2}$} & 0.428 & +0.014 [$-$0.018, +0.046] & \textbf{0.70} & \textbf{0.85} & \textbf{0.94} & \textbf{0.92} \\
+    DINOv3 + LoRA & DINOv3, self-sup. & 1.18\,M & 17\,min & 0.434 & +0.020 [$-$0.025, +0.066] & 0.68 & 0.83 & \textbf{0.94} & 0.91 \\
+    ResNet-50, fine-tuned & ImageNet-1k & 23.5\,M & 7\,min\bx{cJ}{$^{4}$} & 0.614 & +0.200 [+0.131, +0.270] & 0.35 & 0.61 & 0.82 & 0.78 \\
+    EfficientNet-V2-S, fine-tuned & ImageNet-1k & 20.2\,M & 5\,min\bx{cJ}{$^{4}$} & 0.625 & +0.211 [+0.152, +0.272] & 0.41 & 0.66 & 0.83 & 0.80 \\
+    ViT-B/16, fine-tuned & ImageNet-1k & 86.1\,M & 11\,min\bx{cJ}{$^{2,4}$} & 0.628 & +0.215 [+0.152, +0.282] & 0.32 & 0.57 & 0.81 & 0.76 \\
+    ResNet-50, frozen + ridge & ImageNet-1k & 2.0\,k & \textbf{$<$1\,s}\bx{cJ}{$^{1}$} & 0.642 & +0.228 [+0.165, +0.293] & 0.34 & 0.58 & 0.84 & 0.77 \\
+    EfficientNet-B0, fine-tuned & ImageNet-1k & 4.0\,M & 6\,min\bx{cJ}{$^{4}$} & 0.667 & +0.253 [+0.179, +0.331] & 0.21 & 0.47 & 0.73 & 0.72 \\
+    Texture (LBP, GLCM, Gabor) + ridge & none & 316 & \textbf{$<$1\,s}\bx{cJ}{$^{1}$} & 0.700 & +0.286 [+0.201, +0.374] & 0.16 & 0.43 & -- & -- \\
+    YOLO11s-cls & ImageNet & 5.5\,M & 1\,min\bx{cJ}{$^{4}$} & 0.707 & +0.293 [+0.211, +0.381] & 0.16 & 0.42 & 0.71 & 0.67 \\
+    YOLOv8s-cls & ImageNet & 5.1\,M & 1\,min\bx{cJ}{$^{4}$} & 0.713 & +0.299 [+0.220, +0.384] & 0.16 & 0.40 & 0.72 & 0.65 \\
     \bottomrule
-  \end{tabular}}
+  \end{tabular}}}
 
   \smallskip
-  \footnotesize $^{a}$ Ridge fit with selection of $\alpha$; descriptors (segmentation and frozen features) are computed once per image, a fraction of a second each. $^{b}$ Partly measured while another job shared the GPU.
-\end{table*}
+  \bx{cJ}{\parbox{\linewidth}{\footnotesize\raggedright
+  Bold marks the best value in each column.\\
+  $^{1}$Ridge fit with selection of $\alpha$; descriptors (segmentation and frozen features) are computed once per image, a fraction of a second each.\\
+  $^{2}$Partly measured while another job shared the GPU.\\
+  $^{3}$Refitted on the same cows the fine-tuned baselines train on, after their inner validation split.\\
+  $^{4}$Measured when the dataset had 64 cows; with all 76 cows each fold takes about 10 to 15\% longer.}}
+\end{table}
